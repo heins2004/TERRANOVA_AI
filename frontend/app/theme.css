@@ -1,0 +1,46 @@
+:root {
+  --background: #f4f7fb;
+  --foreground: #122033;
+  --surface: #ffffff;
+  --surface-muted: #e9f0fb;
+  --card: rgba(255, 255, 255, 0.78);
+  --card-strong: #ffffff;
+  --border: #c4d2e5;
+  --primary: #0f5bd3;
+  --primary-foreground: #ffffff;
+  --secondary: #0e7a58;
+  --secondary-foreground: #ffffff;
+  --muted-foreground: #5b6b81;
+  --danger: #c43d37;
+  --danger-foreground: #ffffff;
+  --success: #1b7f5f;
+  --success-foreground: #ffffff;
+  --accent: #d7e6ff;
+  --hero-start: #0f5bd3;
+  --hero-end: #062c61;
+  --shadow-color: rgba(15, 43, 82, 0.16);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-card: var(--card);
+  --color-card-strong: var(--card-strong);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-accent: var(--accent);
+  --color-hero-start: var(--hero-start);
+  --color-hero-end: var(--hero-end);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}

@@ -1,0 +1,1 @@
+"""TERRANOVA AI backend package."""
