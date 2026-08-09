@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+import { useAuth } from "@/components/auth-provider";
 import { submitAuth } from "@/lib/auth";
 
 type AuthMode = "login" | "register";
@@ -33,6 +34,7 @@ const pageContent = {
 
 export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
+  const { login } = useAuth();
   const content = pageContent[mode];
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -60,16 +62,9 @@ export function AuthForm({ mode }: AuthFormProps) {
               password,
             });
 
-      localStorage.setItem("terranova_token", response.access_token);
-      localStorage.setItem("terranova_user", JSON.stringify(response.user));
+      login(response);
       setSuccessMessage(response.message);
-
-      if (mode === "register") {
-        router.push("/login");
-        return;
-      }
-
-      router.push("/");
+      router.replace("/home");
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Something went wrong.",
