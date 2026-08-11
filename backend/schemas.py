@@ -18,10 +18,10 @@ class UserResponse(BaseModel):
     id: int
     full_name: str
     email: EmailStr
+    role: str
     created_at: str
 
 
 class AuthResponse(BaseModel):
     message: str
-    access_token: str
     user: UserResponse

@@ -90,9 +90,9 @@ export function AuthForm({ mode }: AuthFormProps) {
               Connected planning for faster, cleaner city decisions.
             </h1>
             <p className="max-w-lg text-lg leading-8 text-white/78">
-              FastAPI manages secure authentication, PostgreSQL stores user
-              records, and this Next.js frontend gives each route a focused
-              entry point for access control.
+              FastAPI manages secure authentication, PostgreSQL stores citizen
+              user records, and this Next.js frontend keeps each route aligned
+              with the backend session boundary.
             </p>
           </div>
         </div>

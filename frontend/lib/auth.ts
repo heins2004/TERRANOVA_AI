@@ -2,20 +2,20 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
 const SESSION_COOKIE_NAME = "terranova_session";
-const TOKEN_STORAGE_KEY = "terranova_token";
-const USER_STORAGE_KEY = "terranova_user";
 
 type AuthMode = "login" | "register";
 
+export type AuthUser = {
+  id: number;
+  full_name: string;
+  email: string;
+  role: string;
+  created_at: string;
+};
+
 export type AuthSuccess = {
   message: string;
-  access_token: string;
-  user: {
-    id: number;
-    full_name: string;
-    email: string;
-    created_at: string;
-  };
+  user: AuthUser;
 };
 
 type LoginPayload = {
@@ -27,66 +27,26 @@ type RegisterPayload = LoginPayload & {
   full_name: string;
 };
 
-export type AuthUser = AuthSuccess["user"];
+type CurrentUserOptions = {
+  cookieHeader?: string;
+};
 
 export function getSessionCookieName() {
   return SESSION_COOKIE_NAME;
 }
 
-export function persistAuthSession(payload: AuthSuccess) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  localStorage.setItem(TOKEN_STORAGE_KEY, payload.access_token);
-  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(payload.user));
-  document.cookie = `${SESSION_COOKIE_NAME}=1; path=/; max-age=604800; samesite=lax`;
-}
-
-export function clearAuthSession() {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  localStorage.removeItem(TOKEN_STORAGE_KEY);
-  localStorage.removeItem(USER_STORAGE_KEY);
-  document.cookie = `${SESSION_COOKIE_NAME}=; path=/; max-age=0; samesite=lax`;
-}
-
-export function getStoredUser() {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const storedUser = localStorage.getItem(USER_STORAGE_KEY);
-
-  if (!storedUser) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(storedUser) as AuthUser;
-  } catch {
-    clearAuthSession();
-    return null;
-  }
-}
-
-export function hasStoredSession() {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  return Boolean(localStorage.getItem(TOKEN_STORAGE_KEY) && getStoredUser());
+function getApiUrl(path: string) {
+  return `${API_BASE_URL}${path}`;
 }
 
 export async function submitAuth(
   mode: AuthMode,
   payload: LoginPayload | RegisterPayload,
 ): Promise<AuthSuccess> {
-  const endpoint = mode === "login" ? "/auth/login" : "/auth/register";
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/register";
+  const response = await fetch(getApiUrl(endpoint), {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },
@@ -102,4 +62,40 @@ export async function submitAuth(
   }
 
   return data as AuthSuccess;
+}
+
+export async function getCurrentUser(
+  options: CurrentUserOptions = {},
+): Promise<AuthUser | null> {
+  const response = await fetch(getApiUrl("/api/auth/me"), {
+    method: "GET",
+    credentials: "include",
+    headers: options.cookieHeader
+      ? {
+          cookie: options.cookieHeader,
+        }
+      : undefined,
+    cache: "no-store",
+  });
+
+  if (response.status === 401) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error("Unable to retrieve the authenticated user.");
+  }
+
+  return (await response.json()) as AuthUser;
+}
+
+export async function logoutUser(): Promise<void> {
+  const response = await fetch(getApiUrl("/api/auth/logout"), {
+    method: "POST",
+    credentials: "include",
+  });
+
+  if (!response.ok && response.status !== 204) {
+    throw new Error("Unable to log out.");
+  }
 }

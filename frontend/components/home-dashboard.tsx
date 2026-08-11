@@ -1,7 +1,7 @@
 "use client";
 
 import { LogoutButton } from "@/components/logout-button";
-import { useAuth } from "@/components/auth-provider";
+import { AuthUser } from "@/lib/auth";
 
 const overviewCards = [
   {
@@ -34,19 +34,11 @@ const feedItems = [
   "AI summary flagged a density mismatch in Ward 4.",
 ];
 
-export function HomeDashboard() {
-  const { isReady, user } = useAuth();
+type HomeDashboardProps = {
+  user: AuthUser;
+};
 
-  if (!isReady) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-background px-6 py-12">
-        <div className="glass-card rounded-[2rem] px-8 py-6 text-sm text-muted-foreground">
-          Loading TERRANOVA AI workspace...
-        </div>
-      </main>
-    );
-  }
-
+export function HomeDashboard({ user }: HomeDashboardProps) {
   return (
     <main className="min-h-screen bg-background">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-6 py-6 lg:flex-row lg:gap-6 lg:px-8">
@@ -65,8 +57,11 @@ export function HomeDashboard() {
 
           <div className="mt-10 rounded-[1.75rem] border border-white/16 bg-white/10 p-5">
             <p className="text-sm text-white/72">Signed in as</p>
-            <p className="mt-2 text-xl font-semibold">{user?.full_name}</p>
-            <p className="mt-1 text-sm text-white/78">{user?.email}</p>
+            <p className="mt-2 text-xl font-semibold">{user.full_name}</p>
+            <p className="mt-1 text-sm text-white/78">{user.email}</p>
+            <p className="mt-2 text-xs uppercase tracking-[0.24em] text-white/62">
+              Role: {user.role}
+            </p>
           </div>
 
           <div className="mt-10 space-y-4">
@@ -92,9 +87,9 @@ export function HomeDashboard() {
               Smart-city decisions with faster planning context.
             </h2>
             <p className="mt-4 max-w-3xl text-base leading-8 text-muted-foreground">
-              This protected workspace is the authenticated entry point for TERRANOVA AI.
-              Backend tools can replace these placeholders later without changing the route
-              structure or the frontend session model.
+              This protected workspace is the authenticated entry point for TERRANOVA AI for{" "}
+              {user.full_name}. Backend tools can replace these placeholders later without
+              changing the route structure or the frontend session model.
             </p>
           </div>
 

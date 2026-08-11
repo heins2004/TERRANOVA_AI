@@ -12,10 +12,8 @@ import { useRouter } from "next/navigation";
 import {
   AuthSuccess,
   AuthUser,
-  clearAuthSession,
-  getStoredUser,
-  hasStoredSession,
-  persistAuthSession,
+  getCurrentUser,
+  logoutUser,
 } from "@/lib/auth";
 
 type AuthContextValue = {
@@ -23,7 +21,7 @@ type AuthContextValue = {
   isReady: boolean;
   user: AuthUser | null;
   login: (payload: AuthSuccess) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -34,22 +32,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    const syncAuthState = () => {
-      if (!hasStoredSession()) {
-        setUser(null);
-        setIsReady(true);
-        return;
+    let isMounted = true;
+
+    async function syncAuthState() {
+      try {
+        const authenticatedUser = await getCurrentUser();
+
+        if (isMounted) {
+          setUser(authenticatedUser);
+        }
+      } catch {
+        if (isMounted) {
+          setUser(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsReady(true);
+        }
       }
+    }
 
-      setUser(getStoredUser());
-      setIsReady(true);
-    };
-
-    syncAuthState();
-    window.addEventListener("storage", syncAuthState);
+    void syncAuthState();
 
     return () => {
-      window.removeEventListener("storage", syncAuthState);
+      isMounted = false;
     };
   }, []);
 
@@ -58,12 +64,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isReady,
     user,
     login(payload) {
-      persistAuthSession(payload);
       setUser(payload.user);
     },
-    logout() {
-      clearAuthSession();
-      setUser(null);
+    async logout() {
+      try {
+        await logoutUser();
+      } finally {
+        setUser(null);
+      }
+
       router.replace("/login");
     },
   };
