@@ -1,119 +1,74 @@
-# 🌍 TERRANOVA AI
+🌍 TERRANOVA AI
 
- An AI-Powered Urban Planning and Intelligent Decision Support Platform
+AI-Powered Urban Planning and Intelligent Decision Support Platform
 
-TERRANOVA AI is an intelligent web-based platform designed to assist governments, urban planners, policymakers, and citizens in making data-driven urban planning decisions. The platform combines Geographic Information Systems (GIS), Artificial Intelligence, Digital Twin technology, Computer Vision, and Decision Support Systems into a unified environment for sustainable city planning.
+TERRANOVA AI is an AI-powered urban planning and decision-support platform designed to assist governments, urban planners, policymakers, and citizens in making intelligent and data-driven decisions for sustainable urban development.
 
- Project Status 🚧 Initial Development (Phase 1)
+The platform integrates Geographic Information Systems (GIS), Artificial Intelligence, Digital Twin technology, Computer Vision, Voice AI, and Retrieval-Augmented Generation (RAG) into a unified urban planning environment.
 
----
-
-# 📖 Project Overview
-
-Rapid urbanization has increased the complexity of city planning and infrastructure management. Traditional planning approaches rely on disconnected systems and manual analysis, making it difficult to evaluate urban development projects efficiently.
-
-TERRANOVA AI addresses these challenges by providing
-
-- GIS-based city visualization
-- Infrastructure management
-- Urban development project management
-- Planning document management
-- Citizen engagement
-- AI-powered decision support (Phase 2)
-
-The project follows a phased development approach to ensure scalability and maintainability.
+Project Status: 🚧 Initial Development — Phase 1
 
 ---
 
-# 🚀 Development Roadmap
+📖 Overview
 
-## Phase 1 – Core Urban Planning Platform
+Rapid urbanization has increased the complexity of transportation, infrastructure, population growth, environmental management, and urban development.
 
-The first phase focuses on building the enterprise web platform without Artificial Intelligence.
+TERRANOVA AI provides a centralized platform for visualizing city information, managing infrastructure and development projects, analyzing planning information, and supporting collaboration between government authorities, urban planners, and citizens.
 
-### Features
+The project is developed in two phases:
 
-- User Authentication
-- Role-Based Access Control (RBAC)
-- Administrator Dashboard
-- Urban Planner Dashboard
-- Government Official Dashboard
-- Citizen Portal
-
-### GIS Module
-
-- Interactive City Map
-- Infrastructure Layers
-- Zoning Visualization
-- Location Search
-- Map-Based Monitoring
-
-### Infrastructure Management
-
-- Roads
-- Buildings
-- Utilities
-- Public Infrastructure
-- Infrastructure Status Tracking
-
-### Urban Development Projects
-
-- Create Projects
-- Manage Projects
-- Project Progress Tracking
-- Budget Tracking
-- Timeline Management
-
-### Planning Documents
-
-- Upload Documents
-- Document Repository
-- Version Management
-- Planning Reports
-
-### Citizen Engagement
-
-- Complaint Submission
-- Suggestions
-- Public Consultation
-- Project Tracking
-
-### Dashboard & Reports
-
-- City Analytics
-- Infrastructure Statistics
-- Project Analytics
-- Administrative Reports
+- Phase 1: Core Urban Planning Platform
+- Phase 2: AI-Powered Decision Support
 
 ---
 
-# 🤖 Phase 2 – AI Decision Support Platform
+🚀 Phase 1 — Core Urban Planning Platform
 
-Phase 2 extends the platform by integrating Artificial Intelligence capabilities.
+The first phase focuses on the development of the core web platform.
 
-## AI Planning Assistant
+Core Modules
+
+- User Management
+- Role-Based Access Control
+- GIS & City Visualization
+- Infrastructure Management
+- Urban Development Project Management
+- Planning Document Management
+- Dashboards & Reports
+- Citizen Feedback and Participation
+
+---
+
+🤖 Phase 2 — AI Decision Support
+
+The second phase introduces advanced Artificial Intelligence capabilities.
+
+AI Modules
+
+AI Planning Assistant
 
 - Natural Language Interaction
 - Voice AI
 - Planning Recommendations
-- Document Question Answering (RAG)
+- Document Question Answering
+- RAG
 
-## Digital Twin & Predictive Analytics
+Digital Twin & Predictive Analytics
 
-- Digital City Simulation
 - Traffic Prediction
-- Population Forecasting
-- Infrastructure Demand Prediction
+- Population Growth Forecasting
+- Infrastructure Demand Estimation
 - Urban Scenario Simulation
 
-## Computer Vision Intelligence
+Computer Vision Intelligence
 
 - Traffic Density Detection
 - Construction Progress Monitoring
 - Infrastructure Utilization Analysis
-- Safety Hazard Detection
+- Safety Hazard Identification
 
-## Citizen & Decision Intelligence
+Citizen & Decision Intelligence
 
 - Citizen Sentiment Analysis
 - Meeting Transcription
@@ -123,154 +78,79 @@ Phase 2 extends the platform by integrating Artificial Intelligence capabilities
 
 ---
 
-# 👥 User Roles
+👥 User Roles
 
-## Administrator
+Administrator
 
-- User Management
-- Role Management
-- GIS Dataset Management
-- System Monitoring
-- Reports
-- Project Approval
+Manages users, roles, GIS datasets, system activities, projects, and administrative reports.
 
-## Urban Planner
+Urban Planner
 
-- Urban Development Projects
-- Infrastructure Analysis
-- GIS Analysis
-- Planning Documents
-- Planning Reports
+Creates and manages urban development projects, analyzes GIS and infrastructure information, manages planning documents, and generates planning reports.
 
-## Government Official
+Government Official
 
-- Review Planning Proposals
-- Monitor Dashboards
-- Track Infrastructure Projects
-- Review AI Recommendations
-- Policy Decisions
+Reviews planning proposals, monitors city performance, tracks infrastructure projects, reviews AI recommendations, and supports policy decisions.
 
-## Citizen
+Citizen
 
-- View Public Projects
-- Submit Complaints
-- Submit Suggestions
-- Participate in Public Consultation
-- Track Project Progress
+Views public development projects, submits complaints and suggestions, participates in public consultations, and tracks project progress.
 
 ---
 
-# 🏗️ Planned Technology Stack
+🛠️ Technology Stack
 
-## Frontend
+Frontend
 
 - Next.js
 - Tailwind CSS
-- Leaflet
+- Leaflet.js
 - Apache ECharts
 
-## Backend
+Backend
 
 - FastAPI
 - Python
 
-## Database
+Database
 
 - PostgreSQL
 - PostGIS
 
-## Artificial Intelligence
+AI / Machine Learning
 
 - LangChain
 - LangGraph
-- OpenAI  Gemini
+- OpenAI / Gemini
 - XGBoost
 - YOLOv8
-- Whisper
 - Sentence Transformers
+- Whisper
 
-## DevOps & Deployment
+Tools & Deployment
 
 - Docker
 - Redis
+- QGIS
+- OpenStreetMap
 - GitHub
 - Vercel
 - Render
+- Cloudinary
 
 ---
 
-# 📂 Proposed Project Structure
+🌐 Vision
 
-```
-terranova-ai
-│
-├── frontend
-├── backend
-├── database
-├── ai
-├── docs
-├── docker
-├── assets
-└── README.md
-```
+TERRANOVA AI aims to transform conventional urban planning into an intelligent, collaborative, and data-driven process.
+
+By combining GIS, Artificial Intelligence, Digital Twin technologies, predictive analytics, and citizen participation, the platform provides a scalable foundation for future smart city ecosystems.
 
 ---
 
-# 🎯 Current Milestone
+📌 Project Information
 
-✅ Project proposal finalized
-
-🚧 Phase 1 development in progress
-
-Current focus
-
-- Project architecture
-- Database design
-- Authentication
-- GIS integration
-- User management
-- Core dashboards
-
----
-
-# 📅 Future Milestones
-
-### Phase 1
-
-- Authentication
-- User Management
-- GIS Module
-- Infrastructure Module
-- Project Management
-- Dashboard
-- Reports
-- Citizen Portal
-
-### Phase 2
-
-- AI Planning Assistant
-- Digital Twin
-- Computer Vision
-- Predictive Analytics
-- Voice AI
-- RAG
-- Agentic AI
-- Smart City Intelligence
-
----
-
-# 📌 Vision
-
-To build a scalable AI-powered urban planning platform that enables governments to make transparent, sustainable, and data-driven decisions through the integration of GIS, Artificial Intelligence, and Digital Twin technologies.
-
----
-
-## 📄 License
-
-This project is currently being developed as an academic research and development project.
-
----
-
-Project TERRANOVA AI  
-Author Heins Devasia  
-Status 🚧 Initial Development
+Project: TERRANOVA AI
+Type: Academic Research and Development Project
+Status: 🚧 Initial Development — Phase 1
+Author: Heins Devasia
