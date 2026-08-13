@@ -1,9 +1,4 @@
-from collections.abc import Generator
-
-import psycopg
-from psycopg.rows import dict_row
-
-from backend.config import get_settings
+from app.database.connection import get_connection
 
 
 CREATE_USERS_TABLE_SQL = """
@@ -33,11 +28,6 @@ CREATE TABLE IF NOT EXISTS user_sessions (
 """
 
 
-def get_connection() -> psycopg.Connection:
-    settings = get_settings()
-    return psycopg.connect(settings.database_url, row_factory=dict_row)
-
-
 def init_db() -> None:
     with get_connection() as connection:
         with connection.cursor() as cursor:
@@ -45,8 +35,3 @@ def init_db() -> None:
             cursor.execute(ADD_ROLE_COLUMN_SQL)
             cursor.execute(CREATE_SESSIONS_TABLE_SQL)
         connection.commit()
-
-
-def get_db() -> Generator[psycopg.Connection, None, None]:
-    with get_connection() as connection:
-        yield connection

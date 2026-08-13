@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { AuthProvider } from "@/components/auth-provider";
+import { AuthProvider } from "@/components/layout/auth-provider";
 
 import "./globals.css";
 

@@ -1,0 +1,84 @@
+from datetime import datetime
+
+from psycopg import Connection
+
+
+def get_user_by_email(connection: Connection, email: str) -> dict | None:
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT id, full_name, email, role, password_hash, created_at
+            FROM users
+            WHERE email = %s
+            """,
+            (email,),
+        )
+        return cursor.fetchone()
+
+
+def create_user(
+    connection: Connection,
+    *,
+    full_name: str,
+    email: str,
+    role: str,
+    password_hash: str,
+) -> dict:
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            INSERT INTO users (full_name, email, role, password_hash)
+            VALUES (%s, %s, %s, %s)
+            RETURNING id, full_name, email, role, created_at
+            """,
+            (full_name, email, role, password_hash),
+        )
+        created_user = cursor.fetchone()
+    connection.commit()
+    return created_user
+
+
+def replace_user_session(
+    connection: Connection,
+    *,
+    user_id: int,
+    session_token: str,
+    expires_at: datetime,
+) -> None:
+    with connection.cursor() as cursor:
+        cursor.execute("DELETE FROM user_sessions WHERE user_id = %s", (user_id,))
+        cursor.execute(
+            """
+            INSERT INTO user_sessions (user_id, session_token, expires_at)
+            VALUES (%s, %s, %s)
+            """,
+            (user_id, session_token, expires_at),
+        )
+    connection.commit()
+
+
+def get_authenticated_user_by_session_token(
+    connection: Connection,
+    session_token: str,
+) -> dict | None:
+    with connection.cursor() as cursor:
+        cursor.execute("DELETE FROM user_sessions WHERE expires_at <= NOW()")
+        cursor.execute(
+            """
+            SELECT users.id, users.full_name, users.email, users.role, users.created_at
+            FROM user_sessions
+            JOIN users ON users.id = user_sessions.user_id
+            WHERE user_sessions.session_token = %s
+              AND user_sessions.expires_at > NOW()
+            """,
+            (session_token,),
+        )
+        user_row = cursor.fetchone()
+    connection.commit()
+    return user_row
+
+
+def delete_session_by_token(connection: Connection, session_token: str) -> None:
+    with connection.cursor() as cursor:
+        cursor.execute("DELETE FROM user_sessions WHERE session_token = %s", (session_token,))
+    connection.commit()

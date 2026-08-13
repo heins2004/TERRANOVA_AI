@@ -3,9 +3,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.auth import router as auth_router
-from backend.config import get_settings
-from backend.database import init_db
+from app.api.v1.router import api_router
+from app.core.config import get_settings
+from app.database.init_db import init_db
 
 
 @asynccontextmanager
@@ -36,4 +36,4 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-app.include_router(auth_router)
+app.include_router(api_router)

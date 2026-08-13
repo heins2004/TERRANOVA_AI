@@ -31,8 +31,8 @@ const workflowItems = [
 export default async function LandingPage() {
   const cookieStore = await cookies();
   const isAuthenticated = cookieStore.has(getSessionCookieName());
-  const primaryHref = isAuthenticated ? "/home" : "/register";
-  const secondaryHref = isAuthenticated ? "/home" : "/login";
+  const primaryHref = isAuthenticated ? "/dashboard" : "/register";
+  const secondaryHref = isAuthenticated ? "/dashboard" : "/login";
   const primaryLabel = isAuthenticated ? "Open Dashboard" : "Get Started";
   const secondaryLabel = isAuthenticated ? "Workspace Access" : "Login";
 
