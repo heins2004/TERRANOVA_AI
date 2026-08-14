@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
-import { useAuth } from "@/components/auth-provider";
+import { useAuth } from "@/components/layout/auth-provider";
 import { submitAuth } from "@/lib/auth";
 
 type AuthMode = "login" | "register";

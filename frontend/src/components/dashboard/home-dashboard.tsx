@@ -1,6 +1,6 @@
 "use client";
 
-import { LogoutButton } from "@/components/logout-button";
+import { LogoutButton } from "@/components/ui/logout-button";
 import { AuthUser } from "@/lib/auth";
 
 const overviewCards = [

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { useAuth } from "@/components/auth-provider";
+import { useAuth } from "@/components/layout/auth-provider";
 
 export function LogoutButton() {
   const { logout } = useAuth();
