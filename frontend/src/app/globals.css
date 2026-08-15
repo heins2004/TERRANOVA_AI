@@ -10,9 +10,9 @@ html {
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), sans-serif;
+  background: var(--surface-container-lowest);
+  color: var(--on-surface);
+  font-family: var(--font-inter), sans-serif;
 }
 
 a {

@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
+import { Inter, JetBrains_Mono, Sora } from "next/font/google";
 
 import { AuthProvider } from "@/components/layout/auth-provider";
 
 import "./globals.css";
+
+const sora = Sora({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-sora" });
+const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-inter" });
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-jetbrains-mono" });
 
 export const metadata: Metadata = {
   title: "TERRANOVA AI",
@@ -11,7 +16,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" className={`${sora.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased dark`}>
+      <head><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" /></head>
       <body className="min-h-full flex flex-col">
         <AuthProvider>{children}</AuthProvider>
       </body>

@@ -8,9 +8,9 @@
   --card: rgba(255, 255, 255, 0.78);
   --card-strong: #ffffff;
   --border: #c4d2e5;
-  --primary: #0f5bd3;
+  --primary: #8aebff;
   --primary-foreground: #ffffff;
-  --secondary: #0e7a58;
+  --secondary: #bdc2ff;
   --secondary-foreground: #ffffff;
   --muted-foreground: #5b6b81;
   --danger: #c43d37;
@@ -21,6 +21,12 @@
   --hero-start: #0f5bd3;
   --hero-end: #062c61;
   --shadow-color: rgba(15, 43, 82, 0.16);
+  --primary-container: #22d3ee;
+  --on-surface-variant: #bbc9cd;
+  --outline-variant: #3c494c;
+  --surface-container-lowest: #0a0e17;
+  --surface-bright: #353943;
+  --on-surface: #dfe2ef;
 }
 
 @theme inline {
@@ -43,6 +49,25 @@
   --color-accent: var(--accent);
   --color-hero-start: var(--hero-start);
   --color-hero-end: var(--hero-end);
+  --color-primary-container: var(--primary-container);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-outline-variant: var(--outline-variant);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-bright: var(--surface-bright);
+  --color-on-surface: var(--on-surface);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-label-caps: var(--font-jetbrains-mono);
+  --font-display-md: var(--font-sora);
+  --font-body-md: var(--font-inter);
+  --font-data-mono: var(--font-jetbrains-mono);
+  --text-label-caps: 12px;
+  --text-label-caps--line-height: 1;
+  --text-label-caps--letter-spacing: 0.1em;
+  --text-label-caps--font-weight: 500;
+  --text-display-md: 36px;
+  --text-display-md--line-height: 1.2;
+  --text-display-md--font-weight: 600;
+  --text-data-mono: 12px;
+  --text-data-mono--line-height: 1.4;
 }
