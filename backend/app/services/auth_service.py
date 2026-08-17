@@ -143,4 +143,5 @@ def logout_user(
         delete_session_by_token(connection, session_token)
 
     _clear_session_cookie(response)
+    response.status_code = 200
     return response

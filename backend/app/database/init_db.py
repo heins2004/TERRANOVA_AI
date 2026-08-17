@@ -27,6 +27,38 @@ CREATE TABLE IF NOT EXISTS user_sessions (
 );
 """
 
+CREATE_PROJECTS_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS projects (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    status VARCHAR(50) NOT NULL DEFAULT 'Proposed',
+    category VARCHAR(100),
+    location_lat DOUBLE PRECISION,
+    location_lng DOUBLE PRECISION,
+    budget NUMERIC(14,2),
+    start_date DATE,
+    end_date DATE,
+    created_by INTEGER NOT NULL REFERENCES users(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+CREATE_INFRASTRUCTURE_ASSETS_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS infrastructure_assets (
+    id SERIAL PRIMARY KEY,
+    project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
+    name VARCHAR(200) NOT NULL,
+    asset_type VARCHAR(100),
+    condition VARCHAR(50) DEFAULT 'Good',
+    location_lat DOUBLE PRECISION,
+    location_lng DOUBLE PRECISION,
+    last_inspected_at DATE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
 
 def init_db() -> None:
     with get_connection() as connection:
@@ -34,4 +66,6 @@ def init_db() -> None:
             cursor.execute(CREATE_USERS_TABLE_SQL)
             cursor.execute(ADD_ROLE_COLUMN_SQL)
             cursor.execute(CREATE_SESSIONS_TABLE_SQL)
+            cursor.execute(CREATE_PROJECTS_TABLE_SQL)
+            cursor.execute(CREATE_INFRASTRUCTURE_ASSETS_TABLE_SQL)
         connection.commit()

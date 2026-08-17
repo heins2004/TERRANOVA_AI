@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { LogoutButton } from "@/components/ui/logout-button";
 import { AuthUser } from "@/lib/auth";
 
@@ -64,15 +65,16 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
             </p>
           </div>
 
-          <div className="mt-10 space-y-4">
-            {["Dashboard Overview", "GIS Workspace", "AI Analysis", "Reports", "Notifications"].map(
+          <div className="mt-10 flex flex-col gap-3">
+            {[{ label: "Dashboard Overview", href: "/dashboard" }, { label: "Projects", href: "/projects" }, { label: "Infrastructure", href: "/infrastructure" }, { label: "GIS Workspace", href: "/map" }, { label: "AI Analysis", href: "#" }, { label: "Reports", href: "#" }].map(
               (item) => (
-                <div
-                  className="rounded-2xl border border-white/12 bg-white/8 px-4 py-3 text-sm text-white/86"
-                  key={item}
+                <Link
+                  className="block w-full rounded-2xl border border-white/12 bg-white/8 px-4 py-3 text-sm text-white/86 transition hover:border-primary-container/40 hover:bg-white/12"
+                  href={item.href}
+                  key={item.label}
                 >
-                  {item}
-                </div>
+                  {item.label}
+                </Link>
               ),
             )}
           </div>

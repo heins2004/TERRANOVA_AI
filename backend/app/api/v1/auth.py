@@ -42,7 +42,7 @@ def me(request: Request, connection: Connection = Depends(get_db)) -> UserRespon
     return user
 
 
-@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/logout")
 def logout(
     request: Request,
     response: Response,

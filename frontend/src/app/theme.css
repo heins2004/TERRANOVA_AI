@@ -1,26 +1,35 @@
 :root {
   --font-geist-sans: "Segoe UI", Helvetica, Arial, sans-serif;
   --font-geist-mono: Consolas, "Courier New", monospace;
-  --background: #f4f7fb;
-  --foreground: #122033;
-  --surface: #ffffff;
-  --surface-muted: #e9f0fb;
-  --card: rgba(255, 255, 255, 0.78);
-  --card-strong: #ffffff;
-  --border: #c4d2e5;
+
+  /* Core surface tokens — now dark, matching the auth screens' navy/glass system */
+  --background: #070a12;
+  --foreground: #dfe2ef;
+  --surface: #12151f;
+  --surface-muted: #1c1f29;
+  --card: rgba(255, 255, 255, 0.05);
+  --card-strong: #151822;
+  --border: rgba(255, 255, 255, 0.12);
+
+  /* Accent tokens — cyan/violet, matching the auth glow system */
   --primary: #8aebff;
-  --primary-foreground: #ffffff;
+  --primary-foreground: #04252b;
   --secondary: #bdc2ff;
-  --secondary-foreground: #ffffff;
-  --muted-foreground: #5b6b81;
-  --danger: #c43d37;
-  --danger-foreground: #ffffff;
-  --success: #1b7f5f;
-  --success-foreground: #ffffff;
-  --accent: #d7e6ff;
-  --hero-start: #0f5bd3;
-  --hero-end: #062c61;
-  --shadow-color: rgba(15, 43, 82, 0.16);
+  --secondary-foreground: #0b0f1a;
+  --muted-foreground: #9aa5b8;
+
+  /* Status tokens — brightened for visibility on a dark background */
+  --danger: #f87171;
+  --danger-foreground: #1a0505;
+  --success: #34d399;
+  --success-foreground: #04150e;
+
+  --accent: rgba(34, 211, 238, 0.12);
+  --hero-start: #0ea5b8;
+  --hero-end: #3730a3;
+  --shadow-color: rgba(0, 0, 0, 0.55);
+
+  /* Existing dark-system tokens (already correct, unchanged) */
   --primary-container: #22d3ee;
   --on-surface-variant: #bbc9cd;
   --outline-variant: #3c494c;

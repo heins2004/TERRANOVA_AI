@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-
 import { getSessionCookieName } from "@/lib/auth";
 
-const protectedRoutes = ["/home"];
+const protectedRoutes = ["/dashboard"];
 const authRoutes = ["/login", "/register"];
 
 export function proxy(request: NextRequest) {
@@ -16,13 +15,13 @@ export function proxy(request: NextRequest) {
   }
 
   if (authRoutes.some((route) => pathname.startsWith(route)) && isAuthenticated) {
-    const homeUrl = new URL("/home", request.url);
-    return NextResponse.redirect(homeUrl);
+    const dashboardUrl = new URL("/dashboard", request.url);
+    return NextResponse.redirect(dashboardUrl);
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/home/:path*", "/login", "/register"],
+  matcher: ["/dashboard/:path*", "/login", "/register"],
 };

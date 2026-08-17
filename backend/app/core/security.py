@@ -1,6 +1,10 @@
 import hashlib
 import hmac
 import secrets
+from collections.abc import Generator
+
+from fastapi import Depends, HTTPException, Request, status
+from app.schemas.auth import UserResponse
 
 PASSWORD_ITERATIONS = 100_000
 
@@ -29,3 +33,29 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 def create_session_token() -> str:
     return secrets.token_urlsafe(32)
+
+
+def _get_db() -> Generator:
+    """Lazy database dependency to keep core security independent of connection import order."""
+    from app.database.connection import get_db
+
+    yield from get_db()
+
+
+def require_role(*allowed_roles: str):
+    """Return a dependency that enforces an authenticated user's role."""
+    def dependency(
+        request: Request,
+        connection = Depends(_get_db),
+    ) -> UserResponse:
+        # Imported here to avoid the auth-service/security circular import.
+        from app.services.auth_service import get_current_authenticated_user
+
+        user = get_current_authenticated_user(request=request, connection=connection)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required.")
+        if user.role not in allowed_roles:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have permission for this action.")
+        return user
+
+    return dependency
