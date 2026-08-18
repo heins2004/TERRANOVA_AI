@@ -66,7 +66,7 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
           </div>
 
           <div className="mt-10 flex flex-col gap-3">
-            {[{ label: "Dashboard Overview", href: "/dashboard" }, { label: "Projects", href: "/projects" }, { label: "Infrastructure", href: "/infrastructure" }, { label: "GIS Workspace", href: "/map" }, { label: "AI Analysis", href: "#" }, { label: "Reports", href: "#" }].map(
+            {[{ label: "Dashboard Overview", href: "/dashboard" }, { label: "Projects", href: "/projects" }, { label: "Infrastructure", href: "/infrastructure" }, { label: "GIS Workspace", href: "/map" }, { label: "Complaints", href: "/complaints" }, ...(user.role === "Administrator" ? [{ label: "Admin", href: "/admin" }] : []), { label: "AI Analysis", href: "#" }, { label: "Reports", href: "#" }].map(
               (item) => (
                 <Link
                   className="block w-full rounded-2xl border border-white/12 bg-white/8 px-4 py-3 text-sm text-white/86 transition hover:border-primary-container/40 hover:bg-white/12"

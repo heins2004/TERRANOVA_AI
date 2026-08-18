@@ -104,6 +104,12 @@ def login_user(
             detail="Invalid email or password.",
         )
 
+    if not user_row["is_active"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account has been deactivated",
+        )
+
     session_token = _create_session(connection, user_row["id"])
     _set_session_cookie(response, session_token)
 
@@ -124,7 +130,7 @@ def get_current_authenticated_user(
         return None
 
     user_row = get_authenticated_user_by_session_token(connection, session_token)
-    if not user_row:
+    if not user_row or not user_row["is_active"]:
         return None
 
     return _serialize_user(user_row)

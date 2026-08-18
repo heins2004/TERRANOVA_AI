@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
     full_name VARCHAR(150) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     role VARCHAR(50) NOT NULL DEFAULT 'Citizen',
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
     password_hash TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -15,6 +16,11 @@ CREATE TABLE IF NOT EXISTS users (
 ADD_ROLE_COLUMN_SQL = """
 ALTER TABLE users
 ADD COLUMN IF NOT EXISTS role VARCHAR(50) NOT NULL DEFAULT 'Citizen';
+"""
+
+ADD_IS_ACTIVE_COLUMN_SQL = """
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
 """
 
 CREATE_SESSIONS_TABLE_SQL = """
@@ -59,13 +65,28 @@ CREATE TABLE IF NOT EXISTS infrastructure_assets (
 );
 """
 
+CREATE_COMPLAINTS_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS complaints (
+    id SERIAL PRIMARY KEY,
+    submitted_by INTEGER NOT NULL REFERENCES users(id),
+    project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
+    subject VARCHAR(200) NOT NULL,
+    description TEXT NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'Submitted',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
 
 def init_db() -> None:
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(CREATE_USERS_TABLE_SQL)
             cursor.execute(ADD_ROLE_COLUMN_SQL)
+            cursor.execute(ADD_IS_ACTIVE_COLUMN_SQL)
             cursor.execute(CREATE_SESSIONS_TABLE_SQL)
             cursor.execute(CREATE_PROJECTS_TABLE_SQL)
             cursor.execute(CREATE_INFRASTRUCTURE_ASSETS_TABLE_SQL)
+            cursor.execute(CREATE_COMPLAINTS_TABLE_SQL)
         connection.commit()

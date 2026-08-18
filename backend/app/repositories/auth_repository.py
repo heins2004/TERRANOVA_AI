@@ -7,7 +7,7 @@ def get_user_by_email(connection: Connection, email: str) -> dict | None:
     with connection.cursor() as cursor:
         cursor.execute(
             """
-            SELECT id, full_name, email, role, password_hash, created_at
+            SELECT id, full_name, email, role, is_active, password_hash, created_at
             FROM users
             WHERE email = %s
             """,
@@ -29,7 +29,7 @@ def create_user(
             """
             INSERT INTO users (full_name, email, role, password_hash)
             VALUES (%s, %s, %s, %s)
-            RETURNING id, full_name, email, role, created_at
+            RETURNING id, full_name, email, role, is_active, created_at
             """,
             (full_name, email, role, password_hash),
         )
@@ -65,7 +65,7 @@ def get_authenticated_user_by_session_token(
         cursor.execute("DELETE FROM user_sessions WHERE expires_at <= NOW()")
         cursor.execute(
             """
-            SELECT users.id, users.full_name, users.email, users.role, users.created_at
+            SELECT users.id, users.full_name, users.email, users.role, users.is_active, users.created_at
             FROM user_sessions
             JOIN users ON users.id = user_sessions.user_id
             WHERE user_sessions.session_token = %s
