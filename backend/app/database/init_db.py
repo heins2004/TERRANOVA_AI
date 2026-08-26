@@ -94,6 +94,30 @@ CREATE TABLE IF NOT EXISTS planning_documents (
 );
 """
 
+CREATE_CONSULTATIONS_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS consultations (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    description TEXT NOT NULL,
+    project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
+    scheduled_at TIMESTAMPTZ NOT NULL,
+    location VARCHAR(255),
+    status VARCHAR(50) NOT NULL DEFAULT 'Upcoming',
+    created_by INTEGER NOT NULL REFERENCES users(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+CREATE_CONSULTATION_FEEDBACK_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS consultation_feedback (
+    id SERIAL PRIMARY KEY,
+    consultation_id INTEGER NOT NULL REFERENCES consultations(id) ON DELETE CASCADE,
+    submitted_by INTEGER NOT NULL REFERENCES users(id),
+    comment TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
 
 def init_db() -> None:
     with get_connection() as connection:
@@ -106,4 +130,6 @@ def init_db() -> None:
             cursor.execute(CREATE_INFRASTRUCTURE_ASSETS_TABLE_SQL)
             cursor.execute(CREATE_COMPLAINTS_TABLE_SQL)
             cursor.execute(CREATE_PLANNING_DOCUMENTS_TABLE_SQL)
+            cursor.execute(CREATE_CONSULTATIONS_TABLE_SQL)
+            cursor.execute(CREATE_CONSULTATION_FEEDBACK_TABLE_SQL)
         connection.commit()
