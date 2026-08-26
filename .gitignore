@@ -50,3 +50,7 @@ Thumbs.db
 # Misc
 # =========================
 *.log
+
+# Uploaded planning documents (retain the directory marker only)
+storage/documents/*
+!storage/documents/.gitkeep

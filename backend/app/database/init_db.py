@@ -78,6 +78,22 @@ CREATE TABLE IF NOT EXISTS complaints (
 );
 """
 
+CREATE_PLANNING_DOCUMENTS_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS planning_documents (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    category VARCHAR(100),
+    project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
+    original_filename VARCHAR(255) NOT NULL,
+    stored_filename VARCHAR(255) NOT NULL UNIQUE,
+    file_size_bytes INTEGER NOT NULL,
+    content_type VARCHAR(100) NOT NULL,
+    uploaded_by INTEGER NOT NULL REFERENCES users(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
 
 def init_db() -> None:
     with get_connection() as connection:
@@ -89,4 +105,5 @@ def init_db() -> None:
             cursor.execute(CREATE_PROJECTS_TABLE_SQL)
             cursor.execute(CREATE_INFRASTRUCTURE_ASSETS_TABLE_SQL)
             cursor.execute(CREATE_COMPLAINTS_TABLE_SQL)
+            cursor.execute(CREATE_PLANNING_DOCUMENTS_TABLE_SQL)
         connection.commit()

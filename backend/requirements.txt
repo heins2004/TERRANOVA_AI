@@ -4,6 +4,7 @@ psycopg[binary]==3.2.11
 pydantic==2.13.4
 python-dotenv==1.1.1
 uvicorn==0.38.
+python-multipart==0.0.20
 sqlalchemy
 psycopg[binary]
 python-dotenv

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getSessionCookieName } from "@/lib/auth";
 
-const protectedRoutes = ["/dashboard", "/complaints", "/admin"];
+const protectedRoutes = ["/dashboard", "/complaints", "/documents", "/admin"];
 const authRoutes = ["/login", "/register"];
 
 export function proxy(request: NextRequest) {
@@ -23,5 +23,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/complaints/:path*", "/admin/:path*", "/login", "/register"],
+  matcher: ["/dashboard/:path*", "/complaints/:path*", "/documents/:path*", "/admin/:path*", "/login", "/register"],
 };
