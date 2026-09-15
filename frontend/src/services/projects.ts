@@ -1,7 +1,7 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
 export type Project = {
-  id: number; title: string; description: string | null; status: string; category: string | null;
+  id: number; title: string; description: string | null; status: string; category: string | null; city: string | null;
   location_lat: number | null; location_lng: number | null; budget: string | number | null;
   start_date: string | null; end_date: string | null; created_by: number; created_at: string; updated_at: string;
 };
@@ -17,7 +17,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return response.status === 204 ? (undefined as T) : response.json() as Promise<T>;
 }
 
-export function getProjects(filters: { status?: string; category?: string } = {}) {
+export function getProjects(filters: { status?: string; category?: string; city?: string } = {}) {
   const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value) as [string, string][]);
   return request<Project[]>(`/api/projects${query.size ? `?${query}` : ""}`);
 }

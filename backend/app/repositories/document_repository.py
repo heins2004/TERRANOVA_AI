@@ -22,9 +22,10 @@ def create_document_record(connection: Connection, *, title: str, description: s
     return document
 
 
-def list_documents(connection: Connection) -> list[dict]:
+def list_documents(connection: Connection, *, project_id: int | None = None) -> list[dict]:
+    where = " WHERE planning_documents.project_id = %s" if project_id is not None else ""
     with connection.cursor() as cursor:
-        cursor.execute(f"{DOCUMENT_SELECT} ORDER BY planning_documents.created_at DESC")
+        cursor.execute(f"{DOCUMENT_SELECT}{where} ORDER BY planning_documents.created_at DESC", (project_id,) if project_id is not None else ())
         return cursor.fetchall()
 
 

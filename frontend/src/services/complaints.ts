@@ -24,11 +24,16 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(body.detail ?? "Unable to complete the complaint request.");
+    const error = new Error(body.detail ?? "Unable to complete the complaint request.") as Error & { status?: number };
+    error.status = response.status;
+    throw error;
   }
   return response.json() as Promise<T>;
 }
 
-export function getComplaints() { return request<Complaint[]>("/api/complaints"); }
+export function getComplaints(filters: { project_id?: number } = {}) {
+  const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value !== undefined) as [string, string][]);
+  return request<Complaint[]>(`/api/complaints${query.size ? `?${query}` : ""}`);
+}
 export function createComplaint(payload: ComplaintPayload) { return request<Complaint>("/api/complaints", { method: "POST", body: JSON.stringify(payload) }); }
 export function updateComplaintStatus(id: number, status: ComplaintStatus) { return request<Complaint>(`/api/complaints/${id}`, { method: "PATCH", body: JSON.stringify({ status }) }); }

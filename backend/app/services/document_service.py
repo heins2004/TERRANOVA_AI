@@ -69,8 +69,8 @@ async def create_document(*, title: str, description: str | None, category: str 
         await file.close()
 
 
-def list_documents(*, connection: Connection) -> list[dict]:
-    return document_repository.list_documents(connection)
+def list_documents(*, project_id: int | None = None, connection: Connection) -> list[dict]:
+    return document_repository.list_documents(connection, project_id=project_id)
 
 
 def get_document(*, document_id: int, connection: Connection) -> dict:

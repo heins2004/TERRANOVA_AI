@@ -20,8 +20,8 @@ infrastructure_router = APIRouter(prefix="/api/infrastructure", tags=["infrastru
 
 
 @projects_router.get("", response_model=list[ProjectResponse])
-def list_projects(status_filter: str | None = Query(None, alias="status"), category: str | None = None, connection: Connection = Depends(get_db)) -> list[dict]:
-    return project_service.list_projects(connection=connection, status_filter=status_filter, category=category)
+def list_projects(status_filter: str | None = Query(None, alias="status"), category: str | None = None, city: str | None = None, connection: Connection = Depends(get_db)) -> list[dict]:
+    return project_service.list_projects(connection=connection, status_filter=status_filter, category=category, city=city)
 
 
 @projects_router.get("/{project_id}", response_model=ProjectResponse)
@@ -46,8 +46,8 @@ def delete_project(project_id: int, connection: Connection = Depends(get_db), _:
 
 
 @infrastructure_router.get("", response_model=list[InfrastructureAssetResponse])
-def list_assets(condition: str | None = None, project_id: int | None = None, connection: Connection = Depends(get_db)) -> list[dict]:
-    return project_service.list_infrastructure_assets(connection=connection, condition=condition, project_id=project_id)
+def list_assets(condition: str | None = None, project_id: int | None = None, city: str | None = None, connection: Connection = Depends(get_db)) -> list[dict]:
+    return project_service.list_infrastructure_assets(connection=connection, condition=condition, project_id=project_id, city=city)
 
 
 @infrastructure_router.get("/{asset_id}", response_model=InfrastructureAssetResponse)

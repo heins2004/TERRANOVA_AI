@@ -19,15 +19,18 @@ def get_complaint_by_id(connection: Connection, complaint_id: int) -> dict | Non
         return cursor.fetchone()
 
 
-def list_complaints_for_user(connection: Connection, user_id: int) -> list[dict]:
+def list_complaints_for_user(connection: Connection, user_id: int, *, project_id: int | None = None) -> list[dict]:
+    clause = " AND project_id = %s" if project_id is not None else ""
+    params = (user_id, project_id) if project_id is not None else (user_id,)
     with connection.cursor() as cursor:
-        cursor.execute("SELECT * FROM complaints WHERE submitted_by = %s ORDER BY created_at DESC", (user_id,))
+        cursor.execute(f"SELECT * FROM complaints WHERE submitted_by = %s{clause} ORDER BY created_at DESC", params)
         return cursor.fetchall()
 
 
-def list_all_complaints(connection: Connection) -> list[dict]:
+def list_all_complaints(connection: Connection, *, project_id: int | None = None) -> list[dict]:
+    where = " WHERE project_id = %s" if project_id is not None else ""
     with connection.cursor() as cursor:
-        cursor.execute("SELECT * FROM complaints ORDER BY created_at DESC")
+        cursor.execute(f"SELECT * FROM complaints{where} ORDER BY created_at DESC", (project_id,) if project_id is not None else ())
         return cursor.fetchall()
 
 

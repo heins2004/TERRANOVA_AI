@@ -25,8 +25,8 @@ def create_complaint(payload: ComplaintCreate, connection: Connection = Depends(
 
 
 @router.get("", response_model=list[ComplaintResponse])
-def list_complaints(connection: Connection = Depends(get_db), user: UserResponse = Depends(current_user)) -> list[dict]:
-    return complaint_service.list_complaints(user_id=user.id, user_role=user.role, connection=connection)
+def list_complaints(project_id: int | None = None, connection: Connection = Depends(get_db), user: UserResponse = Depends(current_user)) -> list[dict]:
+    return complaint_service.list_complaints(user_id=user.id, user_role=user.role, project_id=project_id, connection=connection)
 
 
 @router.patch("/{complaint_id}", response_model=ComplaintResponse)

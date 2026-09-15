@@ -26,12 +26,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, { credentials: "include", ...options });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(body.detail ?? "Unable to complete the document request.");
+    const error = new Error(body.detail ?? "Unable to complete the document request.") as Error & { status?: number };
+    error.status = response.status;
+    throw error;
   }
   return response.status === 204 ? (undefined as T) : response.json() as Promise<T>;
 }
 
-export function getDocuments() { return request<PlanningDocument[]>("/api/documents"); }
+export function getDocuments(filters: { project_id?: number } = {}) { const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value !== undefined) as [string, string][]); return request<PlanningDocument[]>(`/api/documents${query.size ? `?${query}` : ""}`); }
 
 export function uploadDocument(payload: DocumentUploadPayload) {
   const formData = new FormData();

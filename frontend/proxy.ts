@@ -15,8 +15,8 @@ export function proxy(request: NextRequest) {
   }
 
   if (authRoutes.some((route) => pathname.startsWith(route)) && isAuthenticated) {
-    const dashboardUrl = new URL("/dashboard", request.url);
-    return NextResponse.redirect(dashboardUrl);
+    const homeUrl = new URL("/", request.url);
+    return NextResponse.redirect(homeUrl);
   }
 
   return NextResponse.next();

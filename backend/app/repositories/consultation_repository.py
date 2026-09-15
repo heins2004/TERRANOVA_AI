@@ -26,9 +26,10 @@ def get_consultation_by_id(connection: Connection, consultation_id: int) -> dict
         return cursor.fetchone()
 
 
-def list_consultations(connection: Connection) -> list[dict]:
+def list_consultations(connection: Connection, *, project_id: int | None = None) -> list[dict]:
+    where = " WHERE c.project_id = %s" if project_id is not None else ""
     with connection.cursor() as cursor:
-        cursor.execute(f"{CONSULTATION_SELECT} ORDER BY c.scheduled_at ASC")
+        cursor.execute(f"{CONSULTATION_SELECT}{where} ORDER BY c.scheduled_at ASC", (project_id,) if project_id is not None else ())
         return cursor.fetchall()
 
 

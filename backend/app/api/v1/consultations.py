@@ -25,8 +25,8 @@ def create_consultation(payload: ConsultationCreate, connection: Connection = De
 
 
 @router.get("", response_model=list[ConsultationResponse])
-def list_consultations(connection: Connection = Depends(get_db), _: UserResponse = Depends(current_user)) -> list[dict]:
-    return consultation_service.list_consultations(connection=connection)
+def list_consultations(project_id: int | None = None, connection: Connection = Depends(get_db), _: UserResponse = Depends(current_user)) -> list[dict]:
+    return consultation_service.list_consultations(project_id=project_id, connection=connection)
 
 
 @router.patch("/{consultation_id}", response_model=ConsultationResponse)

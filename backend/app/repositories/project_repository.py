@@ -1,7 +1,7 @@
 from psycopg import Connection
 
 
-FIELDS = ("title", "description", "status", "category", "location_lat", "location_lng", "budget", "start_date", "end_date")
+FIELDS = ("title", "description", "status", "category", "city", "location_lat", "location_lng", "budget", "start_date", "end_date")
 
 
 def create_project(connection: Connection, *, created_by: int, **values: object) -> dict:
@@ -20,12 +20,14 @@ def get_project_by_id(connection: Connection, project_id: int) -> dict | None:
         return cursor.fetchone()
 
 
-def list_projects(connection: Connection, *, status: str | None = None, category: str | None = None) -> list[dict]:
+def list_projects(connection: Connection, *, status: str | None = None, category: str | None = None, city: str | None = None) -> list[dict]:
     clauses, params = [], []
     if status:
         clauses.append("status = %s"); params.append(status)
     if category:
         clauses.append("category = %s"); params.append(category)
+    if city:
+        clauses.append("city = %s"); params.append(city)
     where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
     with connection.cursor() as cursor:
         cursor.execute(f"SELECT * FROM projects{where} ORDER BY created_at DESC", params)

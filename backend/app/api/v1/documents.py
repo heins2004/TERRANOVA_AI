@@ -37,8 +37,8 @@ async def create_document(
 
 
 @router.get("", response_model=list[DocumentResponse])
-def list_documents(connection: Connection = Depends(get_db), _: UserResponse = Depends(current_user)) -> list[dict]:
-    return document_service.list_documents(connection=connection)
+def list_documents(project_id: int | None = None, connection: Connection = Depends(get_db), _: UserResponse = Depends(current_user)) -> list[dict]:
+    return document_service.list_documents(project_id=project_id, connection=connection)
 
 
 @router.get("/{document_id}/download")

@@ -4,11 +4,11 @@ import { FormEvent, useState } from "react";
 import { DocumentUploadPayload } from "@/services/documents";
 import { Project } from "@/services/projects";
 
-export function DocumentUploadForm({ projects, onSubmit }: { projects: Project[]; onSubmit: (payload: DocumentUploadPayload) => Promise<void> }) {
+export function DocumentUploadForm({ projects, onSubmit, initialProjectId }: { projects: Project[]; onSubmit: (payload: DocumentUploadPayload) => Promise<void>; initialProjectId?: number }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
-  const [projectId, setProjectId] = useState("");
+  const [projectId, setProjectId] = useState(initialProjectId?.toString() ?? "");
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -19,7 +19,7 @@ export function DocumentUploadForm({ projects, onSubmit }: { projects: Project[]
     setSaving(true); setError("");
     try {
       await onSubmit({ title, description, category, project_id: projectId, file });
-      setTitle(""); setDescription(""); setCategory(""); setProjectId(""); setFile(null);
+      setTitle(""); setDescription(""); setCategory(""); setProjectId(initialProjectId?.toString() ?? ""); setFile(null);
       const input = document.getElementById("planning-document-file") as HTMLInputElement | null;
       if (input) input.value = "";
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to upload document."); }

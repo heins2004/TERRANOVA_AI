@@ -1,6 +1,6 @@
 from psycopg import Connection
 
-FIELDS = ("project_id", "name", "asset_type", "condition", "location_lat", "location_lng", "last_inspected_at")
+FIELDS = ("project_id", "name", "asset_type", "condition", "city", "location_lat", "location_lng", "last_inspected_at")
 
 
 def create_infrastructure_asset(connection: Connection, **values: object) -> dict:
@@ -17,10 +17,11 @@ def get_infrastructure_asset_by_id(connection: Connection, asset_id: int) -> dic
         return cursor.fetchone()
 
 
-def list_infrastructure_assets(connection: Connection, *, condition: str | None = None, project_id: int | None = None) -> list[dict]:
+def list_infrastructure_assets(connection: Connection, *, condition: str | None = None, project_id: int | None = None, city: str | None = None) -> list[dict]:
     clauses, params = [], []
     if condition: clauses.append("condition = %s"); params.append(condition)
     if project_id is not None: clauses.append("project_id = %s"); params.append(project_id)
+    if city: clauses.append("city = %s"); params.append(city)
     where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
     with connection.cursor() as cursor:
         cursor.execute(f"SELECT * FROM infrastructure_assets{where} ORDER BY created_at DESC", params)

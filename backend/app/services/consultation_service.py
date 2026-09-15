@@ -11,8 +11,8 @@ def create_consultation(*, payload: ConsultationCreate, created_by: int, connect
     return consultation_repository.create_consultation(connection, created_by=created_by, **payload.model_dump())
 
 
-def list_consultations(*, connection: Connection) -> list[dict]:
-    return consultation_repository.list_consultations(connection)
+def list_consultations(*, project_id: int | None = None, connection: Connection) -> list[dict]:
+    return consultation_repository.list_consultations(connection, project_id=project_id)
 
 
 def update_consultation(*, consultation_id: int, payload: ConsultationUpdate, connection: Connection) -> dict:

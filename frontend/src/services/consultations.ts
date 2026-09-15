@@ -13,11 +13,11 @@ export type Feedback = { id: number; consultation_id: number; submitted_by: numb
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, { credentials: "include", ...options, headers: { "Content-Type": "application/json", ...options?.headers } });
-  if (!response.ok) { const body = await response.json().catch(() => ({})); throw new Error(body.detail ?? "Unable to complete the consultation request."); }
+  if (!response.ok) { const body = await response.json().catch(() => ({})); const error = new Error(body.detail ?? "Unable to complete the consultation request.") as Error & { status?: number }; error.status = response.status; throw error; }
   return response.json() as Promise<T>;
 }
 
-export function getConsultations() { return request<Consultation[]>("/api/consultations"); }
+export function getConsultations(filters: { project_id?: number } = {}) { const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value !== undefined) as [string, string][]); return request<Consultation[]>(`/api/consultations${query.size ? `?${query}` : ""}`); }
 export function createConsultation(payload: ConsultationPayload) { return request<Consultation>("/api/consultations", { method: "POST", body: JSON.stringify(payload) }); }
 export function updateConsultation(id: number, payload: ConsultationUpdatePayload) { return request<Consultation>(`/api/consultations/${id}`, { method: "PATCH", body: JSON.stringify(payload) }); }
 export function getFeedback(consultationId: number) { return request<Feedback[]>(`/api/consultations/${consultationId}/feedback`); }

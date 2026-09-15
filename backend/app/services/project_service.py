@@ -2,6 +2,7 @@ from fastapi import HTTPException, status
 from psycopg import Connection
 
 from app.repositories import infrastructure_repository, project_repository
+from app.core.cities import CITY_SLUGS
 from app.schemas.projects import (
     InfrastructureAssetCreate,
     InfrastructureAssetUpdate,
@@ -23,8 +24,14 @@ def _validate_coordinate_pair(values: dict) -> None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Latitude and longitude must be provided together.")
 
 
+def _validate_city(values: dict) -> None:
+    if "city" in values and values["city"] not in CITY_SLUGS:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="City must be a supported city slug.")
+
+
 def create_project(*, payload: ProjectCreate, created_by: int, connection: Connection) -> dict:
     values = payload.model_dump()
+    _validate_city(values)
     _validate_coordinate_pair(values)
     return project_repository.create_project(connection, created_by=created_by, **values)
 
@@ -35,12 +42,13 @@ def get_project(*, project_id: int, connection: Connection) -> dict:
     return project
 
 
-def list_projects(*, connection: Connection, status_filter: str | None, category: str | None) -> list[dict]:
-    return project_repository.list_projects(connection, status=status_filter, category=category)
+def list_projects(*, connection: Connection, status_filter: str | None, category: str | None, city: str | None) -> list[dict]:
+    return project_repository.list_projects(connection, status=status_filter, category=category, city=city)
 
 
 def update_project(*, project_id: int, payload: ProjectUpdate, connection: Connection) -> dict:
     values = payload.model_dump(exclude_unset=True)
+    _validate_city(values)
     _validate_coordinate_pair(values)
     project = project_repository.update_project(connection, project_id, values)
     if not project: _not_found("Project")
@@ -53,6 +61,7 @@ def delete_project(*, project_id: int, connection: Connection) -> None:
 
 def create_infrastructure_asset(*, payload: InfrastructureAssetCreate, connection: Connection) -> dict:
     values = payload.model_dump()
+    _validate_city(values)
     _validate_coordinate_pair(values)
     return infrastructure_repository.create_infrastructure_asset(connection, **values)
 
@@ -63,12 +72,13 @@ def get_infrastructure_asset(*, asset_id: int, connection: Connection) -> dict:
     return asset
 
 
-def list_infrastructure_assets(*, connection: Connection, condition: str | None, project_id: int | None) -> list[dict]:
-    return infrastructure_repository.list_infrastructure_assets(connection, condition=condition, project_id=project_id)
+def list_infrastructure_assets(*, connection: Connection, condition: str | None, project_id: int | None, city: str | None) -> list[dict]:
+    return infrastructure_repository.list_infrastructure_assets(connection, condition=condition, project_id=project_id, city=city)
 
 
 def update_infrastructure_asset(*, asset_id: int, payload: InfrastructureAssetUpdate, connection: Connection) -> dict:
     values = payload.model_dump(exclude_unset=True)
+    _validate_city(values)
     _validate_coordinate_pair(values)
     asset = infrastructure_repository.update_infrastructure_asset(connection, asset_id, values)
     if not asset: _not_found("Infrastructure asset")

@@ -11,10 +11,10 @@ def create_complaint(*, payload: ComplaintCreate, submitted_by: int, connection:
     return complaint_repository.create_complaint(connection, submitted_by=submitted_by, **payload.model_dump())
 
 
-def list_complaints(*, user_id: int, user_role: str, connection: Connection) -> list[dict]:
+def list_complaints(*, user_id: int, user_role: str, project_id: int | None = None, connection: Connection) -> list[dict]:
     if user_role in STAFF_ROLES:
-        return complaint_repository.list_all_complaints(connection)
-    return complaint_repository.list_complaints_for_user(connection, user_id)
+        return complaint_repository.list_all_complaints(connection, project_id=project_id)
+    return complaint_repository.list_complaints_for_user(connection, user_id, project_id=project_id)
 
 
 def update_complaint_status(*, complaint_id: int, payload: ComplaintUpdate, connection: Connection) -> dict:

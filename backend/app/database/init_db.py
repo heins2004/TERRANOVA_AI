@@ -65,6 +65,14 @@ CREATE TABLE IF NOT EXISTS infrastructure_assets (
 );
 """
 
+ADD_PROJECT_CITY_COLUMN_SQL = """
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS city VARCHAR(100);
+"""
+
+ADD_INFRASTRUCTURE_CITY_COLUMN_SQL = """
+ALTER TABLE infrastructure_assets ADD COLUMN IF NOT EXISTS city VARCHAR(100);
+"""
+
 CREATE_COMPLAINTS_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS complaints (
     id SERIAL PRIMARY KEY,
@@ -128,6 +136,8 @@ def init_db() -> None:
             cursor.execute(CREATE_SESSIONS_TABLE_SQL)
             cursor.execute(CREATE_PROJECTS_TABLE_SQL)
             cursor.execute(CREATE_INFRASTRUCTURE_ASSETS_TABLE_SQL)
+            cursor.execute(ADD_PROJECT_CITY_COLUMN_SQL)
+            cursor.execute(ADD_INFRASTRUCTURE_CITY_COLUMN_SQL)
             cursor.execute(CREATE_COMPLAINTS_TABLE_SQL)
             cursor.execute(CREATE_PLANNING_DOCUMENTS_TABLE_SQL)
             cursor.execute(CREATE_CONSULTATIONS_TABLE_SQL)

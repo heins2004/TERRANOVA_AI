@@ -4,10 +4,10 @@ import { FormEvent, useState } from "react";
 import { ComplaintPayload } from "@/services/complaints";
 import { Project } from "@/services/projects";
 
-export function ComplaintForm({ projects, onSubmit }: { projects: Project[]; onSubmit: (payload: ComplaintPayload) => Promise<void> }) {
+export function ComplaintForm({ projects, onSubmit, initialProjectId }: { projects: Project[]; onSubmit: (payload: ComplaintPayload) => Promise<void>; initialProjectId?: number }) {
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
-  const [projectId, setProjectId] = useState("");
+  const [projectId, setProjectId] = useState(initialProjectId?.toString() ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -16,7 +16,7 @@ export function ComplaintForm({ projects, onSubmit }: { projects: Project[]; onS
     setSaving(true); setError("");
     try {
       await onSubmit({ subject, description, project_id: projectId ? Number(projectId) : null });
-      setSubject(""); setDescription(""); setProjectId("");
+      setSubject(""); setDescription(""); setProjectId(initialProjectId?.toString() ?? "");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to submit complaint.");
     } finally { setSaving(false); }
