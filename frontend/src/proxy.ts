@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getSessionCookieName } from "@/lib/auth";
 
-const protectedRoutes = ["/dashboard", "/complaints", "/consultations", "/documents", "/admin"];
+const protectedRoutes = ["/dashboard", "/complaints", "/consultations", "/documents", "/admin", "/planning"];
 const authRoutes = ["/login", "/register"];
 
 export function proxy(request: NextRequest) {
@@ -15,13 +15,28 @@ export function proxy(request: NextRequest) {
   }
 
   if (authRoutes.some((route) => pathname.startsWith(route)) && isAuthenticated) {
-    const homeUrl = new URL("/", request.url);
-    return NextResponse.redirect(homeUrl);
+    const dashboardUrl = new URL("/dashboard", request.url);
+    return NextResponse.redirect(dashboardUrl);
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/complaints/:path*", "/consultations/:path*", "/documents/:path*", "/admin/:path*", "/login", "/register"],
+  matcher: [
+    "/dashboard",
+    "/dashboard/:path*",
+    "/complaints",
+    "/complaints/:path*",
+    "/consultations",
+    "/consultations/:path*",
+    "/documents",
+    "/documents/:path*",
+    "/admin",
+    "/admin/:path*",
+    "/planning",
+    "/planning/:path*",
+    "/login",
+    "/register",
+  ],
 };
