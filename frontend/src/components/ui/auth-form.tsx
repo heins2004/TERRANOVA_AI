@@ -41,7 +41,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
       login(response);
       setSuccessMessage(response.message);
-      router.replace("/");
+      router.replace("/dashboard");
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Something went wrong.");
     } finally {

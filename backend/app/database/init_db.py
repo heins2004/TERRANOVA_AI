@@ -69,6 +69,11 @@ ADD_PROJECT_CITY_COLUMN_SQL = """
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS city VARCHAR(100);
 """
 
+ADD_CANDIDATE_SITE_ID_TO_PROJECTS_SQL = """
+ALTER TABLE projects
+    ADD COLUMN IF NOT EXISTS candidate_site_id INTEGER REFERENCES candidate_sites(id) ON DELETE SET NULL;
+"""
+
 ADD_INFRASTRUCTURE_CITY_COLUMN_SQL = """
 ALTER TABLE infrastructure_assets ADD COLUMN IF NOT EXISTS city VARCHAR(100);
 """
@@ -126,6 +131,72 @@ CREATE TABLE IF NOT EXISTS consultation_feedback (
 );
 """
 
+CREATE_POSTGIS_EXTENSION_SQL = """
+CREATE EXTENSION IF NOT EXISTS postgis;
+"""
+
+CREATE_STUDY_AREAS_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS study_areas (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    city VARCHAR(100),
+    boundary GEOMETRY(Polygon, 4326) NOT NULL,
+    created_by INTEGER NOT NULL REFERENCES users(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+CREATE_CANDIDATE_SITES_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS candidate_sites (
+    id SERIAL PRIMARY KEY,
+    study_area_id INTEGER NOT NULL REFERENCES study_areas(id) ON DELETE CASCADE,
+    name VARCHAR(200) NOT NULL,
+    location GEOMETRY(Point, 4326) NOT NULL,
+    area_size_acres NUMERIC(10,2),
+    land_use VARCHAR(100),
+    suitability_status VARCHAR(50) NOT NULL DEFAULT 'RequiresReview',
+    availability_status VARCHAR(50) NOT NULL DEFAULT 'VerificationRequired',
+    ownership_type VARCHAR(50) NOT NULL DEFAULT 'Unknown',
+    flood_risk VARCHAR(50) NOT NULL DEFAULT 'Unknown',
+    notes TEXT,
+    promoted_project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
+    created_by INTEGER NOT NULL REFERENCES users(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+CREATE_CANDIDATE_SITE_PROXIMITY_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS candidate_site_proximity (
+    id SERIAL PRIMARY KEY,
+    candidate_site_id INTEGER NOT NULL REFERENCES candidate_sites(id) ON DELETE CASCADE,
+    amenity_type TEXT NOT NULL,
+    name TEXT,
+    distance_meters NUMERIC NOT NULL,
+    computed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_candidate_site_proximity_site_id
+    ON candidate_site_proximity (candidate_site_id);
+"""
+
+CREATE_OSM_LAYER_CACHE_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS osm_layer_cache (
+    id SERIAL PRIMARY KEY,
+    grid_cell_key TEXT NOT NULL,
+    layer_type TEXT NOT NULL,
+    geojson JSONB NOT NULL,
+    fetched_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_osm_layer_cache_cell_type
+    ON osm_layer_cache (grid_cell_key, layer_type);
+"""
+
+DEFAULT_TEST_USERS = [
+    {"full_name": "Citizen User", "email": "citizen@test.com", "role": "Citizen"},
+    {"full_name": "Urban Planner User", "email": "planner@test.com", "role": "Urban Planner"},
+    {"full_name": "Government Official User", "email": "gov@test.com", "role": "Government Official"},
+    {"full_name": "Administrator User", "email": "admin@test.com", "role": "Administrator"},
+]
+
 
 def init_db() -> None:
     with get_connection() as connection:
@@ -142,4 +213,26 @@ def init_db() -> None:
             cursor.execute(CREATE_PLANNING_DOCUMENTS_TABLE_SQL)
             cursor.execute(CREATE_CONSULTATIONS_TABLE_SQL)
             cursor.execute(CREATE_CONSULTATION_FEEDBACK_TABLE_SQL)
+            cursor.execute(CREATE_POSTGIS_EXTENSION_SQL)
+            cursor.execute(CREATE_STUDY_AREAS_TABLE_SQL)
+            cursor.execute(CREATE_CANDIDATE_SITES_TABLE_SQL)
+            # Add candidate_site_id FK on projects AFTER candidate_sites exists
+            cursor.execute(ADD_CANDIDATE_SITE_ID_TO_PROJECTS_SQL)
+            cursor.execute(CREATE_CANDIDATE_SITE_PROXIMITY_TABLE_SQL)
+            cursor.execute(CREATE_OSM_LAYER_CACHE_TABLE_SQL)
+
+            # Ensure default test users exist on fresh setup
+            from app.core.security import hash_password
+            default_hash = hash_password("12345678")
+            for u in DEFAULT_TEST_USERS:
+                cursor.execute(
+                    """
+                    INSERT INTO users (full_name, email, role, password_hash)
+                    VALUES (%s, %s, %s, %s)
+                    ON CONFLICT (email) DO NOTHING
+                    """,
+                    (u["full_name"], u["email"], u["role"], default_hash),
+                )
         connection.commit()
+
+

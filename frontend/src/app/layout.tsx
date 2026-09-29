@@ -5,9 +5,9 @@ import { AuthProvider } from "@/components/layout/auth-provider";
 
 import "./globals.css";
 
-const sora = Sora({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-sora" });
-const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-inter" });
-const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-jetbrains-mono" });
+const sora = Sora({ subsets: ["latin"], weight: ["400", "600"], variable: "--font-sora", display: "swap" });
+const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-inter", display: "swap" });
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-jetbrains-mono", display: "swap", preload: false });
 
 export const metadata: Metadata = {
   title: "TERRANOVA AI",

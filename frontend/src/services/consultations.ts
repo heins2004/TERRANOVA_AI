@@ -17,7 +17,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export function getConsultations(filters: { project_id?: number } = {}) { const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value !== undefined) as [string, string][]); return request<Consultation[]>(`/api/consultations${query.size ? `?${query}` : ""}`); }
+export function getConsultations(filters: { project_id?: number } = {}) {
+  const query = new URLSearchParams(
+    Object.entries(filters)
+      .filter(([, value]) => value !== undefined)
+      .map(([key, value]) => [key, String(value)])
+  );
+  return request<Consultation[]>(`/api/consultations${query.size ? `?${query}` : ""}`);
+}
 export function createConsultation(payload: ConsultationPayload) { return request<Consultation>("/api/consultations", { method: "POST", body: JSON.stringify(payload) }); }
 export function updateConsultation(id: number, payload: ConsultationUpdatePayload) { return request<Consultation>(`/api/consultations/${id}`, { method: "PATCH", body: JSON.stringify(payload) }); }
 export function getFeedback(consultationId: number) { return request<Feedback[]>(`/api/consultations/${consultationId}/feedback`); }

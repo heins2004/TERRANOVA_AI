@@ -32,7 +32,11 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export function getComplaints(filters: { project_id?: number } = {}) {
-  const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value !== undefined) as [string, string][]);
+  const query = new URLSearchParams(
+    Object.entries(filters)
+      .filter(([, value]) => value !== undefined)
+      .map(([key, value]) => [key, String(value)])
+  );
   return request<Complaint[]>(`/api/complaints${query.size ? `?${query}` : ""}`);
 }
 export function createComplaint(payload: ComplaintPayload) { return request<Complaint>("/api/complaints", { method: "POST", body: JSON.stringify(payload) }); }

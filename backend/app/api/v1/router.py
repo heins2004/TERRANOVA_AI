@@ -7,6 +7,9 @@ from app.api.v1.complaints import router as complaints_router
 from app.api.v1.consultations import router as consultations_router
 from app.api.v1.documents import router as documents_router
 from app.api.v1.projects import infrastructure_router, projects_router
+from app.api.v1.study_areas import router as study_areas_router
+from app.api.v1.candidate_sites import router as candidate_sites_router
+from app.api.v1.osm_layers import router as osm_layers_router
 
 api_router = APIRouter()
 api_router.include_router(auth_router)
@@ -17,3 +20,7 @@ api_router.include_router(infrastructure_router)
 api_router.include_router(complaints_router)
 api_router.include_router(consultations_router)
 api_router.include_router(documents_router)
+api_router.include_router(study_areas_router)
+api_router.include_router(candidate_sites_router)
+api_router.include_router(osm_layers_router)
+

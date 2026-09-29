@@ -72,8 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } finally {
         setUser(null);
       }
-
-      router.replace("/login");
+      window.location.href = "/";
     },
   };
 

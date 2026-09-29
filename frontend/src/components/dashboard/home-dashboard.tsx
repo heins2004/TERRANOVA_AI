@@ -1,21 +1,57 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import {
+  HudBackground,
+  HudButton,
+  HudCornerBrackets,
+  HudCornerReadouts,
+  HudMetricTile,
+  HudPanel,
+  HudStatusLine,
+} from "@/components/hud/Hud";
 import { LogoutButton } from "@/components/ui/logout-button";
 import { AuthUser } from "@/lib/auth";
 import { getUsers } from "@/services/admin";
 import { Complaint, getComplaints } from "@/services/complaints";
 import { getConsultations } from "@/services/consultations";
 import { getDocuments } from "@/services/documents";
-import { getInfrastructureAssets, InfrastructureAsset } from "@/services/infrastructure";
+import {
+  getInfrastructureAssets,
+  InfrastructureAsset,
+} from "@/services/infrastructure";
 import { getProjects, Project } from "@/services/projects";
 
+const NationalCoverageMap = dynamic(
+  () =>
+    import("@/components/dashboard/NationalCoverageMap").then(
+      (m) => m.NationalCoverageMap
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[230px] w-full items-center justify-center font-data-mono text-[11px] uppercase tracking-widest text-on-surface-variant">
+        INITIALIZING SPATIAL MATRIX...
+      </div>
+    ),
+  }
+);
+
 type HomeDashboardProps = { user: AuthUser };
-type DashboardData = { projects: Project[]; assets: InfrastructureAsset[]; complaints: Complaint[]; upcomingConsultations: number; documentCount?: number; userCount?: number };
+type DashboardData = {
+  projects: Project[];
+  assets: InfrastructureAsset[];
+  complaints: Complaint[];
+  upcomingConsultations: number;
+  documentCount?: number;
+  userCount?: number;
+};
 
 const staffRoles = ["Urban Planner", "Government Official", "Administrator"];
-const needsAttention = (status: string) => status === "Submitted" || status === "UnderReview";
+const needsAttention = (status: string) =>
+  status === "Submitted" || status === "UnderReview";
 
 export function HomeDashboard({ user }: HomeDashboardProps) {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -26,23 +62,495 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
     async function loadDashboard() {
       try {
         setError("");
-        const [projects, assets, complaints, consultations, documents, users] = await Promise.all([
-          getProjects(), getInfrastructureAssets(), getComplaints(), getConsultations(),
-          isStaff ? getDocuments() : Promise.resolve(undefined),
-          user.role === "Administrator" ? getUsers() : Promise.resolve(undefined),
-        ]);
-        setData({ projects, assets, complaints, upcomingConsultations: consultations.filter((consultation) => consultation.status === "Upcoming").length, documentCount: documents?.length, userCount: users?.length });
+        const [projects, assets, complaints, consultations, documents, users] =
+          await Promise.all([
+            getProjects(),
+            getInfrastructureAssets(),
+            getComplaints(),
+            getConsultations(),
+            isStaff ? getDocuments() : Promise.resolve(undefined),
+            user.role === "Administrator"
+              ? getUsers()
+              : Promise.resolve(undefined),
+          ]);
+        setData({
+          projects,
+          assets,
+          complaints,
+          upcomingConsultations: consultations.filter(
+            (c) => c.status === "Upcoming"
+          ).length,
+          documentCount: documents?.length,
+          userCount: users?.length,
+        });
       } catch (caught) {
-        setError(caught instanceof Error ? caught.message : "Unable to load dashboard data.");
+        setError(
+          caught instanceof Error
+            ? caught.message
+            : "Unable to load telemetry from database."
+        );
       }
     }
     void loadDashboard();
   }, [isStaff, user.role]);
 
-  const recentProjects = useMemo(() => data?.projects.slice().sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime()).slice(0, 3) ?? [], [data]);
-  const navigation = [{ label: "Dashboard Overview", href: "/dashboard" }, { label: "Projects", href: "/projects" }, { label: "Infrastructure", href: "/infrastructure" }, { label: "GIS Workspace", href: "/map" }, { label: "Complaints", href: "/complaints" }, { label: "Documents", href: "/documents" }, { label: "Consultations", href: "/consultations" }, ...(user.role === "Administrator" ? [{ label: "Admin", href: "/admin" }] : []), { label: "Browse by City", href: "/" }];
-  const baseTiles = data ? [{ label: "Total projects", value: data.projects.length }, { label: "Assets needing attention", value: data.assets.filter((asset) => asset.condition === "Poor" || asset.condition === "Critical").length }, { label: "Upcoming consultations", value: data.upcomingConsultations }] : [];
-  const roleTiles = data ? user.role === "Citizen" ? [{ label: "My complaints", value: data.complaints.length }, { label: "Complaints in progress", value: data.complaints.filter((complaint) => needsAttention(complaint.status)).length }] : [{ label: "Complaints needing attention", value: data.complaints.filter((complaint) => needsAttention(complaint.status)).length }, { label: "Documents uploaded", value: data.documentCount ?? 0 }, ...(user.role === "Administrator" ? [{ label: "Total users", value: data.userCount ?? 0 }] : [])] : [];
+  const recentProjects = useMemo(
+    () =>
+      data?.projects
+        .slice()
+        .sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
+        .slice(0, 4) ?? [],
+    [data]
+  );
 
-  return <main className="min-h-screen bg-background"><div className="mx-auto flex min-h-screen max-w-7xl flex-col px-[24px] py-[24px] lg:flex-row lg:gap-[24px] lg:px-[32px]"><aside className="hero-panel rounded-[32px] px-[24px] py-[32px] text-primary-foreground lg:w-[320px] lg:px-[28px]"><div className="flex items-start justify-between gap-[16px]"><div><p className="text-[12px] uppercase tracking-[0.32em] text-white/72">TERRANOVA AI</p><h1 className="mt-[12px] text-[30px] font-semibold leading-tight">Urban Planning Command Center</h1></div><LogoutButton /></div><div className="mt-[40px] rounded-[28px] border border-white/16 bg-white/10 p-[20px]"><p className="text-sm text-white/72">Signed in as</p><p className="mt-[8px] text-[20px] font-semibold">{user.full_name}</p><p className="mt-[4px] text-sm text-white/78">{user.email}</p><p className="mt-[8px] text-[12px] uppercase tracking-[0.24em] text-white/62">Role: {user.role}</p></div><nav className="mt-[40px] flex flex-col gap-[12px]">{navigation.map((item) => <Link className="block w-full rounded-[16px] border border-white/12 bg-white/8 px-[16px] py-[12px] text-sm text-white/86 transition hover:border-primary-container/40 hover:bg-white/12" href={item.href} key={item.label}>{item.label}</Link>)}</nav></aside><section className="mt-[24px] flex-1 lg:mt-[0px]"><div className="flex flex-col gap-[24px]"><article className="glass-card rounded-[32px] p-[24px] sm:p-[32px]"><p className="text-sm font-medium uppercase tracking-[0.28em] text-secondary">Welcome</p><h2 className="mt-[12px] text-[30px] font-semibold text-foreground">Welcome back, {user.full_name}.</h2><p className="mt-[16px] max-w-3xl text-base leading-8 text-muted-foreground">Your {user.role.toLowerCase()} workspace is connected to the latest planning, infrastructure, and community activity.</p></article>{error ? <article className="glass-card rounded-[28px] p-[24px]"><p className="text-danger">{error}</p></article> : !data ? <article className="glass-card rounded-[28px] p-[24px]"><p className="font-data-mono text-[12px] text-on-surface-variant">LOADING LIVE DASHBOARD DATA...</p></article> : <><section className="grid gap-[16px] md:grid-cols-2 xl:grid-cols-4">{[...baseTiles, ...roleTiles].map((tile) => <article className="glass-card rounded-[28px] p-[20px]" key={tile.label}><p className="text-sm text-muted-foreground">{tile.label}</p><p className="mt-[12px] text-[36px] font-semibold text-foreground">{tile.value}</p></article>)}</section><section className="grid gap-[24px] xl:grid-cols-[1.2fr_0.8fr]"><article className="glass-card rounded-[32px] p-[24px] sm:p-[32px]"><h3 className="text-[22px] font-semibold text-foreground">Recent Activity</h3><p className="mt-[8px] text-sm text-muted-foreground">The latest projects added to TERRANOVA AI.</p><div className="mt-[20px] flex flex-col gap-[12px]">{recentProjects.map((project) => <Link className="block w-full rounded-[16px] border border-white/10 px-[16px] py-[14px] transition hover:border-primary-container/60" href={`/projects/${project.id}`} key={project.id}><p className="text-sm font-semibold text-foreground">{project.title}</p><p className="mt-[4px] font-data-mono text-[11px] uppercase tracking-wider text-on-surface-variant">{project.status} · {project.category ?? "General planning"}</p></Link>)}{!recentProjects.length && <p className="font-data-mono text-[12px] text-on-surface-variant">NO PROJECTS HAVE BEEN CREATED YET.</p>}</div></article><article className="glass-card rounded-[32px] p-[24px]"><h3 className="text-[22px] font-semibold text-foreground">Working Links</h3><div className="mt-[20px] flex flex-col gap-[12px]">{user.role === "Citizen" && <Link className="block w-full border border-primary-container/60 px-[16px] py-[12px] text-sm font-semibold text-primary transition hover:bg-primary-container/10" href="/">BROWSE PROJECTS BY CITY</Link>}{user.role === "Administrator" && <Link className="block w-full border border-primary-container/60 px-[16px] py-[12px] text-sm font-semibold text-primary transition hover:bg-primary-container/10" href="/admin">OPEN ADMINISTRATION</Link>}<Link className="block w-full border border-white/15 px-[16px] py-[12px] text-sm text-on-surface-variant transition hover:border-primary-container/60" href="/projects">OPEN PROJECTS</Link><Link className="block w-full border border-white/15 px-[16px] py-[12px] text-sm text-on-surface-variant transition hover:border-primary-container/60" href="/map">OPEN GIS WORKSPACE</Link></div></article></section></>}</div></section></div></main>;
+  const navigation = [
+    { label: "Command Overview", href: "/dashboard", icon: "dashboard" },
+    { label: "Urban Projects", href: "/projects", icon: "apartment" },
+    { label: "Infrastructure Grid", href: "/infrastructure", icon: "construction" },
+    { label: "GIS Workspace", href: "/map", icon: "map" },
+    ...(user.role !== "Citizen"
+      ? [{ label: "Planning Workspace", href: "/planning", icon: "architecture" }]
+      : []),
+    { label: "Civic Complaints", href: "/complaints", icon: "report_problem" },
+    { label: "Consultation Matrix", href: "/consultations", icon: "forum" },
+    { label: "Document Archive", href: "/documents", icon: "folder_open" },
+    ...(user.role === "Administrator"
+      ? [{ label: "Administration", href: "/admin", icon: "admin_panel_settings" }]
+      : []),
+  ];
+
+  // Role-aware metric summary cards
+  const summaryMetrics = useMemo(() => {
+    if (!data) return [];
+
+    const base = [
+      {
+        label: "Active Projects",
+        value: data.projects.length,
+        subLabel: "Metropolitan scale initiatives",
+        href: "/projects",
+        accent: true,
+      },
+      {
+        label: "Critical Assets",
+        value: data.assets.filter(
+          (a) => a.condition === "Poor" || a.condition === "Critical"
+        ).length,
+        subLabel: "Require inspection / repair",
+        href: "/infrastructure",
+        accent: false,
+      },
+      {
+        label: "Upcoming Consultations",
+        value: data.upcomingConsultations,
+        subLabel: "Open public review sessions",
+        href: "/consultations",
+        accent: false,
+      },
+    ];
+
+    if (user.role === "Citizen") {
+      return [
+        ...base,
+        {
+          label: "My Complaints",
+          value: data.complaints.length,
+          subLabel: "Submitted citizen reports",
+          href: "/complaints",
+          accent: false,
+        },
+        {
+          label: "Complaints In Progress",
+          value: data.complaints.filter((c) => needsAttention(c.status)).length,
+          subLabel: "Under municipal review",
+          href: "/complaints",
+          accent: false,
+        },
+      ];
+    }
+
+    const staffMetrics = [
+      ...base,
+      {
+        label: "Complaints Needing Review",
+        value: data.complaints.filter((c) => needsAttention(c.status)).length,
+        subLabel: "Pending triage by department",
+        href: "/complaints",
+        accent: false,
+      },
+      {
+        label: "Repository Documents",
+        value: data.documentCount ?? 0,
+        subLabel: "Archived planning briefs",
+        href: "/documents",
+        accent: false,
+      },
+    ];
+
+    if (user.role === "Administrator") {
+      staffMetrics.push({
+        label: "Registered Nodes / Users",
+        value: data.userCount ?? 0,
+        subLabel: "Active platform accounts",
+        href: "/admin",
+        accent: true,
+      });
+    }
+
+    return staffMetrics;
+  }, [data, user.role]);
+
+  return (
+    <div className="relative min-h-screen w-full bg-surface-container-lowest text-on-surface overflow-x-hidden flex flex-col justify-between selection:bg-primary-container/30 selection:text-primary">
+      <HudBackground />
+
+      {/* Top HUD Frame Bar with Corner Readouts */}
+      <header className="relative z-20 w-full border-b border-white/10 bg-surface-container-lowest/85 px-[24px] py-[10px] backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between font-data-mono text-[10px] uppercase tracking-widest">
+          <span className="text-primary-container font-semibold">
+            SYS.INIT.SEQ // V.4.2.1
+          </span>
+          <span className="hidden sm:inline-block text-on-surface-variant/60">
+            TERRANOVA COMMAND INTERFACE // SECTOR-01
+          </span>
+          <span className="text-secondary font-semibold">
+            NET_ID: TERRANOVA-HUB
+          </span>
+        </div>
+      </header>
+
+      {/* Main Command Workspace */}
+      <div className="relative z-10 mx-auto w-full max-w-7xl flex-1 flex flex-col px-[20px] py-[24px] lg:flex-row lg:gap-[24px] lg:px-[32px]">
+        {/* Left Sidebar Console */}
+        <aside className="flex flex-col gap-[20px] lg:w-[320px] lg:shrink-0">
+          {/* Logo & Node Branding */}
+          <HudPanel brackets="all" className="p-[20px]">
+            <div className="flex items-center gap-[12px]">
+              <div className="flex h-10 w-10 items-center justify-center rounded border border-primary-container/40 bg-primary-container/10">
+                <svg className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                  <line x1="12" y1="22.08" x2="12" y2="12" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-display-md text-[18px] font-semibold tracking-tight text-primary uppercase">
+                  TERRANOVA AI
+                </p>
+                <p className="flex items-center gap-1.5 font-label-caps text-[9px] tracking-widest text-on-surface-variant">
+                  <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary-container" />
+                  COMMAND CONSOLE // HUD
+                </p>
+              </div>
+            </div>
+
+            {/* Operator Matrix Card */}
+            <div className="mt-[20px] rounded-lg border border-white/10 bg-white/[0.03] p-[16px]">
+              <div className="flex items-center justify-between">
+                <span className="font-data-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
+                  OPERATOR IDENTITY
+                </span>
+                <span className="font-data-mono text-[10px] uppercase tracking-widest text-primary-container">
+                  SECURE_LINK
+                </span>
+              </div>
+              <p className="mt-[10px] font-display-md text-[17px] font-semibold text-foreground">
+                {user.full_name}
+              </p>
+              <p className="mt-[2px] font-data-mono text-[11px] text-muted-foreground break-all">
+                {user.email}
+              </p>
+              <div className="mt-[12px] flex items-center justify-between border-t border-white/10 pt-[10px]">
+                <span className="font-data-mono text-[10px] uppercase tracking-wider text-on-surface-variant">
+                  CLEARANCE
+                </span>
+                <span className="rounded border border-primary-container/40 bg-primary-container/10 px-[8px] py-[2px] font-data-mono text-[10px] font-semibold uppercase tracking-wider text-primary">
+                  {user.role}
+                </span>
+              </div>
+
+              {/* Logout Button embedded inside operator card */}
+              <div className="mt-[16px] border-t border-white/10 pt-[12px]">
+                <LogoutButton className="w-full" />
+              </div>
+            </div>
+          </HudPanel>
+
+          {/* Navigation Console */}
+          <HudPanel brackets="diagonal" className="p-[20px]">
+            <p className="font-data-mono text-[10px] uppercase tracking-widest text-on-surface-variant mb-[14px]">
+              SYSTEM MODULES
+            </p>
+            <nav className="flex flex-col gap-[8px]">
+              {navigation.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`group flex items-center gap-[12px] rounded border px-[14px] py-[10px] transition-all ${
+                    item.href === "/dashboard"
+                      ? "border-primary-container/60 bg-primary-container/10 text-primary shadow-[0_0_15px_rgba(34,211,238,0.15)]"
+                      : "border-white/10 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/40 hover:bg-white/[0.06] hover:text-foreground"
+                  }`}
+                >
+                  <span
+                    className={`material-symbols-outlined text-[18px] transition-colors ${
+                      item.href === "/dashboard"
+                        ? "text-primary"
+                        : "text-muted-foreground group-hover:text-primary"
+                    }`}
+                  >
+                    {item.icon}
+                  </span>
+                  <span className="font-label-caps text-[11px] tracking-wider uppercase">
+                    {item.label}
+                  </span>
+                </Link>
+              ))}
+            </nav>
+          </HudPanel>
+        </aside>
+
+        {/* Main Command Workspace */}
+        <section className="mt-[24px] flex-1 lg:mt-0 flex flex-col gap-[24px]">
+          {/* Mission Status Header Banner */}
+          <HudPanel brackets="all" className="p-[24px] sm:p-[28px]">
+            <div className="flex flex-wrap items-center justify-between gap-[12px] border-b border-white/10 pb-[14px]">
+              <div className="flex items-center gap-[10px]">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-primary-container" />
+                <span className="font-data-mono text-[11px] uppercase tracking-widest text-primary">
+                  WORKSPACE ACTIVE // NODE: {user.role.toUpperCase()}
+                </span>
+              </div>
+              <span className="font-data-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                GRID_REF: TERRANOVA-METRO-01
+              </span>
+            </div>
+
+            <h1 className="mt-[16px] font-display-md text-[26px] sm:text-[32px] font-semibold tracking-tight text-foreground uppercase">
+              Command Center // {user.full_name}
+            </h1>
+            <p className="mt-[8px] max-w-2xl font-body-md text-[14px] leading-relaxed text-muted-foreground">
+              Connected to real-time spatial telemetry, infrastructure registries,
+              and civic channels. Select an operational module or inspect current
+              directives below.
+            </p>
+          </HudPanel>
+
+          {/* System Error Message */}
+          {error && (
+            <div className="rounded-lg border border-danger/40 bg-danger/10 p-[16px] font-data-mono text-[12px] text-danger">
+              [TELEMETRY_ERROR]: {error}
+            </div>
+          )}
+
+          {/* Loading State */}
+          {!data && !error && (
+            <HudPanel brackets="diagonal" className="p-[28px] text-center">
+              <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-primary-container border-t-transparent mr-2" />
+              <span className="font-data-mono text-[12px] uppercase tracking-widest text-on-surface-variant">
+                SYNCHRONIZING SYSTEM TELEMETRY...
+              </span>
+            </HudPanel>
+          )}
+
+          {/* Summary Metrics Grid */}
+          {data && (
+            <div className="grid gap-[16px] sm:grid-cols-2 xl:grid-cols-3">
+              {summaryMetrics.map((metric) => (
+                <HudMetricTile
+                  key={metric.label}
+                  label={metric.label}
+                  value={metric.value}
+                  subLabel={metric.subLabel}
+                  href={metric.href}
+                  accent={metric.accent}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Dual Panel Grid: Recent Projects & Telemetry Hub */}
+          {data && (
+            <div className="grid gap-[24px] xl:grid-cols-[1.3fr_0.7fr]">
+              {/* Left: Recent Projects Stream */}
+              <HudPanel brackets="all" className="p-[24px]">
+                <div className="flex items-center justify-between border-b border-white/10 pb-[12px]">
+                  <div>
+                    <h2 className="font-display-md text-[18px] font-semibold uppercase text-foreground">
+                      Recent Urban Projects
+                    </h2>
+                    <p className="mt-[2px] font-data-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                      Latest initiatives registered in TERRANOVA AI
+                    </p>
+                  </div>
+                  <HudButton href="/projects" size="sm" variant="ghost">
+                    View All →
+                  </HudButton>
+                </div>
+
+                <div className="mt-[16px] flex flex-col gap-[10px]">
+                  {recentProjects.map((project) => (
+                    <Link
+                      key={project.id}
+                      href={`/projects/${project.id}`}
+                      className="group block w-full rounded-lg border border-white/10 bg-white/[0.02] p-[14px] transition-all hover:border-primary-container/60 hover:bg-white/[0.06]"
+                    >
+                      <div className="flex items-start justify-between gap-[12px]">
+                        <div>
+                          <p className="text-[14px] font-medium text-foreground transition-colors group-hover:text-primary">
+                            {project.title}
+                          </p>
+                          <p className="mt-[4px] font-data-mono text-[11px] text-muted-foreground">
+                            {project.category ?? "General Planning"}
+                            {project.city ? ` · ${project.city}` : ""}
+                          </p>
+                        </div>
+                        <span className="shrink-0 rounded border border-primary-container/30 bg-primary-container/10 px-[8px] py-[3px] font-data-mono text-[10px] uppercase tracking-wider text-primary">
+                          {project.status}
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+
+                  {!recentProjects.length && (
+                    <p className="p-[16px] font-data-mono text-[12px] uppercase text-muted-foreground text-center">
+                      NO PROJECTS RECORDED IN CURRENT SECTOR
+                    </p>
+                  )}
+                </div>
+              </HudPanel>
+
+              {/* Right Column: National Coverage Map + Operational Directives */}
+              <div className="flex flex-col gap-[20px]">
+                {/* National Spatial Coverage Panel */}
+                <HudPanel brackets="all" className="p-[20px]">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-[10px] mb-[14px]">
+                    <div>
+                      <h2 className="font-display-md text-[16px] font-semibold uppercase text-foreground">
+                        National Coverage
+                      </h2>
+                      <p className="mt-[2px] font-data-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                        Active metropolitan nodes across India
+                      </p>
+                    </div>
+                    <HudButton href="/map" size="sm" variant="ghost">
+                      Full Map ↗
+                    </HudButton>
+                  </div>
+
+                  <NationalCoverageMap />
+                </HudPanel>
+
+                {/* Directives & Fast-Access Panel */}
+                <HudPanel brackets="all" className="p-[20px] flex flex-col justify-between">
+                  <div>
+                    <div className="border-b border-white/10 pb-[10px]">
+                      <h2 className="font-display-md text-[16px] font-semibold uppercase text-foreground">
+                        Directives
+                      </h2>
+                      <p className="mt-[2px] font-data-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                        Fast-access command links
+                      </p>
+                    </div>
+
+                    <div className="mt-[14px] flex flex-col gap-[10px]">
+                      <HudButton
+                        href="/map"
+                        variant="secondary"
+                        size="md"
+                        fullWidth
+                        className="justify-between"
+                      >
+                        <span>GIS WORKSPACE</span>
+                        <span className="material-symbols-outlined text-[16px]">
+                          explore
+                        </span>
+                      </HudButton>
+
+                      {user.role !== "Citizen" && (
+                        <HudButton
+                          href="/planning"
+                          variant="secondary"
+                          size="md"
+                          fullWidth
+                          className="justify-between"
+                        >
+                          <span>PLANNING WORKSPACE</span>
+                          <span className="material-symbols-outlined text-[16px]">
+                            architecture
+                          </span>
+                        </HudButton>
+                      )}
+
+                      <HudButton
+                        href="/infrastructure"
+                        variant="secondary"
+                        size="md"
+                        fullWidth
+                        className="justify-between"
+                      >
+                        <span>INFRASTRUCTURE REGISTRY</span>
+                        <span className="material-symbols-outlined text-[16px]">
+                          domain
+                        </span>
+                      </HudButton>
+
+                      <HudButton
+                        href="/consultations"
+                        variant="secondary"
+                        size="md"
+                        fullWidth
+                        className="justify-between"
+                      >
+                        <span>CONSULTATION PORTAL</span>
+                        <span className="material-symbols-outlined text-[16px]">
+                          forum
+                        </span>
+                      </HudButton>
+                    </div>
+                  </div>
+
+                  {/* System Telemetry Readout */}
+                  <div className="mt-[20px] border-t border-white/10 pt-[14px] flex flex-col gap-[8px]">
+                    <HudStatusLine
+                      label="DB ENGINE"
+                      value="POSTGRESQL + POSTGIS"
+                      accent
+                      statusDot
+                    />
+                    <HudStatusLine
+                      label="AUTH"
+                      value="PBKDF2-HMAC-256"
+                    />
+                    <HudStatusLine
+                      label="NETWORK"
+                      value="SECURE NODE // TLS"
+                    />
+                  </div>
+                </HudPanel>
+              </div>
+            </div>
+          )}
+        </section>
+      </div>
+
+      {/* Bottom HUD Frame Bar with Corner Readouts */}
+      <footer className="relative z-20 w-full border-t border-white/10 bg-surface-container-lowest/85 px-[24px] py-[10px] backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between font-data-mono text-[10px] uppercase tracking-widest">
+          <span className="text-primary-container font-semibold">
+            SYSTEM STATUS: OPERATIONAL
+          </span>
+          <span className="hidden sm:inline-block text-on-surface-variant/60">
+            CORE: POSTGRESQL + POSTGIS // TELEMETRY: ACTIVE
+          </span>
+          <span className="text-secondary font-semibold">
+            ENCRYPTION: AES-256
+          </span>
+        </div>
+      </footer>
+    </div>
+  );
 }

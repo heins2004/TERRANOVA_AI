@@ -86,7 +86,8 @@ export async function getCurrentUser(
     throw new Error("Unable to retrieve the authenticated user.");
   }
 
-  return (await response.json()) as AuthUser;
+  const data = await response.json();
+  return (data as AuthUser) || null;
 }
 
 export async function logoutUser(): Promise<void> {

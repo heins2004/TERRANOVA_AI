@@ -1,7 +1,7 @@
 from psycopg import Connection
 
 
-FIELDS = ("title", "description", "status", "category", "city", "location_lat", "location_lng", "budget", "start_date", "end_date")
+FIELDS = ("title", "description", "status", "category", "city", "location_lat", "location_lng", "budget", "start_date", "end_date", "candidate_site_id")
 
 
 def create_project(connection: Connection, *, created_by: int, **values: object) -> dict:
@@ -12,6 +12,47 @@ def create_project(connection: Connection, *, created_by: int, **values: object)
         row = cursor.fetchone()
     connection.commit()
     return row
+
+
+def create_from_candidate_site(
+    connection: Connection,
+    *,
+    created_by: int,
+    candidate_site_id: int,
+    title: str,
+    city: str | None,
+    # GeoJSON Point coordinates are [lng, lat] — caller must pass already-converted lat/lng
+    location_lat: float | None,
+    location_lng: float | None,
+    description: str | None = None,
+    status: str = "Proposed",
+    category: str | None = None,
+    budget: object = None,
+    start_date: object = None,
+    end_date: object = None,
+) -> dict:
+    """Create a project row linked back to the originating candidate site."""
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            INSERT INTO projects (
+                title, description, status, category, city,
+                location_lat, location_lng, budget, start_date, end_date,
+                candidate_site_id, created_by
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING *
+            """,
+            (
+                title, description, status, category, city,
+                location_lat, location_lng, budget, start_date, end_date,
+                candidate_site_id, created_by,
+            ),
+        )
+        row = cursor.fetchone()
+    connection.commit()
+    return row
+
 
 
 def get_project_by_id(connection: Connection, project_id: int) -> dict | None:

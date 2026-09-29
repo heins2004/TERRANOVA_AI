@@ -31,15 +31,9 @@ def login(
     return login_user(payload=payload, response=response, connection=connection)
 
 
-@router.get("/me", response_model=UserResponse)
-def me(request: Request, connection: Connection = Depends(get_db)) -> UserResponse:
-    user = get_current_authenticated_user(request=request, connection=connection)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required.",
-        )
-    return user
+@router.get("/me", response_model=UserResponse | None)
+def me(request: Request, connection: Connection = Depends(get_db)) -> UserResponse | None:
+    return get_current_authenticated_user(request=request, connection=connection)
 
 
 @router.post("/logout")

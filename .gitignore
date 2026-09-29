@@ -54,3 +54,6 @@ Thumbs.db
 # Uploaded planning documents (retain the directory marker only)
 storage/documents/*
 !storage/documents/.gitkeep
+
+# Test reports
+testing/e2e/

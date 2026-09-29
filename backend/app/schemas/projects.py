@@ -43,6 +43,7 @@ class ProjectResponse(BaseModel):
     budget: Decimal | None = None
     start_date: date | None = None
     end_date: date | None = None
+    candidate_site_id: int | None = None
     created_by: int
     created_at: datetime
     updated_at: datetime

@@ -33,7 +33,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return response.status === 204 ? (undefined as T) : response.json() as Promise<T>;
 }
 
-export function getDocuments(filters: { project_id?: number } = {}) { const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value !== undefined) as [string, string][]); return request<PlanningDocument[]>(`/api/documents${query.size ? `?${query}` : ""}`); }
+export function getDocuments(filters: { project_id?: number } = {}) {
+  const query = new URLSearchParams(
+    Object.entries(filters)
+      .filter(([, value]) => value !== undefined)
+      .map(([key, value]) => [key, String(value)])
+  );
+  return request<PlanningDocument[]>(`/api/documents${query.size ? `?${query}` : ""}`);
+}
 
 export function uploadDocument(payload: DocumentUploadPayload) {
   const formData = new FormData();

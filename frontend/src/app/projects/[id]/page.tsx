@@ -252,7 +252,7 @@ export default function ProjectDetailPage() {
                   </div>
                   {user && (
                     <div className="mt-[16px]">
-                      <FeedbackForm onSubmit={(comment) => createFeedback(consultation.id, comment)} />
+                      <FeedbackForm onSubmit={async (comment) => { await createFeedback(consultation.id, comment); }} />
                     </div>
                   )}
                 </article>
