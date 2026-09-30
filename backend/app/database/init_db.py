@@ -198,6 +198,60 @@ DEFAULT_TEST_USERS = [
 ]
 
 
+DEFAULT_DEMO_PROJECTS = [
+    {
+        "title": "Bengaluru Outer Ring Transit Expansion",
+        "description": "Integration of metro line with peripheral ring corridors and multimodal transit hubs.",
+        "status": "InProgress",
+        "category": "Transportation",
+        "city": "bengaluru",
+        "budget": 15000000.00,
+        "location_lat": 12.9716,
+        "location_lng": 77.5946,
+    },
+    {
+        "title": "Mumbai Coastal Freeway Phase 2",
+        "description": "High-capacity arterial expressway connecting northern suburbs with coastal greenways.",
+        "status": "Approved",
+        "category": "Infrastructure",
+        "city": "mumbai",
+        "budget": 28000000.00,
+        "location_lat": 19.0760,
+        "location_lng": 72.8777,
+    },
+    {
+        "title": "Delhi Smart Solar & Grid Modernization",
+        "description": "Decentralized rooftop solar distribution network and real-time power metering across government zones.",
+        "status": "Completed",
+        "category": "Energy",
+        "city": "delhi",
+        "budget": 8500000.00,
+        "location_lat": 28.7041,
+        "location_lng": 77.1025,
+    },
+    {
+        "title": "Hyderabad Bio-Tech Logistics Hub",
+        "description": "Eco-industrial corridor with zero-emission freight zones and automated warehousing.",
+        "status": "OnHold",
+        "category": "Urban Development",
+        "city": "hyderabad",
+        "budget": 12000000.00,
+        "location_lat": 17.3850,
+        "location_lng": 78.4867,
+    },
+    {
+        "title": "Kochi Backwaters Eco-Restoration",
+        "description": "Wetland conservation, stormwater canal desilting, and sustainable public water transit.",
+        "status": "Proposed",
+        "category": "Environmental",
+        "city": "kochi",
+        "budget": 4500000.00,
+        "location_lat": 9.9312,
+        "location_lng": 76.2673,
+    },
+]
+
+
 def init_db() -> None:
     with get_connection() as connection:
         with connection.cursor() as cursor:
@@ -233,6 +287,39 @@ def init_db() -> None:
                     """,
                     (u["full_name"], u["email"], u["role"], default_hash),
                 )
+
+            # Ensure demo projects with varied statuses exist on setup
+            cursor.execute("SELECT id FROM users WHERE email = %s", ("planner@test.com",))
+            planner_row = cursor.fetchone()
+            planner_user_id = planner_row["id"] if planner_row else None
+            if not planner_user_id:
+                cursor.execute("SELECT id FROM users ORDER BY id ASC LIMIT 1")
+                first_row = cursor.fetchone()
+                planner_user_id = first_row["id"] if first_row else 1
+
+            for p in DEFAULT_DEMO_PROJECTS:
+                cursor.execute(
+                    """
+                    INSERT INTO projects (title, description, status, category, city, budget, location_lat, location_lng, created_by)
+                    SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM projects WHERE title = %s
+                    )
+                    """,
+                    (
+                        p["title"],
+                        p["description"],
+                        p["status"],
+                        p["category"],
+                        p["city"],
+                        p["budget"],
+                        p["location_lat"],
+                        p["location_lng"],
+                        planner_user_id,
+                        p["title"],
+                    ),
+                )
         connection.commit()
+
 
 

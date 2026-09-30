@@ -23,6 +23,7 @@ import {
   InfrastructureAsset,
 } from "@/services/infrastructure";
 import { getProjects, Project } from "@/services/projects";
+import { projectStatusClasses } from "@/components/projects/StatusBadge";
 
 const NationalCoverageMap = dynamic(
   () =>
@@ -408,7 +409,12 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
                             {project.city ? ` · ${project.city}` : ""}
                           </p>
                         </div>
-                        <span className="shrink-0 rounded border border-primary-container/30 bg-primary-container/10 px-[8px] py-[3px] font-data-mono text-[10px] uppercase tracking-wider text-primary">
+                        <span
+                          className={`shrink-0 rounded border px-[8px] py-[3px] font-data-mono text-[10px] uppercase tracking-wider ${
+                            projectStatusClasses[project.status] ??
+                            "border-primary-container/30 bg-primary-container/10 text-primary"
+                          }`}
+                        >
                           {project.status}
                         </span>
                       </div>
