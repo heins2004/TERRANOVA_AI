@@ -58,11 +58,12 @@ def test_repository_cache_and_ttl():
 
 
 def test_osm_layers_unauthenticated():
-    res = client.get("/api/v1/osm-layers?bbox=77.58,12.96,77.59,12.97&types=school")
+    res = client.get("/api/osm-layers?bbox=77.58,12.96,77.59,12.97&types=school")
     assert res.status_code == 401
 
-    res2 = client.get("/api/osm-layers?bbox=77.58,12.96,77.59,12.97&types=school")
-    assert res2.status_code == 401
+    # /api/v1/osm-layers route was removed, returns 404
+    res_removed = client.get("/api/v1/osm-layers?bbox=77.58,12.96,77.59,12.97&types=school")
+    assert res_removed.status_code == 404
 
 
 def test_osm_layers_authenticated_citizen_and_planner():
@@ -139,7 +140,7 @@ def test_osm_layers_authenticated_citizen_and_planner():
 
     # Planner accessing endpoint
     client.cookies.set(cookie_name, planner_token)
-    res_planner = client.get("/api/v1/osm-layers?bbox=77.58,12.96,77.59,12.97&types=hospital")
+    res_planner = client.get("/api/osm-layers?bbox=77.58,12.96,77.59,12.97&types=hospital")
     assert res_planner.status_code == 200
     data_planner = res_planner.json()
     assert "hospital" in data_planner["layers"]

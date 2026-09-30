@@ -67,16 +67,6 @@ def _handle_osm_layers(
     return {"layers": layers}
 
 
-@router.get("/api/v1/osm-layers")
-def get_osm_layers_v1(
-    bbox: str = Query(...),
-    types: str = Query("road,school,hospital"),
-    connection: Connection = Depends(get_db),
-    user: UserResponse = Depends(require_role(*ALL_AUTHENTICATED_ROLES)),
-) -> dict:
-    return _handle_osm_layers(bbox=bbox, types=types, connection=connection, user=user)
-
-
 @router.get("/api/osm-layers")
 def get_osm_layers(
     bbox: str = Query(...),
