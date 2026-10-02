@@ -1,201 +1,254 @@
 "use client";
 
-import Link from "next/link";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  HudBackground,
-  HudButton,
-  HudCornerBrackets,
-  HudCornerReadouts,
-  HudPanel,
-} from "@/components/hud/Hud";
+  FINAL_FRAME_SRC,
+  INTRO_SRC_DESKTOP,
+  INTRO_SRC_MOBILE,
+  POSTER_SRC,
+  REVEAL_AT_SECONDS,
+  WATERMARK_SRC,
+} from "./intro-config";
+
+type IntroState =
+  | "loading"
+  | "playing"
+  | "revealed"
+  | "autoplay-blocked"
+  | "reduced-motion"
+  | "error";
 
 export function LandingView() {
+  const [state, setState] = useState<IntroState>("loading");
+  const [videoSrc, setVideoSrc] = useState<string>("");
+  const [hasClickedPlayIntro, setHasClickedPlayIntro] = useState(false);
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const revealedRef = useRef(false);
+  const hasEndedRef = useRef(false);
+
+  // 1. Media query source selection and reduced motion check (once on mount)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const reducedMotionQuery = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    );
+    if (reducedMotionQuery.matches) {
+      setState("reduced-motion");
+      return;
+    }
+
+    const mobileQuery = window.matchMedia(
+      "(max-width: 768px), (orientation: portrait)"
+    );
+    const selectedSrc = mobileQuery.matches
+      ? INTRO_SRC_MOBILE
+      : INTRO_SRC_DESKTOP;
+    setVideoSrc(selectedSrc);
+  }, []);
+
+  // 2. Autoplay attempt once videoSrc is assigned
+  useEffect(() => {
+    if (!videoSrc) return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    // Setting property directly as React does not reliably render muted attribute
+    video.muted = true;
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          setState((prev) => (prev === "loading" ? "playing" : prev));
+        })
+        .catch((err) => {
+          console.warn("Autoplay blocked or failed:", err);
+          setState("autoplay-blocked");
+        });
+    }
+  }, [videoSrc]);
+
+  // 3. Time detection for reveal at REVEAL_AT_SECONDS (8s)
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !videoSrc) return;
+
+    let rVFCId: number | null = null;
+    let isCancelled = false;
+
+    const checkTime = (currentTime: number) => {
+      if (!revealedRef.current && currentTime >= REVEAL_AT_SECONDS) {
+        revealedRef.current = true;
+        setState("revealed");
+      }
+    };
+
+    const onFrame = () => {
+      if (isCancelled || !videoRef.current) return;
+      checkTime(videoRef.current.currentTime);
+      if (
+        "requestVideoFrameCallback" in HTMLVideoElement.prototype &&
+        !hasEndedRef.current
+      ) {
+        rVFCId = (videoRef.current as any).requestVideoFrameCallback(onFrame);
+      }
+    };
+
+    if ("requestVideoFrameCallback" in HTMLVideoElement.prototype) {
+      rVFCId = (videoRef.current as any).requestVideoFrameCallback(onFrame);
+    }
+
+    const handleTimeUpdate = () => {
+      checkTime(video.currentTime);
+    };
+
+    video.addEventListener("timeupdate", handleTimeUpdate);
+
+    return () => {
+      isCancelled = true;
+      if (
+        rVFCId !== null &&
+        "cancelVideoFrameCallback" in HTMLVideoElement.prototype
+      ) {
+        (video as any).cancelVideoFrameCallback(rVFCId);
+      }
+      video.removeEventListener("timeupdate", handleTimeUpdate);
+    };
+  }, [videoSrc]);
+
+  // 4. Resume playback on tab visibility change (never pause intentionally)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const video = videoRef.current;
+      if (
+        document.visibilityState === "visible" &&
+        video &&
+        !hasEndedRef.current &&
+        !video.ended &&
+        (state === "playing" || state === "revealed")
+      ) {
+        video.play().catch(() => {});
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [state]);
+
+  const handleEnded = () => {
+    hasEndedRef.current = true;
+    if (!revealedRef.current) {
+      revealedRef.current = true;
+      setState("revealed");
+    }
+  };
+
+  const handleError = () => {
+    setState("error");
+  };
+
+  const handlePause = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (
+      !hasEndedRef.current &&
+      !video.ended &&
+      (state === "playing" || state === "revealed")
+    ) {
+      video.play().catch(() => {});
+    }
+  };
+
+  const handlePlayIntroClick = () => {
+    setHasClickedPlayIntro(true);
+    revealedRef.current = false;
+    hasEndedRef.current = false;
+    setState("playing");
+    const video = videoRef.current;
+    if (video) {
+      video.currentTime = 0;
+      video.muted = true;
+      video.play().catch((err) => {
+        console.error("Play error on user click:", err);
+      });
+    }
+  };
+
+  const showFinalFrameStill =
+    state === "reduced-motion" ||
+    state === "error" ||
+    (state === "autoplay-blocked" && !hasClickedPlayIntro);
+
   return (
-    <div className="relative min-h-screen w-full bg-surface-container-lowest text-on-surface overflow-x-hidden selection:bg-primary-container/30 selection:text-primary">
-      <HudBackground />
+    <div
+      data-testid="intro-landing-container"
+      data-state={state}
+      className="fixed inset-0 h-[100dvh] h-[100svh] w-screen overflow-hidden bg-[#0a0e17]"
+    >
+      {/* Video Layer (Compositor isolated, pointer-events disabled) */}
+      <div className="absolute inset-0 h-full w-full pointer-events-none [transform:translateZ(0)]">
+        {videoSrc && !showFinalFrameStill && (
+          <video
+            ref={videoRef}
+            src={videoSrc}
+            autoPlay
+            muted
+            playsInline
+            preload="auto"
+            poster={POSTER_SRC}
+            disablePictureInPicture
+            disableRemotePlayback
+            controlsList="nodownload noremoteplayback"
+            className="h-full w-full object-cover object-center pointer-events-none"
+            onEnded={handleEnded}
+            onError={handleError}
+            onPause={handlePause}
+          />
+        )}
 
-      <HudCornerReadouts
-        topRight="NET_ID: TERRANOVA-CORE"
-        bottomLeft="SYSTEM STATUS: ONLINE"
-        bottomRight="ENCRYPTION: AES-256"
-      />
+        {showFinalFrameStill && (
+          <img
+            src={FINAL_FRAME_SRC}
+            alt="Terranova AI city development"
+            className="h-full w-full object-cover object-center pointer-events-none"
+          />
+        )}
+      </div>
 
-      <main className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col justify-between px-[24px] pt-[24px] pb-[32px] sm:px-[32px] lg:px-[48px]">
-        {/* Top Mission Briefing Bar */}
-        <header className="flex flex-wrap items-center justify-between gap-[16px] border-b border-white/10 pb-[20px]">
-          <div className="flex items-center gap-[12px]">
-            <div className="flex h-9 w-9 items-center justify-center rounded border border-primary-container/40 bg-primary-container/10">
-              <svg className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-                <line x1="12" y1="22.08" x2="12" y2="12" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-display-md text-[18px] font-semibold tracking-tight text-primary uppercase">
-                TERRANOVA AI
-              </p>
-              <p className="flex items-center gap-2 font-label-caps text-[10px] tracking-wider text-on-surface-variant">
-                <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary-container" />
-                ORCHESTRATING THE URBAN FUTURE
-              </p>
-            </div>
-          </div>
+      {/* Watermark Slot (aria-hidden, clean empty placeholder for later) */}
+      <div
+        data-slot="video-watermark"
+        aria-hidden="true"
+        className="pointer-events-none absolute top-[24px] left-[24px] z-20"
+      >
+        {/* WATERMARK_SRC = null; logo watermark can be added later */}
+        {WATERMARK_SRC && (
+          <img src={WATERMARK_SRC} alt="" className="h-8 w-auto opacity-70" />
+        )}
+      </div>
 
-          <div className="flex items-center gap-[12px]">
-            <HudButton href="/login" size="sm" variant="primary">
-              Access System
-            </HudButton>
-            <HudButton href="/register" size="sm" variant="secondary">
-              Initialize Registration
-            </HudButton>
-          </div>
-        </header>
-
-        {/* Hero & Mission Briefing Center */}
-        <section className="my-auto py-[48px]">
-          <div className="grid gap-[32px] lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-            {/* Left Column: Mission Overview */}
-            <div>
-              <div className="mb-[20px] inline-flex items-center gap-[8px] rounded border border-primary-container/40 bg-primary-container/10 px-[12px] py-[6px]">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-primary-container" />
-                <span className="font-data-mono text-[11px] uppercase tracking-widest text-primary">
-                  URBAN INTELLIGENCE MATRIX // READY
-                </span>
-              </div>
-
-              <h1 className="font-display-md text-[38px] sm:text-[48px] font-semibold leading-[1.15] tracking-tight text-foreground uppercase">
-                Intelligent Spatial Planning for{" "}
-                <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                  Metropolitan Scale
-                </span>
-              </h1>
-
-              <p className="mt-[20px] max-w-xl font-body-md text-[16px] leading-[1.7] text-muted-foreground">
-                TERRANOVA AI unifies geospatial intelligence, infrastructure
-                telemetry, and multi-stakeholder civic participation into an
-                integrated command environment for cities of tomorrow.
-              </p>
-
-              {/* CTAs */}
-              <div className="mt-[36px] flex flex-wrap items-center gap-[16px]">
-                <HudButton href="/login" size="lg" variant="primary">
-                  Access System
-                  <span className="material-symbols-outlined text-[18px]">
-                    login
-                  </span>
-                </HudButton>
-                <HudButton href="/register" size="lg" variant="secondary">
-                  Initialize Registration
-                  <span className="material-symbols-outlined text-[18px]">
-                    how_to_reg
-                  </span>
-                </HudButton>
-              </div>
-
-              {/* Quick Spec Highlights */}
-              <div className="mt-[40px] grid grid-cols-2 sm:grid-cols-3 gap-[16px] border-t border-white/10 pt-[24px]">
-                <div>
-                  <p className="font-data-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
-                    CORE GIS ENGINE
-                  </p>
-                  <p className="mt-[4px] font-data-mono text-[13px] font-semibold text-primary">
-                    POSTGIS + OSM
-                  </p>
-                </div>
-                <div>
-                  <p className="font-data-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
-                    GOVERNANCE
-                  </p>
-                  <p className="mt-[4px] font-data-mono text-[13px] font-semibold text-foreground">
-                    ROLE-GATED HUD
-                  </p>
-                </div>
-                <div>
-                  <p className="font-data-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
-                    SECURITY
-                  </p>
-                  <p className="mt-[4px] font-data-mono text-[13px] font-semibold text-secondary">
-                    PBKDF2-HMAC-256
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column: Mission Briefing HUD Panels */}
-            <div className="flex flex-col gap-[16px]">
-              <HudPanel brackets="all" className="p-[24px]">
-                <div className="flex items-center justify-between border-b border-white/10 pb-[12px]">
-                  <p className="font-data-mono text-[11px] uppercase tracking-widest text-primary">
-                    [MODULE 01] GIS SPATIAL WORKSPACE
-                  </p>
-                  <span className="font-data-mono text-[10px] text-on-surface-variant">
-                    ACTIVE
-                  </span>
-                </div>
-                <p className="mt-[12px] text-[13px] leading-relaxed text-muted-foreground">
-                  Interactive multi-layer geospatial engine with Overpass OSM
-                  amenities, candidate site identification, and flood vulnerability analysis.
-                </p>
-              </HudPanel>
-
-              <HudPanel brackets="all" className="p-[24px]">
-                <div className="flex items-center justify-between border-b border-white/10 pb-[12px]">
-                  <p className="font-data-mono text-[11px] uppercase tracking-widest text-primary">
-                    [MODULE 02] INFRASTRUCTURE LIFECYCLE
-                  </p>
-                  <span className="font-data-mono text-[10px] text-on-surface-variant">
-                    TELEMETRY
-                  </span>
-                </div>
-                <p className="mt-[12px] text-[13px] leading-relaxed text-muted-foreground">
-                  Proactive condition tracking for bridges, water systems, and power networks
-                  with automated priority flags for assets needing urgent attention.
-                </p>
-              </HudPanel>
-
-              <HudPanel brackets="all" className="p-[24px]">
-                <div className="flex items-center justify-between border-b border-white/10 pb-[12px]">
-                  <p className="font-data-mono text-[11px] uppercase tracking-widest text-primary">
-                    [MODULE 03] CIVIC CONSULTATION NETWORK
-                  </p>
-                  <span className="font-data-mono text-[10px] text-on-surface-variant">
-                    VERIFIED
-                  </span>
-                </div>
-                <p className="mt-[12px] text-[13px] leading-relaxed text-muted-foreground">
-                  Transparent public feedback channels, urban project proposals, and direct
-                  dialogue between citizens, planners, and municipal officials.
-                </p>
-              </HudPanel>
-            </div>
-          </div>
-        </section>
-
-        {/* Footer Terminal Bar */}
-        <footer className="flex flex-wrap items-center justify-between gap-[16px] border-t border-white/10 pt-[20px] font-data-mono text-[11px] text-on-surface-variant">
-          <div className="flex items-center gap-[16px]">
-            <span>TERRANOVA URBAN OS // v4.2.1</span>
-            <span className="text-white/20">|</span>
-            <span>STATUS: ALL NODES OPERATIONAL</span>
-          </div>
-          <div className="flex items-center gap-[16px]">
-            <Link
-              href="/login"
-              className="text-primary hover:text-primary-container transition"
+      {/* Autoplay-blocked Play Intro button */}
+      {state === "autoplay-blocked" && !hasClickedPlayIntro && (
+        <div className="absolute top-[54%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-auto">
+          <button
+            type="button"
+            id="play-intro-btn"
+            onClick={handlePlayIntroClick}
+            className="inline-flex items-center gap-2 rounded-full border border-primary-container/80 bg-[#0a0e17]/85 px-[20px] py-[10px] font-label-caps text-[12px] tracking-widest text-primary uppercase shadow-[0_0_25px_rgba(34,211,238,0.3)] backdrop-blur-md transition-all hover:bg-primary-container/20 hover:scale-105 active:scale-95 cursor-pointer"
+          >
+            <svg
+              className="h-4 w-4 fill-current text-primary"
+              viewBox="0 0 24 24"
             >
-              ACCESS PORTAL
-            </Link>
-            <span className="text-white/20">|</span>
-            <Link
-              href="/register"
-              className="text-on-surface-variant hover:text-primary transition"
-            >
-              REGISTER NODE
-            </Link>
-          </div>
-        </footer>
-      </main>
+              <path d="M8 5v14l11-7z" />
+            </svg>
+            <span>Play intro</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
