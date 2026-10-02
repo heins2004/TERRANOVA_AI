@@ -108,7 +108,7 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
   );
 
   const navigation = [
-    { label: "Command Overview", href: "/dashboard", icon: "dashboard" },
+    { label: "Command Overview", href: "/", icon: "dashboard" },
     { label: "Urban Projects", href: "/projects", icon: "apartment" },
     { label: "Infrastructure Grid", href: "/infrastructure", icon: "construction" },
     { label: "GIS Workspace", href: "/map", icon: "map" },
@@ -291,14 +291,14 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
                   key={item.href}
                   href={item.href}
                   className={`group flex items-center gap-[12px] rounded border px-[14px] py-[10px] transition-all ${
-                    item.href === "/dashboard"
+                    item.href === "/"
                       ? "border-primary-container/60 bg-primary-container/10 text-primary shadow-[0_0_15px_rgba(34,211,238,0.15)]"
                       : "border-white/10 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/40 hover:bg-white/[0.06] hover:text-foreground"
                   }`}
                 >
                   <span
                     className={`material-symbols-outlined text-[18px] transition-colors ${
-                      item.href === "/dashboard"
+                      item.href === "/"
                         ? "text-primary"
                         : "text-muted-foreground group-hover:text-primary"
                     }`}

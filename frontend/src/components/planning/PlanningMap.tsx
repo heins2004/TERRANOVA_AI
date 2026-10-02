@@ -259,7 +259,7 @@ export function PlanningMap() {
     if (!isReady || hasRedirectedRef.current) return;
     if (!user || !PERMITTED_ROLES.includes(user.role)) {
       hasRedirectedRef.current = true;
-      router.replace("/dashboard");
+      router.replace("/");
     }
   }, [isReady, user, router]);
 
@@ -465,7 +465,7 @@ export function PlanningMap() {
 
   // Guard render — all hooks above have fired unconditionally, so this early
   // return is safe. isReady=false shows a loading screen; wrong role shows the
-  // redirect message while the useEffect fires router.replace("/dashboard").
+  // redirect message while the useEffect fires router.replace("/").
   if (!isReady || !user || !PERMITTED_ROLES.includes(user.role)) {
     return (
       <div className="flex h-screen items-center justify-center font-data-mono text-sm text-on-surface-variant">
@@ -578,7 +578,7 @@ export function PlanningMap() {
         <div className="flex items-center gap-[16px]">
           <Link
             className="flex items-center gap-[6px] font-data-mono text-[11px] text-primary transition hover:underline"
-            href="/dashboard"
+            href="/"
           >
             &larr; DASHBOARD
           </Link>
