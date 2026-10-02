@@ -1,9 +1,8 @@
 "use client";
 
 import L from "leaflet";
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import { MapContainer, Marker, TileLayer, Tooltip } from "react-leaflet";
+import { MapContainer, Marker, TileLayer, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
 // 8 supported metropolitan cities defined in TERRANOVA AI
@@ -31,6 +30,35 @@ const hudMarkerIcon = L.divIcon({
   iconAnchor: [10, 10],
 });
 
+function MapController() {
+  const map = useMap();
+
+  useEffect(() => {
+    map.attributionControl?.setPrefix("Leaflet");
+
+    const coords = SUPPORTED_CITIES.map((c) => [c.lat, c.lng] as [number, number]);
+    const bounds = L.latLngBounds(coords);
+
+    const updateView = () => {
+      map.invalidateSize();
+      map.fitBounds(bounds, { padding: [24, 24] });
+    };
+
+    updateView();
+    const timer1 = setTimeout(updateView, 150);
+    const timer2 = setTimeout(updateView, 500);
+
+    window.addEventListener("resize", updateView);
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      window.removeEventListener("resize", updateView);
+    };
+  }, [map]);
+
+  return null;
+}
+
 export function NationalCoverageMap() {
   const [mounted, setMounted] = useState(false);
 
@@ -40,14 +68,21 @@ export function NationalCoverageMap() {
 
   if (!mounted) {
     return (
-      <div className="flex h-[230px] w-full items-center justify-center font-data-mono text-[11px] uppercase tracking-widest text-on-surface-variant">
+      <div className="flex h-full min-h-[260px] w-full items-center justify-center font-data-mono text-[11px] uppercase tracking-widest text-on-surface-variant">
         INITIALIZING SPATIAL MATRIX...
       </div>
     );
   }
 
   return (
-    <div className="relative h-[195px] w-full overflow-hidden rounded-lg border border-white/10 bg-[#0a0e17]">
+    <div className="relative h-full w-full overflow-hidden rounded-lg border border-white/10 bg-[#0a0e17] pointer-events-none">
+      <style>{`
+        .hud-national-map.leaflet-container,
+        .hud-national-map .leaflet-container,
+        .leaflet-container {
+          background: #0a0e17 !important;
+        }
+      `}</style>
       <MapContainer
         center={[22.3, 79.5]}
         zoom={4}
@@ -56,15 +91,18 @@ export function NationalCoverageMap() {
         doubleClickZoom={false}
         zoomControl={false}
         touchZoom={false}
-        attributionControl={false}
-        className="h-full w-full z-0 pointer-events-auto"
+        attributionControl={true}
+        style={{ backgroundColor: "#0a0e17", width: "100%", height: "100%" }}
+        className="hud-national-map h-full w-full z-0"
       >
+        <MapController />
         {/* Esri World Dark Gray Base Tile Layer */}
         <TileLayer
           url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
           maxZoom={16}
+          attribution="&copy; Esri, Leaflet"
         />
-        {/* Esri World Dark Gray Reference Layer for accurate boundaries & place names */}
+        {/* Esri World Dark Gray Reference Layer */}
         <TileLayer
           url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}"
           maxZoom={16}
@@ -87,32 +125,6 @@ export function NationalCoverageMap() {
           </Marker>
         ))}
       </MapContainer>
-
-      {/* Interactive HUD Overlay linking to /map */}
-      <Link
-        id="national-map-link"
-        href="/map"
-        className="group absolute inset-0 z-10 flex flex-col justify-between p-[12px] bg-gradient-to-t from-black/80 via-transparent to-black/30 transition-all hover:bg-black/20"
-        title="Open Full Interactive GIS Workspace"
-      >
-        <div className="flex items-center justify-between">
-          <span className="inline-flex items-center gap-1.5 rounded border border-primary-container/40 bg-surface-container-lowest/80 px-[8px] py-[3px] font-data-mono text-[9px] uppercase tracking-widest text-primary backdrop-blur-md">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary-container" />
-            INDIA GRID // 8 NODES
-          </span>
-          <span className="flex items-center gap-1 rounded border border-white/20 bg-surface-container-lowest/80 px-[8px] py-[3px] font-data-mono text-[9px] uppercase tracking-wider text-on-surface-variant backdrop-blur-md transition-colors group-hover:border-primary-container group-hover:text-primary">
-            EXPAND GIS
-            <span className="material-symbols-outlined text-[13px] transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
-              open_in_new
-            </span>
-          </span>
-        </div>
-
-        <div className="flex items-center justify-between font-data-mono text-[9px] uppercase tracking-wider text-white/60">
-          <span>ESRI GEOSPATIAL TILES</span>
-          <span className="text-primary group-hover:underline">CLICK TO ENTER FULL MAP →</span>
-        </div>
-      </Link>
     </div>
   );
 }

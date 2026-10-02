@@ -5,11 +5,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   HudBackground,
-  HudButton,
-  HudCornerBrackets,
   HudMetricTile,
   HudPanel,
-  HudStatusLine,
 } from "@/components/hud/Hud";
 import { TopBar } from "@/components/layout/TopBar";
 import { AuthUser } from "@/lib/auth";
@@ -32,7 +29,7 @@ const NationalCoverageMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-[230px] w-full items-center justify-center font-data-mono text-[11px] uppercase tracking-widest text-on-surface-variant">
+      <div className="flex h-full min-h-[260px] w-full items-center justify-center font-data-mono text-[11px] uppercase tracking-widest text-on-surface-variant">
         INITIALIZING SPATIAL MATRIX...
       </div>
     ),
@@ -109,7 +106,6 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
   const navigation = [
     { label: "Urban Projects", href: "/projects", icon: "apartment" },
     { label: "Infrastructure Grid", href: "/infrastructure", icon: "construction" },
-    { label: "GIS Workspace", href: "/map", icon: "map" },
     ...(user.role !== "Citizen"
       ? [{ label: "Planning Workspace", href: "/planning", icon: "architecture" }]
       : []),
@@ -121,7 +117,7 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
       : []),
   ];
 
-  // Role-aware metric summary cards
+  // Role-aware metric summary cards (display-only, not links)
   const summaryMetrics = useMemo(() => {
     if (!data) return [];
 
@@ -130,7 +126,6 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
         label: "Active Projects",
         value: data.projects.length,
         subLabel: "Metropolitan scale initiatives",
-        href: "/projects",
         accent: true,
       },
       {
@@ -139,14 +134,12 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
           (a) => a.condition === "Poor" || a.condition === "Critical"
         ).length,
         subLabel: "Require inspection / repair",
-        href: "/infrastructure",
         accent: false,
       },
       {
         label: "Upcoming Consultations",
         value: data.upcomingConsultations,
         subLabel: "Open public review sessions",
-        href: "/consultations",
         accent: false,
       },
     ];
@@ -158,14 +151,12 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
           label: "My Complaints",
           value: data.complaints.length,
           subLabel: "Submitted citizen reports",
-          href: "/complaints",
           accent: false,
         },
         {
           label: "Complaints In Progress",
           value: data.complaints.filter((c) => needsAttention(c.status)).length,
           subLabel: "Under municipal review",
-          href: "/complaints",
           accent: false,
         },
       ];
@@ -177,14 +168,12 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
         label: "Complaints Needing Review",
         value: data.complaints.filter((c) => needsAttention(c.status)).length,
         subLabel: "Pending triage by department",
-        href: "/complaints",
         accent: false,
       },
       {
         label: "Repository Documents",
         value: data.documentCount ?? 0,
         subLabel: "Archived planning briefs",
-        href: "/documents",
         accent: false,
       },
     ];
@@ -194,7 +183,6 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
         label: "Registered Nodes / Users",
         value: data.userCount ?? 0,
         subLabel: "Active platform accounts",
-        href: "/admin",
         accent: true,
       });
     }
@@ -211,10 +199,10 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
 
       {/* Main Command Workspace */}
       <div className="relative z-10 mx-auto w-full max-w-7xl flex-1 flex flex-col px-[20px] py-[24px] lg:flex-row lg:gap-[24px] lg:px-[32px]">
-        {/* Left Sidebar Console */}
-        <aside className="flex flex-col gap-[20px] lg:w-[320px] lg:shrink-0">
-          {/* Logo & Node Branding */}
-          <HudPanel brackets="all" className="p-[20px]">
+        {/* Left Sidebar Console (Desktop) / Horizontal Nav Chip Row (Mobile) */}
+        <aside className="contents lg:flex lg:flex-col lg:gap-[20px] lg:w-[320px] lg:shrink-0">
+          {/* Logo & Operator Identity Card (Desktop sidebar only) */}
+          <HudPanel brackets="all" className="hidden lg:block p-[20px]">
             <div className="flex items-center gap-[12px]">
               <div className="flex h-10 w-10 items-center justify-center rounded border border-primary-container/40 bg-primary-container/10">
                 <svg className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -261,24 +249,24 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
             </div>
           </HudPanel>
 
-          {/* Navigation Console */}
-          <HudPanel brackets="diagonal" className="p-[20px]">
-            <p className="font-data-mono text-[10px] uppercase tracking-widest text-on-surface-variant mb-[14px]">
+          {/* Navigation Console: scrollable chip row on mobile, sidebar list on desktop */}
+          <HudPanel brackets="diagonal" className="order-1 lg:order-none p-[12px] lg:p-[20px]">
+            <p className="hidden lg:block font-data-mono text-[10px] uppercase tracking-widest text-on-surface-variant mb-[14px]">
               SYSTEM MODULES
             </p>
-            <nav className="flex flex-col gap-[8px]">
+            <nav className="flex flex-row overflow-x-auto gap-[8px] scrollbar-none py-[2px] lg:flex-col lg:overflow-visible lg:py-0">
               {navigation.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`group flex items-center gap-[12px] rounded border px-[14px] py-[10px] transition-all ${
+                  className={`group shrink-0 flex items-center gap-[8px] lg:gap-[12px] rounded border px-[12px] py-[8px] lg:px-[14px] lg:py-[10px] transition-all whitespace-nowrap ${
                     item.href === "/"
                       ? "border-primary-container/60 bg-primary-container/10 text-primary shadow-[0_0_15px_rgba(34,211,238,0.15)]"
                       : "border-white/10 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/40 hover:bg-white/[0.06] hover:text-foreground"
                   }`}
                 >
                   <span
-                    className={`material-symbols-outlined text-[18px] transition-colors ${
+                    className={`material-symbols-outlined text-[16px] lg:text-[18px] transition-colors ${
                       item.href === "/"
                         ? "text-primary"
                         : "text-muted-foreground group-hover:text-primary"
@@ -296,7 +284,7 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
         </aside>
 
         {/* Main Command Workspace */}
-        <section className="mt-[24px] flex-1 lg:mt-0 flex flex-col gap-[24px]">
+        <section className="order-2 lg:order-none flex-1 flex flex-col gap-[24px]">
           {/* Mission Status Header Banner */}
           <HudPanel brackets="all" className="p-[24px] sm:p-[28px]">
             <div className="flex flex-wrap items-center justify-between gap-[12px] border-b border-white/10 pb-[14px]">
@@ -338,7 +326,7 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
             </HudPanel>
           )}
 
-          {/* Summary Metrics Grid */}
+          {/* Summary Metrics Grid (Display-only stat tiles) */}
           {data && (
             <div className="grid gap-[16px] sm:grid-cols-2 xl:grid-cols-3">
               {summaryMetrics.map((metric) => (
@@ -347,33 +335,27 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
                   label={metric.label}
                   value={metric.value}
                   subLabel={metric.subLabel}
-                  href={metric.href}
                   accent={metric.accent}
                 />
               ))}
             </div>
           )}
 
-          {/* Dual Panel Grid: Recent Projects & Telemetry Hub */}
+          {/* Lower Area: Recent Projects Stream & National Coverage Map */}
           {data && (
-            <div className="grid gap-[24px] xl:grid-cols-[1.3fr_0.7fr]">
-              {/* Left: Recent Projects Stream */}
-              <HudPanel brackets="all" className="p-[24px]">
-                <div className="flex items-center justify-between border-b border-white/10 pb-[12px]">
-                  <div>
-                    <h2 className="font-display-md text-[18px] font-semibold uppercase text-foreground">
-                      Recent Urban Projects
-                    </h2>
-                    <p className="mt-[2px] font-data-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Latest initiatives registered in TERRANOVA AI
-                    </p>
-                  </div>
-                  <HudButton href="/projects" size="sm" variant="ghost">
-                    View All →
-                  </HudButton>
+            <div className="grid gap-[24px] items-stretch lg:grid-cols-[1.5fr_1fr]">
+              {/* Recent Urban Projects */}
+              <HudPanel brackets="all" className="order-2 lg:order-1 h-full p-[24px] flex flex-col">
+                <div className="border-b border-white/10 pb-[12px]">
+                  <h2 className="font-display-md text-[18px] font-semibold uppercase text-foreground">
+                    Recent Urban Projects
+                  </h2>
+                  <p className="mt-[2px] font-data-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Latest initiatives registered in TERRANOVA AI
+                  </p>
                 </div>
 
-                <div className="mt-[16px] flex flex-col gap-[10px]">
+                <div className="mt-[16px] flex flex-col gap-[10px] flex-1">
                   {recentProjects.map((project) => (
                     <Link
                       key={project.id}
@@ -410,115 +392,38 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
                 </div>
               </HudPanel>
 
-              {/* Right Column: National Coverage Map + Operational Directives */}
-              <div className="flex flex-col gap-[20px]">
-                {/* National Spatial Coverage Panel */}
-                <HudPanel brackets="all" className="p-[20px]">
+              {/* National Coverage Map Tile */}
+              <Link
+                href="/map"
+                id="national-coverage-tile"
+                className="group block order-1 lg:order-2 h-full min-h-[320px] transition-all"
+              >
+                <HudPanel
+                  brackets="all"
+                  className="h-full p-[20px] flex flex-col transition-all group-hover:border-primary-container/60 group-hover:bg-white/[0.04]"
+                >
                   <div className="flex items-center justify-between border-b border-white/10 pb-[10px] mb-[14px]">
-                    <div>
-                      <h2 className="font-display-md text-[16px] font-semibold uppercase text-foreground">
-                        National Coverage
+                    <div className="whitespace-nowrap">
+                      <h2 className="font-display-md text-[16px] font-semibold uppercase text-foreground transition-colors group-hover:text-primary">
+                        NATIONAL COVERAGE
                       </h2>
                       <p className="mt-[2px] font-data-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                        Active metropolitan nodes across India
+                        8 active nodes across India
                       </p>
                     </div>
-                    <HudButton href="/map" size="sm" variant="ghost">
-                      Full Map ↗
-                    </HudButton>
+                    <span
+                      aria-hidden="true"
+                      className="material-symbols-outlined text-[18px] text-on-surface-variant transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary"
+                    >
+                      arrow_outward
+                    </span>
                   </div>
 
-                  <NationalCoverageMap />
-                </HudPanel>
-
-                {/* Directives & Fast-Access Panel */}
-                <HudPanel brackets="all" className="p-[20px] flex flex-col justify-between">
-                  <div>
-                    <div className="border-b border-white/10 pb-[10px]">
-                      <h2 className="font-display-md text-[16px] font-semibold uppercase text-foreground">
-                        Directives
-                      </h2>
-                      <p className="mt-[2px] font-data-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                        Fast-access command links
-                      </p>
-                    </div>
-
-                    <div className="mt-[14px] flex flex-col gap-[10px]">
-                      <HudButton
-                        href="/map"
-                        variant="secondary"
-                        size="md"
-                        fullWidth
-                        className="justify-between"
-                      >
-                        <span>GIS WORKSPACE</span>
-                        <span className="material-symbols-outlined text-[16px]">
-                          explore
-                        </span>
-                      </HudButton>
-
-                      {user.role !== "Citizen" && (
-                        <HudButton
-                          href="/planning"
-                          variant="secondary"
-                          size="md"
-                          fullWidth
-                          className="justify-between"
-                        >
-                          <span>PLANNING WORKSPACE</span>
-                          <span className="material-symbols-outlined text-[16px]">
-                            architecture
-                          </span>
-                        </HudButton>
-                      )}
-
-                      <HudButton
-                        href="/infrastructure"
-                        variant="secondary"
-                        size="md"
-                        fullWidth
-                        className="justify-between"
-                      >
-                        <span>INFRASTRUCTURE REGISTRY</span>
-                        <span className="material-symbols-outlined text-[16px]">
-                          domain
-                        </span>
-                      </HudButton>
-
-                      <HudButton
-                        href="/consultations"
-                        variant="secondary"
-                        size="md"
-                        fullWidth
-                        className="justify-between"
-                      >
-                        <span>CONSULTATION PORTAL</span>
-                        <span className="material-symbols-outlined text-[16px]">
-                          forum
-                        </span>
-                      </HudButton>
-                    </div>
-                  </div>
-
-                  {/* System Telemetry Readout */}
-                  <div className="mt-[20px] border-t border-white/10 pt-[14px] flex flex-col gap-[8px]">
-                    <HudStatusLine
-                      label="DB ENGINE"
-                      value="POSTGRESQL + POSTGIS"
-                      accent
-                      statusDot
-                    />
-                    <HudStatusLine
-                      label="AUTH"
-                      value="PBKDF2-HMAC-256"
-                    />
-                    <HudStatusLine
-                      label="NETWORK"
-                      value="SECURE NODE // TLS"
-                    />
+                  <div className="flex-1 min-h-[260px] lg:min-h-[320px] w-full overflow-hidden rounded-lg">
+                    <NationalCoverageMap />
                   </div>
                 </HudPanel>
-              </div>
+              </Link>
             </div>
           )}
         </section>
