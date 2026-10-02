@@ -56,4 +56,4 @@ storage/documents/*
 !storage/documents/.gitkeep
 
 # Test reports
-testing/e2e/
+testing/
