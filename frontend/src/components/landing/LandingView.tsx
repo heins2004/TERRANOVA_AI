@@ -391,37 +391,40 @@ export function LandingView() {
           </nav>
         </header>
 
-        {/* Hero Panel (Desktop left/upper-middle, Mobile top) */}
+        {/* Hero Panel (Desktop left/upper-middle, Mobile top, compact on short landscape) */}
         <section
-          className={`my-auto max-w-[480px] pt-[8px] pb-[16px] sm:pt-[16px] ${
+          className={`my-auto max-w-[480px] [@media(max-height:520px)]:max-w-[320px] pt-[8px] pb-[16px] sm:pt-[16px] [@media(max-height:520px)]:pt-0 [@media(max-height:520px)]:pb-0 ${
             isRevealed ? "pointer-events-auto" : "pointer-events-none"
           }`}
         >
           <div
             style={getStaggerStyle(200, 500)}
-            className="relative rounded-xl border border-white/10 bg-white/5 p-[24px] sm:p-[32px] shadow-2xl backdrop-blur-[25px]"
+            className="relative rounded-xl border border-white/10 bg-white/5 p-[24px] sm:p-[32px] [@media(max-height:520px)]:p-[16px] shadow-2xl backdrop-blur-[25px]"
           >
             <HudCornerBrackets variant="all" />
 
             <h1
               style={getStaggerStyle(300, 450)}
-              className="font-sans text-[28px] sm:text-[34px] lg:text-[38px] font-semibold leading-[1.14] tracking-tight text-white"
+              className="font-sans text-[26px] sm:text-[32px] lg:text-[38px] [@media(max-height:520px)]:text-[20px] font-semibold leading-[1.14] tracking-tight text-white"
             >
               Plan the city before it exists.
             </h1>
 
             <p
               style={getStaggerStyle(400, 450)}
-              className="mt-[14px] sm:mt-[16px] font-sans text-[13px] sm:text-[14px] leading-[1.6] text-muted-foreground"
+              className="mt-[14px] sm:mt-[16px] font-sans text-[13px] sm:text-[14px] leading-[1.6] text-muted-foreground [@media(max-height:520px)]:hidden"
             >
               TERRANOVA AI turns an empty plot into zoning, traffic and growth
               scenarios in minutes.
             </p>
 
-            <div style={getStaggerStyle(500, 450)} className="mt-[20px] sm:mt-[24px]">
+            <div
+              style={getStaggerStyle(500, 450)}
+              className="mt-[20px] sm:mt-[24px] [@media(max-height:520px)]:mt-[12px]"
+            >
               <Link
                 href="/register"
-                className="inline-flex items-center justify-center gap-[8px] rounded border border-primary-container/80 bg-primary-container/15 px-[24px] py-[12px] font-label-caps text-[12px] tracking-widest text-primary-container uppercase transition-all duration-300 hover:bg-primary-container/25 hover:shadow-[0_0_20px_rgba(34,211,238,0.35)] active:scale-95"
+                className="inline-flex items-center justify-center gap-[8px] rounded border border-primary-container/80 bg-primary-container/15 px-[24px] py-[12px] [@media(max-height:520px)]:px-[16px] [@media(max-height:520px)]:py-[8px] font-label-caps text-[12px] [@media(max-height:520px)]:text-[11px] tracking-widest text-primary-container uppercase transition-all duration-300 hover:bg-primary-container/25 hover:shadow-[0_0_20px_rgba(34,211,238,0.35)] active:scale-95"
               >
                 <span>Start a plan</span>
                 <svg
@@ -440,15 +443,15 @@ export function LandingView() {
           </div>
         </section>
 
-        {/* Four Option Cards Section (Non-clickable info tiles, no buttons/links) */}
+        {/* Four Option Cards Section (Hidden on short landscape <520px height) */}
         <div
           id="platform"
-          className={`w-full max-w-7xl mx-auto pt-[8px] pb-[calc(env(safe-area-inset-bottom)+4px)] ${
+          className={`w-full max-w-7xl mx-auto pt-[8px] pb-[calc(env(safe-area-inset-bottom)+4px)] [@media(max-height:520px)]:hidden ${
             isRevealed ? "pointer-events-auto" : "pointer-events-none"
           }`}
         >
-          {/* Mobile: 1 horizontally scrollable row; Desktop: compact 4-column row */}
-          <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-[12px] overflow-x-auto sm:overflow-x-visible snap-x snap-mandatory pb-[4px] scrollbar-none">
+          {/* Mobile & Tablet: horizontally scrollable snap row; Desktop: 4-column row */}
+          <div className="flex lg:grid lg:grid-cols-4 gap-[12px] overflow-x-auto lg:overflow-x-visible snap-x snap-mandatory pb-[4px] scrollbar-none">
             {OPTION_CARDS.map((card, index) => {
               const cardDelay = 600 + index * 70;
               return (
