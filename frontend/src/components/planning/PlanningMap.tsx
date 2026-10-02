@@ -254,9 +254,11 @@ export function PlanningMap() {
 
   // Role gate: redirect Citizens (and any non-editor) as soon as auth state is known.
   // The proxy only checks session existence — it cannot read the role from the cookie.
+  const hasRedirectedRef = useRef(false);
   useEffect(() => {
-    if (!isReady) return;
+    if (!isReady || hasRedirectedRef.current) return;
     if (!user || !PERMITTED_ROLES.includes(user.role)) {
+      hasRedirectedRef.current = true;
       router.replace("/dashboard");
     }
   }, [isReady, user, router]);
