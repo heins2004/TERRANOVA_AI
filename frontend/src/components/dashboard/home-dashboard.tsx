@@ -7,12 +7,11 @@ import {
   HudBackground,
   HudButton,
   HudCornerBrackets,
-  HudCornerReadouts,
   HudMetricTile,
   HudPanel,
   HudStatusLine,
 } from "@/components/hud/Hud";
-import { LogoutButton } from "@/components/ui/logout-button";
+import { TopBar } from "@/components/layout/TopBar";
 import { AuthUser } from "@/lib/auth";
 import { getUsers } from "@/services/admin";
 import { Complaint, getComplaints } from "@/services/complaints";
@@ -108,7 +107,6 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
   );
 
   const navigation = [
-    { label: "Command Overview", href: "/", icon: "dashboard" },
     { label: "Urban Projects", href: "/projects", icon: "apartment" },
     { label: "Infrastructure Grid", href: "/infrastructure", icon: "construction" },
     { label: "GIS Workspace", href: "/map", icon: "map" },
@@ -208,20 +206,8 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
     <div className="relative min-h-screen w-full bg-surface-container-lowest text-on-surface overflow-x-hidden flex flex-col justify-between selection:bg-primary-container/30 selection:text-primary">
       <HudBackground />
 
-      {/* Top HUD Frame Bar with Corner Readouts */}
-      <header className="relative z-20 w-full border-b border-white/10 bg-surface-container-lowest/85 px-[24px] py-[10px] backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between font-data-mono text-[10px] uppercase tracking-widest">
-          <span className="text-primary-container font-semibold">
-            SYS.INIT.SEQ // V.4.2.1
-          </span>
-          <span className="hidden sm:inline-block text-on-surface-variant/60">
-            TERRANOVA COMMAND INTERFACE // SECTOR-01
-          </span>
-          <span className="text-secondary font-semibold">
-            NET_ID: TERRANOVA-HUB
-          </span>
-        </div>
-      </header>
+      {/* Unified Top Bar with Home and Logout */}
+      <TopBar user={user} />
 
       {/* Main Command Workspace */}
       <div className="relative z-10 mx-auto w-full max-w-7xl flex-1 flex flex-col px-[20px] py-[24px] lg:flex-row lg:gap-[24px] lg:px-[32px]">
@@ -271,11 +257,6 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
                 <span className="rounded border border-primary-container/40 bg-primary-container/10 px-[8px] py-[2px] font-data-mono text-[10px] font-semibold uppercase tracking-wider text-primary">
                   {user.role}
                 </span>
-              </div>
-
-              {/* Logout Button embedded inside operator card */}
-              <div className="mt-[16px] border-t border-white/10 pt-[12px]">
-                <LogoutButton className="w-full" />
               </div>
             </div>
           </HudPanel>
@@ -553,7 +534,7 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
             CORE: POSTGRESQL + POSTGIS // TELEMETRY: ACTIVE
           </span>
           <span className="text-secondary font-semibold">
-            ENCRYPTION: AES-256
+            NET_ID: TERRANOVA-HUB // ENCRYPTION: AES-256
           </span>
         </div>
       </footer>
