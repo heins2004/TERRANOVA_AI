@@ -335,14 +335,14 @@ export function LandingView() {
       {/* 5. Website Layer (in DOM from start, accessibility inert until revealed) */}
       <div
         inert={!isRevealed}
-        className={`absolute inset-0 z-20 flex flex-col justify-between p-[16px] sm:p-[24px] lg:p-[40px] ${
-          isRevealed ? "pointer-events-auto" : "pointer-events-none"
-        }`}
+        className="pointer-events-none absolute inset-0 z-20 flex flex-col justify-between pt-[16px] px-[16px] pb-[16px] sm:pt-[24px] sm:px-[24px] sm:pb-[20px] lg:pt-[32px] lg:px-[40px] lg:pb-[20px]"
       >
         {/* Header */}
         <header
           style={getStaggerStyle(100, 500)}
-          className="flex items-center justify-between border-b border-white/10 pb-[16px]"
+          className={`flex items-center justify-between border-b border-white/10 pb-[16px] ${
+            isRevealed ? "pointer-events-auto" : "pointer-events-none"
+          }`}
         >
           {/* Brand mark + Name */}
           <div className="flex items-center gap-[12px]">
@@ -392,7 +392,11 @@ export function LandingView() {
         </header>
 
         {/* Hero Panel (Desktop left/upper-middle, Mobile top) */}
-        <section className="my-auto max-w-[480px] pt-[8px] pb-[16px] sm:pt-[16px]">
+        <section
+          className={`my-auto max-w-[480px] pt-[8px] pb-[16px] sm:pt-[16px] ${
+            isRevealed ? "pointer-events-auto" : "pointer-events-none"
+          }`}
+        >
           <div
             style={getStaggerStyle(200, 500)}
             className="relative rounded-xl border border-white/10 bg-white/5 p-[24px] sm:p-[32px] shadow-2xl backdrop-blur-[25px]"
@@ -439,7 +443,9 @@ export function LandingView() {
         {/* Four Option Cards Section (Non-clickable info tiles, no buttons/links) */}
         <div
           id="platform"
-          className="w-full max-w-7xl mx-auto pt-[8px] pb-[calc(env(safe-area-inset-bottom)+4px)]"
+          className={`w-full max-w-7xl mx-auto pt-[8px] pb-[calc(env(safe-area-inset-bottom)+4px)] ${
+            isRevealed ? "pointer-events-auto" : "pointer-events-none"
+          }`}
         >
           {/* Mobile: 1 horizontally scrollable row; Desktop: compact 4-column row */}
           <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-[12px] overflow-x-auto sm:overflow-x-visible snap-x snap-mandatory pb-[4px] scrollbar-none">
