@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getSessionCookieName } from "@/lib/auth";
 
-const exactProtectedRoutes = ["/projects", "/infrastructure", "/map"];
+const exactProtectedRoutes = [
+  "/projects",
+  "/projects/new",
+  "/infrastructure",
+  "/map",
+];
 const prefixProtectedRoutes = [
   "/complaints",
   "/consultations",
@@ -32,6 +37,7 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     "/projects",
+    "/projects/new",
     "/infrastructure",
     "/map",
     "/complaints",
