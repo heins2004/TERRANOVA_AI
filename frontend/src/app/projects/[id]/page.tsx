@@ -214,12 +214,15 @@ export default function ProjectDetailPage() {
             >
               <span>{TAB_LABELS[key]}</span>
               {isReady && !user ? (
-                <span
-                  className="material-symbols-outlined text-[13px] text-muted-foreground/70 ml-1"
-                  aria-hidden="true"
-                >
-                  lock
-                </span>
+                <>
+                  <span
+                    className="material-symbols-outlined text-[13px] text-muted-foreground/70 ml-[4px]"
+                    aria-hidden="true"
+                  >
+                    lock
+                  </span>
+                  <span className="sr-only">Log in required</span>
+                </>
               ) : user ? (
                 <span>({tabCounts[key]})</span>
               ) : null}
