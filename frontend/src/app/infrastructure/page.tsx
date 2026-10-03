@@ -41,9 +41,9 @@ export default function InfrastructurePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-surface-container-lowest text-on-surface">
+    <div className="min-h-screen flex flex-col bg-surface-container-lowest text-on-surface overflow-x-hidden">
       <TopBar user={user} />
-      <main className="flex-1 px-[24px] py-[32px]">
+      <main className="flex-1 px-[16px] py-[24px] sm:px-[24px] sm:py-[32px]">
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-wrap justify-between gap-[16px]">
             <div>
