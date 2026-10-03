@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { TopBar } from "@/components/layout/TopBar";
 
 const CityMap = dynamic(() => import("@/components/maps/CityMap").then((module) => module.CityMap), {
   ssr: false,
@@ -8,5 +9,12 @@ const CityMap = dynamic(() => import("@/components/maps/CityMap").then((module) 
 });
 
 export default function MapPage() {
-  return <main className="relative h-screen w-full bg-surface-container-lowest"><CityMap /></main>;
+  return (
+    <div className="relative h-screen w-full flex flex-col bg-surface-container-lowest">
+      <TopBar />
+      <main className="relative flex-1 w-full overflow-hidden">
+        <CityMap />
+      </main>
+    </div>
+  );
 }

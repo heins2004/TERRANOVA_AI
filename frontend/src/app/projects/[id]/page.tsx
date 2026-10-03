@@ -8,6 +8,7 @@ import { ComplaintForm } from "@/components/citizen/ComplaintForm";
 import { FeedbackForm } from "@/components/consultations/FeedbackForm";
 import { DocumentUploadForm } from "@/components/documents/DocumentUploadForm";
 import { useAuth } from "@/components/layout/auth-provider";
+import { TopBar } from "@/components/layout/TopBar";
 import { ProjectForm } from "@/components/projects/ProjectForm";
 import { StatusBadge } from "@/components/projects/StatusBadge";
 import { Complaint, createComplaint, getComplaints } from "@/services/complaints";
@@ -116,17 +117,21 @@ export default function ProjectDetailPage() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-surface-container-lowest p-[32px] text-danger">
-        {error}
-      </main>
+      <div className="min-h-screen flex flex-col bg-surface-container-lowest text-on-surface">
+        <TopBar user={user} />
+        <main className="flex-1 p-[32px] text-danger">{error}</main>
+      </div>
     );
   }
 
   if (!project) {
     return (
-      <main className="min-h-screen bg-surface-container-lowest p-[32px] font-data-mono text-on-surface-variant">
-        LOADING PROJECT RECORD...
-      </main>
+      <div className="min-h-screen flex flex-col bg-surface-container-lowest text-on-surface">
+        <TopBar user={user} />
+        <main className="flex-1 p-[32px] font-data-mono text-on-surface-variant">
+          LOADING PROJECT RECORD...
+        </main>
+      </div>
     );
   }
 
@@ -137,11 +142,13 @@ export default function ProjectDetailPage() {
   };
 
   return (
-    <main className="min-h-screen bg-surface-container-lowest px-[24px] py-[32px] text-on-surface">
-      <div className="mx-auto max-w-5xl">
-        <Link className="font-data-mono text-[11px] text-primary" href="/projects">
-          &larr; ALL PROJECTS
-        </Link>
+    <div className="min-h-screen flex flex-col bg-surface-container-lowest text-on-surface">
+      <TopBar user={user} />
+      <main className="flex-1 px-[24px] py-[32px]">
+        <div className="mx-auto max-w-5xl">
+          <Link className="font-data-mono text-[11px] text-primary" href="/projects">
+            &larr; ALL PROJECTS
+          </Link>
 
         <article className="glass-card mt-[20px] rounded-xl p-[28px]">
           <div className="flex flex-wrap items-start justify-between gap-[16px]">
@@ -296,6 +303,7 @@ export default function ProjectDetailPage() {
         </div>
       </div>
     </main>
+  </div>
   );
 }
 

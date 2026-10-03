@@ -575,14 +575,6 @@ export function PlanningMap() {
 
       {/* Top Header Floating Bar */}
       <header className="glass-card absolute top-[16px] left-[16px] right-[16px] z-[1000] flex items-center justify-between rounded-[16px] px-[20px] py-[12px] md:left-[24px] md:right-[24px]">
-        <div className="flex items-center gap-[16px]">
-          <Link
-            className="flex items-center gap-[6px] font-data-mono text-[11px] text-primary transition hover:underline"
-            href="/"
-          >
-            &larr; DASHBOARD
-          </Link>
-          <div className="h-[16px] w-[1px] bg-white/20" />
           <div>
             <h1 className="font-display-md text-[18px] font-semibold tracking-wide text-foreground">
               Planning Workspace
@@ -591,7 +583,6 @@ export function PlanningMap() {
               Study Areas &bull; Candidate Sites Identification
             </p>
           </div>
-        </div>
 
         <div className="flex items-center gap-[12px]">
           {user ? (

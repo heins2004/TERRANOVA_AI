@@ -1,21 +1,146 @@
 "use client";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ConsultationCard } from "@/components/consultations/ConsultationCard";
 import { ConsultationForm } from "@/components/consultations/ConsultationForm";
 import { FeedbackForm } from "@/components/consultations/FeedbackForm";
 import { FeedbackList } from "@/components/consultations/FeedbackList";
 import { useAuth } from "@/components/layout/auth-provider";
+import { TopBar } from "@/components/layout/TopBar";
 import { Consultation, ConsultationPayload, ConsultationStatus, Feedback, createConsultation, createFeedback, getConsultations, getFeedback, updateConsultation } from "@/services/consultations";
 import { Project, getProjects } from "@/services/projects";
 const editorRoles = ["Urban Planner", "Government Official", "Administrator"];
 export default function ConsultationsPage() {
-  const { user } = useAuth(); const [consultations, setConsultations] = useState<Consultation[]>([]); const [projects, setProjects] = useState<Project[]>([]); const [selected, setSelected] = useState<Consultation | null>(null); const [feedback, setFeedback] = useState<Feedback[]>([]); const [showCreate, setShowCreate] = useState(false); const [error, setError] = useState(""); const canEdit = Boolean(user && editorRoles.includes(user.role));
-  async function load() { try { setError(""); setConsultations(await getConsultations()); } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to load consultations."); } }
-  useEffect(() => { void load(); getProjects().then(setProjects).catch(() => undefined); }, []);
-  async function select(item: Consultation) { setSelected(item); try { setFeedback(await getFeedback(item.id)); } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to load feedback."); } }
-  async function submit(payload: ConsultationPayload) { const item = await createConsultation(payload); setConsultations((current) => [...current, item].sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))); setShowCreate(false); await select(item); }
-  async function changeStatus(item: Consultation, status: ConsultationStatus) { try { const updated = await updateConsultation(item.id, { status }); setConsultations((current) => current.map((entry) => entry.id === updated.id ? updated : entry)); if (selected?.id === updated.id) setSelected(updated); } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to update consultation."); } }
-  async function submitFeedback(comment: string) { if (!selected) return; const created = await createFeedback(selected.id, comment); setFeedback((current) => [...current, created]); }
-  return <main className="min-h-screen bg-surface-container-lowest px-[24px] py-[32px] text-on-surface"><div className="mx-auto max-w-6xl"><div className="flex flex-wrap items-end justify-between gap-[16px]"><div><p className="font-label-caps text-label-caps tracking-widest text-primary">PUBLIC ENGAGEMENT</p><h1 className="mt-[8px] font-display-md text-display-md">Citizen Consultations</h1><p className="mt-[8px] text-sm text-on-surface-variant">Upcoming public sessions and community feedback.</p></div><div className="flex gap-[12px]">{canEdit && <button className="border border-primary-container/60 px-[14px] py-[10px] font-data-mono text-[11px] text-primary hover:bg-primary-container/10" type="button" onClick={() => setShowCreate((current) => !current)}>{showCreate ? "CLOSE FORM" : "CREATE CONSULTATION"}</button>}<Link className="border border-white/15 px-[14px] py-[10px] font-data-mono text-[11px] text-on-surface-variant hover:border-primary-container/50" href="/">DASHBOARD</Link></div></div>{canEdit && showCreate && <div className="mt-[24px]"><ConsultationForm projects={projects} onSubmit={submit} /></div>}{error && <p className="mt-[24px] text-danger">{error}</p>}<section className="mt-[32px]"><h2 className="font-display-md text-[26px]">Scheduled consultations</h2><div className="mt-[16px] grid gap-[16px] md:grid-cols-2">{consultations.map((item) => <ConsultationCard canEdit={canEdit} consultation={item} key={item.id} selected={selected?.id === item.id} onSelect={() => void select(item)} onStatusChange={(status) => changeStatus(item, status)} />)}{!error && !consultations.length && <p className="font-data-mono text-sm text-on-surface-variant">NO CONSULTATIONS ARE CURRENTLY SCHEDULED.</p>}</div></section>{selected && <section className="mt-[32px]"><div className="glass-card rounded-xl p-[24px]"><p className="font-data-mono text-[11px] uppercase tracking-[0.16em] text-primary">Consultation details</p><h2 className="mt-[8px] font-display-md text-[28px]">{selected.title}</h2><p className="mt-[16px] whitespace-pre-wrap text-sm leading-6 text-on-surface-variant">{selected.description}</p></div><div className="mt-[16px] grid gap-[16px] lg:grid-cols-2"><FeedbackForm onSubmit={submitFeedback} /><FeedbackList feedback={feedback} /></div></section>}</div></main>;
+  const { user } = useAuth();
+  const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selected, setSelected] = useState<Consultation | null>(null);
+  const [feedback, setFeedback] = useState<Feedback[]>([]);
+  const [showCreate, setShowCreate] = useState(false);
+  const [error, setError] = useState("");
+  const canEdit = Boolean(user && editorRoles.includes(user.role));
+
+  async function load() {
+    try {
+      setError("");
+      setConsultations(await getConsultations());
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to load consultations.");
+    }
+  }
+
+  useEffect(() => {
+    void load();
+    getProjects().then(setProjects).catch(() => undefined);
+  }, []);
+
+  async function select(item: Consultation) {
+    setSelected(item);
+    try {
+      setFeedback(await getFeedback(item.id));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to load feedback.");
+    }
+  }
+
+  async function submit(payload: ConsultationPayload) {
+    const item = await createConsultation(payload);
+    setConsultations((current) =>
+      [...current, item].sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))
+    );
+    setShowCreate(false);
+    await select(item);
+  }
+
+  async function changeStatus(item: Consultation, status: ConsultationStatus) {
+    try {
+      const updated = await updateConsultation(item.id, { status });
+      setConsultations((current) =>
+        current.map((entry) => (entry.id === updated.id ? updated : entry))
+      );
+      if (selected?.id === updated.id) setSelected(updated);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to update consultation.");
+    }
+  }
+
+  async function submitFeedback(comment: string) {
+    if (!selected) return;
+    const created = await createFeedback(selected.id, comment);
+    setFeedback((current) => [...current, created]);
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col bg-surface-container-lowest text-on-surface">
+      <TopBar user={user} />
+      <main className="flex-1 px-[24px] py-[32px]">
+        <div className="mx-auto max-w-6xl">
+          <div className="flex flex-wrap items-end justify-between gap-[16px]">
+            <div>
+              <p className="font-label-caps text-label-caps tracking-widest text-primary">
+                PUBLIC ENGAGEMENT
+              </p>
+              <h1 className="mt-[8px] font-display-md text-display-md">Citizen Consultations</h1>
+              <p className="mt-[8px] text-sm text-on-surface-variant">
+                Upcoming public sessions and community feedback.
+              </p>
+            </div>
+            {canEdit && (
+              <div className="flex gap-[12px]">
+                <button
+                  className="border border-primary-container/60 px-[14px] py-[10px] font-data-mono text-[11px] text-primary hover:bg-primary-container/10"
+                  type="button"
+                  onClick={() => setShowCreate((current) => !current)}
+                >
+                  {showCreate ? "CLOSE FORM" : "CREATE CONSULTATION"}
+                </button>
+              </div>
+            )}
+          </div>
+          {canEdit && showCreate && (
+            <div className="mt-[24px]">
+              <ConsultationForm projects={projects} onSubmit={submit} />
+            </div>
+          )}
+          {error && <p className="mt-[24px] text-danger">{error}</p>}
+          <section className="mt-[32px]">
+            <h2 className="font-display-md text-[26px]">Scheduled consultations</h2>
+            <div className="mt-[16px] grid gap-[16px] md:grid-cols-2">
+              {consultations.map((item) => (
+                <ConsultationCard
+                  canEdit={canEdit}
+                  consultation={item}
+                  key={item.id}
+                  selected={selected?.id === item.id}
+                  onSelect={() => void select(item)}
+                  onStatusChange={(status) => changeStatus(item, status)}
+                />
+              ))}
+              {!error && !consultations.length && (
+                <p className="font-data-mono text-sm text-on-surface-variant">
+                  NO CONSULTATIONS ARE CURRENTLY SCHEDULED.
+                </p>
+              )}
+            </div>
+          </section>
+          {selected && (
+            <section className="mt-[32px]">
+              <div className="glass-card rounded-xl p-[24px]">
+                <p className="font-data-mono text-[11px] uppercase tracking-[0.16em] text-primary">
+                  Consultation details
+                </p>
+                <h2 className="mt-[8px] font-display-md text-[28px]">{selected.title}</h2>
+                <p className="mt-[16px] whitespace-pre-wrap text-sm leading-6 text-on-surface-variant">
+                  {selected.description}
+                </p>
+              </div>
+              <div className="mt-[16px] grid gap-[16px] lg:grid-cols-2">
+                <FeedbackForm onSubmit={submitFeedback} />
+                <FeedbackList feedback={feedback} />
+              </div>
+            </section>
+          )}
+        </div>
+      </main>
+    </div>
+  );
 }

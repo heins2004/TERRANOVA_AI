@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { TopBar } from "@/components/layout/TopBar";
 
 const PlanningMap = dynamic(
   () => import("@/components/planning/PlanningMap").then((module) => module.PlanningMap),
@@ -16,8 +17,11 @@ const PlanningMap = dynamic(
 
 export default function PlanningPage() {
   return (
-    <main className="relative h-screen w-full bg-surface-container-lowest">
-      <PlanningMap />
-    </main>
+    <div className="relative h-screen w-full flex flex-col bg-surface-container-lowest">
+      <TopBar />
+      <main className="relative flex-1 w-full overflow-hidden">
+        <PlanningMap />
+      </main>
+    </div>
   );
 }
