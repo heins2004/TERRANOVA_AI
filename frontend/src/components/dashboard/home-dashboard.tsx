@@ -201,51 +201,29 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
       <div className="relative z-10 mx-auto w-full max-w-7xl flex-1 flex flex-col px-[20px] py-[24px] lg:flex-row lg:gap-[24px] lg:px-[32px]">
         {/* Left Sidebar Console (Desktop) / Horizontal Nav Chip Row (Mobile) */}
         <aside className="contents lg:flex lg:flex-col lg:gap-[20px] lg:w-[320px] lg:shrink-0">
-          {/* Logo & Operator Identity Card (Desktop sidebar only) */}
-          <HudPanel brackets="all" className="hidden lg:block p-[20px]">
-            <div className="flex items-center gap-[12px]">
-              <div className="flex h-10 w-10 items-center justify-center rounded border border-primary-container/40 bg-primary-container/10">
-                <svg className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                  <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-                  <line x1="12" y1="22.08" x2="12" y2="12" />
-                </svg>
-              </div>
-              <div>
-                <p className="font-display-md text-[18px] font-semibold tracking-tight text-primary uppercase">
-                  TERRANOVA AI
-                </p>
-                <p className="flex items-center gap-1.5 font-label-caps text-[9px] tracking-widest text-on-surface-variant">
-                  <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary-container" />
-                  COMMAND CONSOLE // HUD
-                </p>
-              </div>
+          {/* Operator Identity Card (Desktop sidebar only) */}
+          <HudPanel brackets="all" className="hidden lg:block p-[16px]">
+            <div className="flex items-center justify-between">
+              <span className="font-data-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
+                OPERATOR IDENTITY
+              </span>
+              <span className="font-data-mono text-[10px] uppercase tracking-widest text-primary-container">
+                SECURE_LINK
+              </span>
             </div>
-
-            {/* Operator Matrix Card */}
-            <div className="mt-[20px] rounded-lg border border-white/10 bg-white/[0.03] p-[16px]">
-              <div className="flex items-center justify-between">
-                <span className="font-data-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
-                  OPERATOR IDENTITY
-                </span>
-                <span className="font-data-mono text-[10px] uppercase tracking-widest text-primary-container">
-                  SECURE_LINK
-                </span>
-              </div>
-              <p className="mt-[10px] font-display-md text-[17px] font-semibold text-foreground">
-                {user.full_name}
-              </p>
-              <p className="mt-[2px] font-data-mono text-[11px] text-muted-foreground break-all">
-                {user.email}
-              </p>
-              <div className="mt-[12px] flex items-center justify-between border-t border-white/10 pt-[10px]">
-                <span className="font-data-mono text-[10px] uppercase tracking-wider text-on-surface-variant">
-                  CLEARANCE
-                </span>
-                <span className="rounded border border-primary-container/40 bg-primary-container/10 px-[8px] py-[2px] font-data-mono text-[10px] font-semibold uppercase tracking-wider text-primary">
-                  {user.role}
-                </span>
-              </div>
+            <p className="mt-[10px] font-display-md text-[17px] font-semibold text-foreground">
+              {user.full_name}
+            </p>
+            <p className="mt-[2px] font-data-mono text-[11px] text-muted-foreground break-all">
+              {user.email}
+            </p>
+            <div className="mt-[12px] flex items-center justify-between border-t border-white/10 pt-[10px]">
+              <span className="font-data-mono text-[10px] uppercase tracking-wider text-on-surface-variant">
+                CLEARANCE
+              </span>
+              <span className="rounded border border-primary-container/40 bg-primary-container/10 px-[8px] py-[2px] font-data-mono text-[10px] font-semibold uppercase tracking-wider text-primary">
+                {user.role}
+              </span>
             </div>
           </HudPanel>
 

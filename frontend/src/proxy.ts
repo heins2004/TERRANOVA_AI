@@ -2,14 +2,26 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getSessionCookieName } from "@/lib/auth";
 
-const protectedRoutes = ["/complaints", "/consultations", "/documents", "/admin", "/planning"];
+const exactProtectedRoutes = ["/projects", "/infrastructure", "/map"];
+const prefixProtectedRoutes = [
+  "/complaints",
+  "/consultations",
+  "/documents",
+  "/admin",
+  "/planning",
+];
 const authRoutes = ["/login", "/register"];
 
 export function proxy(request: NextRequest) {
   const isAuthenticated = request.cookies.has(getSessionCookieName());
   const { pathname } = request.nextUrl;
 
-  if (protectedRoutes.some((route) => pathname.startsWith(route)) && !isAuthenticated) {
+  const isExactProtected = exactProtectedRoutes.includes(pathname);
+  const isPrefixProtected = prefixProtectedRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
+
+  if ((isExactProtected || isPrefixProtected) && !isAuthenticated) {
     const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);
   }
@@ -19,6 +31,9 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/projects",
+    "/infrastructure",
+    "/map",
     "/complaints",
     "/complaints/:path*",
     "/consultations",

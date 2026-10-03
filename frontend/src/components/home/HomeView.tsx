@@ -272,64 +272,34 @@ export function HomeView({
           className="contents lg:flex lg:flex-col lg:gap-[20px] lg:w-[320px] lg:shrink-0"
         >
           {/* Identity Card (Desktop sidebar) */}
-          <HudPanel brackets="all" className="hidden lg:block p-[20px]">
-            <div className="flex items-center gap-[12px]">
-              <div className="flex h-10 w-10 items-center justify-center rounded border border-primary-container/40 bg-primary-container/10">
-                <svg
-                  className="h-5 w-5 text-primary"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                  <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-                  <line x1="12" y1="22.08" x2="12" y2="12" />
-                </svg>
-              </div>
-              <div>
-                <p className="font-display-md text-[18px] font-semibold tracking-tight text-primary uppercase">
-                  TERRANOVA AI
-                </p>
-                <p className="flex items-center gap-1.5 font-label-caps text-[9px] tracking-widest text-on-surface-variant">
-                  <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary-container" />
-                  COMMAND CONSOLE // HUD
-                </p>
-              </div>
+          <HudPanel brackets="all" className="hidden lg:block p-[16px]">
+            <div className="flex items-center justify-between">
+              <span className="font-data-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
+                OPERATOR IDENTITY
+              </span>
+              <span className="font-data-mono text-[10px] uppercase tracking-widest text-primary-container">
+                {user ? "SECURE_LINK" : "GUEST ACCESS"}
+              </span>
             </div>
-
-            {/* Operator Matrix Card */}
-            <div className="mt-[20px] rounded-lg border border-white/10 bg-white/[0.03] p-[16px]">
-              <div className="flex items-center justify-between">
-                <span className="font-data-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
-                  OPERATOR IDENTITY
-                </span>
-                <span className="font-data-mono text-[10px] uppercase tracking-widest text-primary-container">
-                  {user ? "SECURE_LINK" : "GUEST ACCESS"}
-                </span>
-              </div>
-              <p className="mt-[10px] font-display-md text-[17px] font-semibold text-foreground">
-                {user ? user.full_name : "GUEST OPERATOR"}
-              </p>
-              <p className="mt-[2px] font-data-mono text-[11px] text-muted-foreground break-all">
-                {user ? user.email : "Log in to unlock modules"}
-              </p>
-              <div className="mt-[12px] flex items-center justify-between border-t border-white/10 pt-[10px]">
-                <span className="font-data-mono text-[10px] uppercase tracking-wider text-on-surface-variant">
-                  CLEARANCE
-                </span>
-                <span
-                  className={`rounded border px-[8px] py-[2px] font-data-mono text-[10px] font-semibold uppercase tracking-wider ${
-                    user
-                      ? "border-primary-container/40 bg-primary-container/10 text-primary"
-                      : "border-white/20 bg-white/5 text-on-surface-variant"
-                  }`}
-                >
-                  {user ? user.role : "GUEST"}
-                </span>
-              </div>
+            <p className="mt-[10px] font-display-md text-[17px] font-semibold text-foreground">
+              {user ? user.full_name : "GUEST OPERATOR"}
+            </p>
+            <p className="mt-[2px] font-data-mono text-[11px] text-muted-foreground break-all">
+              {user ? user.email : "Log in to unlock modules"}
+            </p>
+            <div className="mt-[12px] flex items-center justify-between border-t border-white/10 pt-[10px]">
+              <span className="font-data-mono text-[10px] uppercase tracking-wider text-on-surface-variant">
+                CLEARANCE
+              </span>
+              <span
+                className={`rounded border px-[8px] py-[2px] font-data-mono text-[10px] font-semibold uppercase tracking-wider ${
+                  user
+                    ? "border-primary-container/40 bg-primary-container/10 text-primary"
+                    : "border-white/20 bg-white/5 text-on-surface-variant"
+                }`}
+              >
+                {user ? user.role : "GUEST"}
+              </span>
             </div>
           </HudPanel>
 
@@ -338,59 +308,61 @@ export function HomeView({
             <p className="hidden lg:block font-data-mono text-[10px] uppercase tracking-widest text-on-surface-variant mb-[14px]">
               SYSTEM MODULES
             </p>
-            <nav className="flex flex-row overflow-x-auto gap-[8px] scrollbar-none py-[2px] lg:flex-col lg:overflow-visible lg:py-0">
-              {user
-                ? authenticatedNav.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`group shrink-0 flex items-center gap-[8px] lg:gap-[12px] rounded border px-[12px] py-[8px] lg:px-[14px] lg:py-[10px] transition-all whitespace-nowrap ${
-                        item.href === "/"
-                          ? "border-primary-container/60 bg-primary-container/10 text-primary shadow-[0_0_15px_rgba(34,211,238,0.15)]"
-                          : "border-white/10 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/40 hover:bg-white/[0.06] hover:text-foreground"
-                      }`}
-                    >
-                      <span
-                        className={`material-symbols-outlined text-[16px] lg:text-[18px] transition-colors ${
-                          item.href === "/"
-                            ? "text-primary"
-                            : "text-muted-foreground group-hover:text-primary"
-                        }`}
+            <nav className="py-[2px] lg:py-0">
+              <ul className="flex flex-row overflow-x-auto gap-[8px] scrollbar-none list-none p-0 m-0 lg:flex-col lg:overflow-visible">
+                {user
+                  ? authenticatedNav.map((item) => (
+                      <li key={item.href} className="shrink-0">
+                        <Link
+                          href={item.href}
+                          className={`group flex items-center gap-[8px] lg:gap-[12px] rounded border px-[12px] py-[8px] lg:px-[14px] lg:py-[10px] transition-all whitespace-nowrap ${
+                            item.href === "/"
+                              ? "border-primary-container/60 bg-primary-container/10 text-primary shadow-[0_0_15px_rgba(34,211,238,0.15)]"
+                              : "border-white/10 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/40 hover:bg-white/[0.06] hover:text-foreground"
+                          }`}
+                        >
+                          <span
+                            className={`material-symbols-outlined text-[16px] lg:text-[18px] transition-colors ${
+                              item.href === "/"
+                                ? "text-primary"
+                                : "text-muted-foreground group-hover:text-primary"
+                            }`}
+                          >
+                            {item.icon}
+                          </span>
+                          <span className="font-label-caps text-[11px] tracking-wider uppercase">
+                            {item.label}
+                          </span>
+                        </Link>
+                      </li>
+                    ))
+                  : guestModules.map((item) => (
+                      <li
+                        key={item.label}
+                        aria-disabled="true"
+                        aria-label={`${item.label}, log in required`}
+                        className="group shrink-0 flex items-center justify-between gap-[8px] lg:gap-[12px] rounded border border-white/5 bg-white/[0.01] px-[12px] py-[8px] lg:px-[14px] lg:py-[10px] opacity-40 cursor-not-allowed select-none whitespace-nowrap"
                       >
-                        {item.icon}
-                      </span>
-                      <span className="font-label-caps text-[11px] tracking-wider uppercase">
-                        {item.label}
-                      </span>
-                    </Link>
-                  ))
-                : guestModules.map((item) => (
-                    <div
-                      key={item.label}
-                      role="link"
-                      aria-disabled="true"
-                      aria-label={`${item.label}, log in required`}
-                      className="group shrink-0 flex items-center justify-between gap-[8px] lg:gap-[12px] rounded border border-white/5 bg-white/[0.01] px-[12px] py-[8px] lg:px-[14px] lg:py-[10px] opacity-40 cursor-not-allowed select-none whitespace-nowrap"
-                    >
-                      <div className="flex items-center gap-[8px] lg:gap-[12px]">
+                        <div className="flex items-center gap-[8px] lg:gap-[12px]">
+                          <span
+                            className="material-symbols-outlined text-[16px] lg:text-[18px] text-muted-foreground"
+                            aria-hidden="true"
+                          >
+                            {item.icon}
+                          </span>
+                          <span className="font-label-caps text-[11px] tracking-wider uppercase text-muted-foreground">
+                            {item.label}
+                          </span>
+                        </div>
                         <span
-                          className="material-symbols-outlined text-[16px] lg:text-[18px] text-muted-foreground"
+                          className="material-symbols-outlined text-[13px] text-muted-foreground/70 ml-2"
                           aria-hidden="true"
                         >
-                          {item.icon}
+                          lock
                         </span>
-                        <span className="font-label-caps text-[11px] tracking-wider uppercase text-muted-foreground">
-                          {item.label}
-                        </span>
-                      </div>
-                      <span
-                        className="material-symbols-outlined text-[13px] text-muted-foreground/70 ml-2"
-                        aria-hidden="true"
-                      >
-                        lock
-                      </span>
-                    </div>
-                  ))}
+                      </li>
+                    ))}
+              </ul>
             </nav>
           </HudPanel>
         </aside>
