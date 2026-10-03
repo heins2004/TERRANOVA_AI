@@ -9,14 +9,24 @@ import { AuthUser } from "@/lib/auth";
 type TopBarProps = {
   user?: AuthUser | null;
   className?: string;
+  showPlayIntro?: boolean;
+  onPlayIntro?: () => void;
+  style?: React.CSSProperties;
 };
 
-export function TopBar({ user: propUser, className = "" }: TopBarProps) {
+export function TopBar({
+  user: propUser,
+  className = "",
+  showPlayIntro = false,
+  onPlayIntro,
+  style,
+}: TopBarProps) {
   const pathname = usePathname();
   const { user: authUser, logout, isReady, isAuthenticated } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const currentUser = propUser ?? authUser;
+  // If propUser is explicitly passed (even null), respect it. Otherwise fallback to auth context.
+  const currentUser = propUser !== undefined ? propUser : (authUser ?? null);
   const isLoggedIn = Boolean(currentUser ?? (isReady && isAuthenticated));
 
   async function handleLogout() {
@@ -33,6 +43,7 @@ export function TopBar({ user: propUser, className = "" }: TopBarProps) {
   return (
     <header
       id="top-bar"
+      style={style}
       className={`relative z-30 w-full border-b border-white/10 bg-surface-container-lowest/85 px-[16px] py-[10px] sm:px-[24px] backdrop-blur-md ${className}`}
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-[16px]">
@@ -47,14 +58,35 @@ export function TopBar({ user: propUser, className = "" }: TopBarProps) {
           </span>
         </div>
 
-        {/* Right Corner: Home and Logout (or Access system if logged-out on subpages) */}
+        {/* Center: Play Intro button (only for guests when autoplay is blocked) */}
+        {showPlayIntro && (
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-40">
+            <button
+              type="button"
+              id="play-intro-btn"
+              aria-label="Play intro"
+              onClick={onPlayIntro}
+              className="h-[32px] inline-flex items-center gap-[6px] rounded-full border border-primary-container/80 bg-[#0a0e17]/90 px-[16px] font-data-mono text-[11px] font-semibold tracking-wider text-primary-container uppercase shadow-[0_0_20px_rgba(34,211,238,0.3)] backdrop-blur-md transition-all hover:bg-primary-container/20 hover:scale-105 active:scale-95 cursor-pointer"
+            >
+              <svg
+                className="h-3.5 w-3.5 fill-current text-primary-container"
+                viewBox="0 0 24 24"
+              >
+                <path d="M8 5v14l11-7z" />
+              </svg>
+              <span>Play intro</span>
+            </button>
+          </div>
+        )}
+
+        {/* Right Corner: Home and Logout / Login (identical height, font, and size) */}
         <div className="flex items-center gap-[8px] sm:gap-[12px]">
           <Link
             href="/"
             id="topbar-home-link"
             aria-label="Home"
             aria-current={isHomeActive ? "page" : undefined}
-            className={`inline-flex items-center justify-center gap-[6px] rounded px-[10px] py-[6px] sm:px-[12px] sm:py-[6px] font-label-caps text-[11px] tracking-wider uppercase transition-all ${
+            className={`h-[32px] inline-flex items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
               isHomeActive
                 ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
                 : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
@@ -73,7 +105,7 @@ export function TopBar({ user: propUser, className = "" }: TopBarProps) {
               aria-label="Logout"
               disabled={isLoggingOut}
               onClick={() => void handleLogout()}
-              className="inline-flex items-center justify-center gap-[6px] rounded border border-danger/40 bg-danger/5 px-[10px] py-[6px] sm:px-[12px] sm:py-[6px] font-label-caps text-[11px] tracking-wider uppercase text-danger transition-all hover:border-danger/80 hover:bg-danger/15 hover:shadow-[0_0_12px_rgba(248,113,113,0.25)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-[32px] inline-flex items-center justify-center gap-[6px] rounded border border-danger/40 bg-danger/5 px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase text-danger transition-all hover:border-danger/80 hover:bg-danger/15 hover:shadow-[0_0_12px_rgba(248,113,113,0.25)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
                 logout
@@ -86,13 +118,13 @@ export function TopBar({ user: propUser, className = "" }: TopBarProps) {
             <Link
               href="/login"
               id="topbar-login-link"
-              aria-label="Access system"
-              className="inline-flex items-center justify-center gap-[6px] rounded border border-primary-container/60 bg-primary-container/10 px-[10px] py-[6px] sm:px-[12px] sm:py-[6px] font-label-caps text-[11px] tracking-widest uppercase text-primary transition-all hover:bg-primary-container/20 hover:shadow-[0_0_15px_rgba(34,211,238,0.25)]"
+              aria-label="Login"
+              className="h-[32px] inline-flex items-center justify-center gap-[6px] rounded border border-primary-container/60 bg-primary-container/10 px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase text-primary transition-all hover:bg-primary-container/20 hover:shadow-[0_0_15px_rgba(34,211,238,0.25)]"
             >
               <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
                 login
               </span>
-              <span className="hidden sm:inline">Access system</span>
+              <span className="hidden sm:inline">Login</span>
             </Link>
           )}
         </div>

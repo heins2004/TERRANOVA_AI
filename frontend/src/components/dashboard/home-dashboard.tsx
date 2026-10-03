@@ -396,6 +396,7 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
               <Link
                 href="/map"
                 id="national-coverage-tile"
+                aria-label="Open GIS workspace, National coverage map"
                 className="group block order-1 lg:order-2 h-full min-h-[320px] transition-all"
               >
                 <HudPanel

@@ -1,7 +1,6 @@
 import { cookies } from "next/headers";
 import { getCurrentUser, AuthUser } from "@/lib/auth";
-import { LandingView } from "@/components/landing/LandingView";
-import { HomeDashboard } from "@/components/dashboard/home-dashboard";
+import { IntroStage } from "@/components/home/IntroStage";
 
 export default async function Page() {
   const cookieStore = await cookies();
@@ -17,10 +16,5 @@ export default async function Page() {
     }
   }
 
-  if (user) {
-    return <HomeDashboard user={user} />;
-  }
-
-  return <LandingView />;
+  return <IntroStage user={user} />;
 }
-
