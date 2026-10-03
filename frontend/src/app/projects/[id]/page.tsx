@@ -208,11 +208,21 @@ export default function ProjectDetailPage() {
               onClick={() => setActiveTab(key)}
               className={
                 activeTab === key
-                  ? "flex-1 rounded-lg bg-primary-container/15 border border-primary-container/60 px-[16px] py-[10px] font-data-mono text-[11px] uppercase tracking-wider text-primary"
-                  : "flex-1 rounded-lg border border-transparent px-[16px] py-[10px] font-data-mono text-[11px] uppercase tracking-wider text-on-surface-variant hover:border-white/10"
+                  ? "flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-primary-container/15 border border-primary-container/60 px-[16px] py-[10px] font-data-mono text-[11px] uppercase tracking-wider text-primary"
+                  : "flex-1 inline-flex items-center justify-center gap-1 rounded-lg border border-transparent px-[16px] py-[10px] font-data-mono text-[11px] uppercase tracking-wider text-on-surface-variant hover:border-white/10"
               }
             >
-              {TAB_LABELS[key]} ({tabCounts[key]})
+              <span>{TAB_LABELS[key]}</span>
+              {isReady && !user ? (
+                <span
+                  className="material-symbols-outlined text-[13px] text-muted-foreground/70 ml-1"
+                  aria-hidden="true"
+                >
+                  lock
+                </span>
+              ) : user ? (
+                <span>({tabCounts[key]})</span>
+              ) : null}
             </button>
           ))}
         </div>
