@@ -46,7 +46,7 @@ export function TopBar({
       style={style}
       className={`relative z-30 w-full border-b border-white/10 bg-surface-container-lowest/85 px-[16px] py-[10px] sm:px-[24px] backdrop-blur-md ${className}`}
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-[16px]">
+      <div className="flex w-full items-center justify-between gap-[16px]">
         {/* Left: Brand text (plain text, never a link) + system readout */}
         <div className="flex items-center gap-[10px] sm:gap-[16px]">
           <span className="font-display-md text-[14px] sm:text-[15px] font-semibold tracking-wider text-primary uppercase select-none">
