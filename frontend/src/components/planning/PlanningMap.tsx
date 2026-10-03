@@ -11,6 +11,7 @@ import {
   TileLayer,
   useMap,
   useMapEvents,
+  ZoomControl,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "@geoman-io/leaflet-geoman-free";
@@ -115,6 +116,7 @@ function GeomanControls({
 
   useEffect(() => {
     if (!map) return;
+    (window as unknown as { __planningMap?: L.Map }).__planningMap = map;
     const pm = (map as unknown as { pm?: { addControls: (opts: unknown) => void; removeControls: () => void } }).pm;
     if (!pm) return;
 
@@ -475,14 +477,30 @@ export function PlanningMap() {
   }
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
+    <div className="planning-workspace-map relative h-full w-full overflow-hidden">
+      <style>{`
+        .planning-workspace-map .leaflet-top.leaflet-left {
+          top: 92px !important;
+          z-index: 1001 !important;
+        }
+        @media (max-width: 640px) {
+          .planning-workspace-map .leaflet-top.leaflet-left {
+            top: 112px !important;
+          }
+        }
+        .planning-workspace-map .leaflet-bottom.leaflet-left {
+          z-index: 1001 !important;
+        }
+      `}</style>
       {/* Map Container */}
       <MapContainer
         center={mapCenter}
         className="h-full w-full"
         scrollWheelZoom
+        zoomControl={false}
         zoom={selectedArea ? 13 : 5}
       >
+        <ZoomControl position="bottomleft" />
         <TileLayer
           attribution={BASEMAPS[activeBasemap].attribution}
           url={BASEMAPS[activeBasemap].url}
