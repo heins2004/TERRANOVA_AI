@@ -3,7 +3,6 @@
 import React, { useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/layout/auth-provider";
-import { Starfield } from "./Starfield";
 import { ProjectCard } from "./ProjectCard";
 import { ProjectPanel } from "./ProjectPanel";
 import {
@@ -164,9 +163,6 @@ export function PublicHome() {
 
   return (
     <div className="relative min-h-screen w-full bg-surface-container-lowest text-on-surface overflow-x-hidden">
-      {/* Background Starfield and Atmospheric Glows */}
-      <Starfield />
-
       {/* Main Header */}
       <header className="relative z-10 mx-auto flex max-w-[1596px] flex-wrap items-center justify-between gap-[14px] px-[16px] py-[18px] sm:px-[32px] lg:px-[48px]">
         {/* Brand Text (not a link) */}
