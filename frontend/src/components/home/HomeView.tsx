@@ -15,10 +15,6 @@ import { getUsers } from "@/services/admin";
 import { Complaint, getComplaints } from "@/services/complaints";
 import { getConsultations } from "@/services/consultations";
 import { getDocuments } from "@/services/documents";
-import {
-  getInfrastructureAssets,
-  InfrastructureAsset,
-} from "@/services/infrastructure";
 import { getProjects, Project } from "@/services/projects";
 import { projectStatusClasses } from "@/components/projects/StatusBadge";
 
@@ -49,7 +45,6 @@ type HomeViewProps = {
 
 type DashboardData = {
   projects: Project[];
-  assets: InfrastructureAsset[];
   complaints?: Complaint[];
   upcomingConsultations?: number;
   documentCount?: number;
@@ -80,20 +75,17 @@ export function HomeView({
         setError("");
         if (!user) {
           // GUEST: Only fetch public endpoints. Never call authenticated APIs (zero 401s).
-          const [projects, assets] = await Promise.all([
+          const [projects] = await Promise.all([
             getProjects(),
-            getInfrastructureAssets(),
           ]);
           setData({
             projects,
-            assets,
           });
         } else {
           // LOGGED-IN: Fetch user-authorized telemetry
-          const [projects, assets, complaints, consultations, documents, users] =
+          const [projects, complaints, consultations, documents, users] =
             await Promise.all([
               getProjects(),
-              getInfrastructureAssets(),
               getComplaints(),
               getConsultations(),
               isStaff ? getDocuments() : Promise.resolve(undefined),
@@ -103,7 +95,6 @@ export function HomeView({
             ]);
           setData({
             projects,
-            assets,
             complaints,
             upcomingConsultations: consultations.filter(
               (c) => c.status === "Upcoming"
@@ -140,7 +131,6 @@ export function HomeView({
     if (!user) return [];
     return [
       { label: "Urban Projects", href: "/projects", icon: "apartment" },
-      { label: "Infrastructure Grid", href: "/infrastructure", icon: "construction" },
       ...(user.role !== "Citizen"
         ? [{ label: "Planning Workspace", href: "/planning", icon: "architecture" }]
         : []),
@@ -156,7 +146,6 @@ export function HomeView({
   // Guest modules list (5 common modules, dimmed with lock, NOT links and NOT buttons)
   const guestModules = [
     { label: "Urban Projects", icon: "apartment" },
-    { label: "Infrastructure Grid", icon: "construction" },
     { label: "Civic Complaints", icon: "report_problem" },
     { label: "Consultation Matrix", icon: "forum" },
     { label: "Document Archive", icon: "folder_open" },
@@ -172,14 +161,6 @@ export function HomeView({
         value: data.projects.length,
         subLabel: "Metropolitan scale initiatives",
         accent: true,
-      },
-      {
-        label: "Critical Assets",
-        value: data.assets.filter(
-          (a) => a.condition === "Poor" || a.condition === "Critical"
-        ).length,
-        subLabel: "Require inspection / repair",
-        accent: false,
       },
     ];
 

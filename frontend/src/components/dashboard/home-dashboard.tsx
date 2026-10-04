@@ -14,10 +14,6 @@ import { getUsers } from "@/services/admin";
 import { Complaint, getComplaints } from "@/services/complaints";
 import { getConsultations } from "@/services/consultations";
 import { getDocuments } from "@/services/documents";
-import {
-  getInfrastructureAssets,
-  InfrastructureAsset,
-} from "@/services/infrastructure";
 import { getProjects, Project } from "@/services/projects";
 import { projectStatusClasses } from "@/components/projects/StatusBadge";
 
@@ -39,7 +35,6 @@ const NationalCoverageMap = dynamic(
 type HomeDashboardProps = { user: AuthUser };
 type DashboardData = {
   projects: Project[];
-  assets: InfrastructureAsset[];
   complaints: Complaint[];
   upcomingConsultations: number;
   documentCount?: number;
@@ -59,10 +54,9 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
     async function loadDashboard() {
       try {
         setError("");
-        const [projects, assets, complaints, consultations, documents, users] =
+        const [projects, complaints, consultations, documents, users] =
           await Promise.all([
             getProjects(),
-            getInfrastructureAssets(),
             getComplaints(),
             getConsultations(),
             isStaff ? getDocuments() : Promise.resolve(undefined),
@@ -72,7 +66,6 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
           ]);
         setData({
           projects,
-          assets,
           complaints,
           upcomingConsultations: consultations.filter(
             (c) => c.status === "Upcoming"
@@ -105,7 +98,6 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
 
   const navigation = [
     { label: "Urban Projects", href: "/projects", icon: "apartment" },
-    { label: "Infrastructure Grid", href: "/infrastructure", icon: "construction" },
     ...(user.role !== "Citizen"
       ? [{ label: "Planning Workspace", href: "/planning", icon: "architecture" }]
       : []),
@@ -127,14 +119,6 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
         value: data.projects.length,
         subLabel: "Metropolitan scale initiatives",
         accent: true,
-      },
-      {
-        label: "Critical Assets",
-        value: data.assets.filter(
-          (a) => a.condition === "Poor" || a.condition === "Critical"
-        ).length,
-        subLabel: "Require inspection / repair",
-        accent: false,
       },
       {
         label: "Upcoming Consultations",

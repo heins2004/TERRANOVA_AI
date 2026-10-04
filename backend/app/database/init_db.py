@@ -51,20 +51,6 @@ CREATE TABLE IF NOT EXISTS projects (
 );
 """
 
-CREATE_INFRASTRUCTURE_ASSETS_TABLE_SQL = """
-CREATE TABLE IF NOT EXISTS infrastructure_assets (
-    id SERIAL PRIMARY KEY,
-    project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
-    name VARCHAR(200) NOT NULL,
-    asset_type VARCHAR(100),
-    condition VARCHAR(50) DEFAULT 'Good',
-    location_lat DOUBLE PRECISION,
-    location_lng DOUBLE PRECISION,
-    last_inspected_at DATE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-"""
-
 ADD_PROJECT_CITY_COLUMN_SQL = """
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS city VARCHAR(100);
 """
@@ -72,10 +58,6 @@ ALTER TABLE projects ADD COLUMN IF NOT EXISTS city VARCHAR(100);
 ADD_CANDIDATE_SITE_ID_TO_PROJECTS_SQL = """
 ALTER TABLE projects
     ADD COLUMN IF NOT EXISTS candidate_site_id INTEGER REFERENCES candidate_sites(id) ON DELETE SET NULL;
-"""
-
-ADD_INFRASTRUCTURE_CITY_COLUMN_SQL = """
-ALTER TABLE infrastructure_assets ADD COLUMN IF NOT EXISTS city VARCHAR(100);
 """
 
 CREATE_COMPLAINTS_TABLE_SQL = """
@@ -260,9 +242,7 @@ def init_db() -> None:
             cursor.execute(ADD_IS_ACTIVE_COLUMN_SQL)
             cursor.execute(CREATE_SESSIONS_TABLE_SQL)
             cursor.execute(CREATE_PROJECTS_TABLE_SQL)
-            cursor.execute(CREATE_INFRASTRUCTURE_ASSETS_TABLE_SQL)
             cursor.execute(ADD_PROJECT_CITY_COLUMN_SQL)
-            cursor.execute(ADD_INFRASTRUCTURE_CITY_COLUMN_SQL)
             cursor.execute(CREATE_COMPLAINTS_TABLE_SQL)
             cursor.execute(CREATE_PLANNING_DOCUMENTS_TABLE_SQL)
             cursor.execute(CREATE_CONSULTATIONS_TABLE_SQL)

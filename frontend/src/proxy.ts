@@ -5,7 +5,6 @@ import { getSessionCookieName } from "@/lib/auth";
 const exactProtectedRoutes = [
   "/projects",
   "/projects/new",
-  "/infrastructure",
   "/map",
 ];
 const prefixProtectedRoutes = [
@@ -38,7 +37,6 @@ export const config = {
   matcher: [
     "/projects",
     "/projects/new",
-    "/infrastructure",
     "/map",
     "/complaints",
     "/complaints/:path*",

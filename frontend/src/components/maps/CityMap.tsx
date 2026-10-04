@@ -6,9 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
-import { conditionClasses, conditionMarkerColors } from "@/components/infrastructure/ConditionBadge";
 import { projectStatusClasses, projectStatusMarkerColors } from "@/components/projects/StatusBadge";
-import { getInfrastructureAssets, InfrastructureAsset } from "@/services/infrastructure";
 import { getProjects, Project } from "@/services/projects";
 import OsmReferenceLayerManager, { ActiveOsmLayers } from "@/components/maps/OsmReferenceLayerManager";
 
@@ -37,10 +35,10 @@ const LABEL_LAYERS: Record<Basemap, string> = {
   satellite: "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
 };
 
-function markerIcon(color: string, kind: "project" | "asset") {
+function markerIcon(color: string) {
   return L.divIcon({
     className: "terranova-map-marker",
-    html: `<span class="terranova-map-marker__dot terranova-map-marker__dot--${kind}" style="--marker-color:${color}"></span>`,
+    html: `<span class="terranova-map-marker__dot terranova-map-marker__dot--project" style="--marker-color:${color}"></span>`,
     iconSize: [22, 22],
     iconAnchor: [11, 11],
     popupAnchor: [0, -12],
@@ -54,9 +52,7 @@ function hasCoordinates(item: { location_lat: number | null; location_lng: numbe
 export function CityMap() {
   const [activeBasemap, setActiveBasemap] = useState<Basemap>("dark");
   const [projects, setProjects] = useState<Project[]>([]);
-  const [assets, setAssets] = useState<InfrastructureAsset[]>([]);
   const [showProjects, setShowProjects] = useState(true);
-  const [showAssets, setShowAssets] = useState(true);
   const [error, setError] = useState("");
   const [activeOsmLayers, setActiveOsmLayers] = useState<ActiveOsmLayers>({
     road: false,
@@ -67,17 +63,15 @@ export function CityMap() {
   const [isTooZoomedOut, setIsTooZoomedOut] = useState(false);
 
   useEffect(() => {
-    Promise.all([getProjects(), getInfrastructureAssets()])
-      .then(([projectRecords, assetRecords]) => {
+    getProjects()
+      .then((projectRecords) => {
         setProjects(projectRecords);
-        setAssets(assetRecords);
       })
       .catch((caught) => setError(caught instanceof Error ? caught.message : "Unable to load map records."));
   }, []);
 
   const locatedProjects = useMemo(() => projects.filter(hasCoordinates), [projects]);
-  const locatedAssets = useMemo(() => assets.filter(hasCoordinates), [assets]);
-  const mapCenter = locatedProjects[0] ?? locatedAssets[0];
+  const mapCenter = locatedProjects[0];
   const center: [number, number] = mapCenter ? [mapCenter.location_lat!, mapCenter.location_lng!] : cityCenter;
 
   return (
@@ -97,7 +91,7 @@ export function CityMap() {
         {showProjects &&
           locatedProjects.map((project) => (
             <Marker
-              icon={markerIcon(projectStatusMarkerColors[project.status] ?? projectStatusMarkerColors.Proposed, "project")}
+              icon={markerIcon(projectStatusMarkerColors[project.status] ?? projectStatusMarkerColors.Proposed)}
               key={`project-${project.id}`}
               position={[project.location_lat!, project.location_lng!]}
             >
@@ -116,37 +110,6 @@ export function CityMap() {
                   <Link className="mt-[14px] block font-data-mono text-[11px] text-primary" href={`/projects/${project.id}`}>
                     OPEN PROJECT &rarr;
                   </Link>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
-        {showAssets &&
-          locatedAssets.map((asset) => (
-            <Marker
-              icon={markerIcon(conditionMarkerColors[asset.condition] ?? conditionMarkerColors.Good, "asset")}
-              key={`asset-${asset.id}`}
-              position={[asset.location_lat!, asset.location_lng!]}
-            >
-              <Popup>
-                <div className="terranova-popup">
-                  <p className="font-data-mono text-[11px] uppercase tracking-wider text-on-surface-variant">
-                    Infrastructure
-                  </p>
-                  <p className="mt-[4px] font-display-md text-[18px] text-on-surface">{asset.name}</p>
-                  <span
-                    className={`mt-[10px] inline-block rounded-full border px-[8px] py-[3px] font-data-mono text-[10px] uppercase ${conditionClasses[asset.condition] ?? conditionClasses.Good
-                      }`}
-                  >
-                    {asset.condition}
-                  </span>
-                  {asset.project_id && (
-                    <Link
-                      className="mt-[14px] block font-data-mono text-[11px] text-primary"
-                      href={`/projects/${asset.project_id}`}
-                    >
-                      OPEN LINKED PROJECT &rarr;
-                    </Link>
-                  )}
                 </div>
               </Popup>
             </Marker>
@@ -191,14 +154,6 @@ export function CityMap() {
             type="button"
           >
             {showProjects ? "\u2713" : "\u25CB"} PROJECTS ({locatedProjects.length})
-          </button>
-          <button
-            className={`block w-full border px-[12px] py-[8px] text-left font-data-mono text-[11px] rounded-lg ${showAssets ? "border-primary-container/60 text-primary bg-primary-container/10" : "border-white/15 text-on-surface-variant"
-              }`}
-            onClick={() => setShowAssets((current) => !current)}
-            type="button"
-          >
-            {showAssets ? "\u2713" : "\u25CB"} INFRASTRUCTURE ({locatedAssets.length})
           </button>
         </div>
 
@@ -267,7 +222,7 @@ export function CityMap() {
 
         {error ? (
           <p className="mt-[12px] font-data-mono text-[11px] text-danger">{error}</p>
-        ) : !locatedProjects.length && !locatedAssets.length ? (
+        ) : !locatedProjects.length ? (
           <p className="mt-[12px] font-data-mono text-[11px] leading-5 text-on-surface-variant">
             NO RECORDS WITH COORDINATES YET.
           </p>

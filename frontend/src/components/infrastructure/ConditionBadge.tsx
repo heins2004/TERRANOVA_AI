@@ -1,3 +1,0 @@
-export const conditionClasses: Record<string, string> = { Good: "border-success/50 bg-success/10 text-success", Fair: "border-amber-400/50 bg-amber-400/10 text-amber-300", Poor: "border-danger/50 bg-danger/10 text-danger", Critical: "border-secondary/60 bg-secondary/10 text-secondary" };
-export const conditionMarkerColors: Record<string, string> = { Good: "#1b7f5f", Fair: "#fbbf24", Poor: "#c43d37", Critical: "#bdc2ff" };
-export function ConditionBadge({ condition }: { condition: string }) { return <span className={`rounded-full border px-[10px] py-[4px] font-data-mono text-[11px] uppercase tracking-wider ${conditionClasses[condition] ?? conditionClasses.Good}`}>{condition}</span>; }

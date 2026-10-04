@@ -1,11 +1,9 @@
 from fastapi import HTTPException, status
 from psycopg import Connection
 
-from app.repositories import infrastructure_repository, project_repository
+from app.repositories import project_repository
 from app.core.cities import CITY_SLUGS
 from app.schemas.projects import (
-    InfrastructureAssetCreate,
-    InfrastructureAssetUpdate,
     ProjectCreate,
     ProjectUpdate,
 )
@@ -59,31 +57,3 @@ def delete_project(*, project_id: int, connection: Connection) -> None:
     if not project_repository.delete_project(connection, project_id): _not_found("Project")
 
 
-def create_infrastructure_asset(*, payload: InfrastructureAssetCreate, connection: Connection) -> dict:
-    values = payload.model_dump()
-    _validate_city(values)
-    _validate_coordinate_pair(values)
-    return infrastructure_repository.create_infrastructure_asset(connection, **values)
-
-
-def get_infrastructure_asset(*, asset_id: int, connection: Connection) -> dict:
-    asset = infrastructure_repository.get_infrastructure_asset_by_id(connection, asset_id)
-    if not asset: _not_found("Infrastructure asset")
-    return asset
-
-
-def list_infrastructure_assets(*, connection: Connection, condition: str | None, project_id: int | None, city: str | None) -> list[dict]:
-    return infrastructure_repository.list_infrastructure_assets(connection, condition=condition, project_id=project_id, city=city)
-
-
-def update_infrastructure_asset(*, asset_id: int, payload: InfrastructureAssetUpdate, connection: Connection) -> dict:
-    values = payload.model_dump(exclude_unset=True)
-    _validate_city(values)
-    _validate_coordinate_pair(values)
-    asset = infrastructure_repository.update_infrastructure_asset(connection, asset_id, values)
-    if not asset: _not_found("Infrastructure asset")
-    return asset
-
-
-def delete_infrastructure_asset(*, asset_id: int, connection: Connection) -> None:
-    if not infrastructure_repository.delete_infrastructure_asset(connection, asset_id): _not_found("Infrastructure asset")
