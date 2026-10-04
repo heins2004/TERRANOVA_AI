@@ -622,7 +622,7 @@ export function PlanningMap() {
       </header>
 
       {/* Left Sidebar: Study Areas & Candidate Sites */}
-      <aside className="glass-card absolute top-[84px] left-[16px] z-[1000] flex max-h-[calc(100vh-100px)] w-[360px] flex-col rounded-[20px] p-[20px] shadow-2xl md:left-[24px]">
+      <aside className="glass-card absolute top-[84px] left-[16px] z-[1000] flex max-h-[calc(100vh-220px)] sm:max-h-[calc(100vh-100px)] w-[360px] flex-col rounded-[20px] p-[20px] shadow-2xl md:left-[24px]">
         {/* Header / Mode Indicator */}
         <div className="flex items-center justify-between pb-[12px] border-b border-white/10">
           <div>
