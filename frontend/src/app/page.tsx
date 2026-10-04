@@ -1,20 +1,5 @@
-import { cookies } from "next/headers";
-import { getCurrentUser, AuthUser } from "@/lib/auth";
-import { IntroStage } from "@/components/home/IntroStage";
+import { PublicHome } from "@/components/public-home/PublicHome";
 
-export default async function Page() {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.toString();
-
-  let user: AuthUser | null = null;
-  if (cookieHeader) {
-    try {
-      user = await getCurrentUser({ cookieHeader });
-    } catch {
-      // Fail-safe: if backend is down or error occurs, treat as unauthenticated
-      user = null;
-    }
-  }
-
-  return <IntroStage user={user} />;
+export default function Page() {
+  return <PublicHome />;
 }
