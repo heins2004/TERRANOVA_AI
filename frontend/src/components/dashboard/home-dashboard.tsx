@@ -265,9 +265,8 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
               Command Center // {user.full_name}
             </h1>
             <p className="mt-[8px] max-w-2xl font-body-md text-[14px] leading-relaxed text-muted-foreground">
-              Connected to real-time spatial telemetry, infrastructure registries,
-              and civic channels. Select an operational module or inspect current
-              directives below.
+              Connected to real-time spatial telemetry and civic channels.
+              Select an operational module or inspect current directives below.
             </p>
           </HudPanel>
 

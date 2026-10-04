@@ -1,7 +1,7 @@
 """Public reference data for the cities currently supported by TERRANOVA.
 
 This deliberately small placeholder list can be edited without changing the
-project or infrastructure APIs.
+project APIs.
 """
 
 CITIES = [
