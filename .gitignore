@@ -57,3 +57,6 @@ storage/documents/*
 
 # Test reports
 testing/
+
+# Database backups
+backups/
