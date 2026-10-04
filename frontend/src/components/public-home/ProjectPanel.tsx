@@ -1,30 +1,161 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import { SampleProject } from "./sampleProjects";
 import { StageTracker } from "./StageTracker";
 import { StanceBar } from "./StanceBar";
 
 type ProjectPanelProps = {
   project: SampleProject;
+  originCard: HTMLElement | null;
+  onStartClose?: () => void;
   onClose: () => void;
 };
 
-export function ProjectPanel({ project, onClose }: ProjectPanelProps) {
+const FULL = "inset(0px 0px 0px 0px round 20px)";
+const EASE = "cubic-bezier(.65,0,.2,1)";
+
+const getClip = (F: DOMRect, C: DOMRect) =>
+  `inset(${C.top - F.top}px ${F.right - C.right}px ${F.bottom - C.bottom}px ${C.left - F.left}px round 16px)`;
+
+export function ProjectPanel({
+  project,
+  originCard,
+  onStartClose,
+  onClose,
+}: ProjectPanelProps) {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const isClosingRef = useRef<boolean>(false);
 
   const totalPeople =
     project.stance.support + project.stance.concern + project.stance.neutral;
 
-  // Focus management: autofocus close button & trap tab focus
-  useEffect(() => {
+  // Request close animation sequence
+  const requestClose = useCallback(() => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+    const panel = panelRef.current;
+    const dialog = dialogRef.current;
+
+    onStartClose?.();
+
+    if (prefersReducedMotion || !originCard || !panel || !dialog) {
+      if (dialog && panel && prefersReducedMotion) {
+        dialog.animate([{ opacity: 1 }, { opacity: 0 }], {
+          duration: 150,
+          fill: "forwards",
+        });
+        const anim = panel.animate([{ opacity: 1 }, { opacity: 0 }], {
+          duration: 150,
+          fill: "forwards",
+        });
+        anim.onfinish = () => {
+          if (originCard) {
+            originCard.style.visibility = "";
+            originCard.focus();
+          }
+          onClose();
+        };
+      } else {
+        if (originCard) {
+          originCard.style.visibility = "";
+          originCard.focus();
+        }
+        onClose();
+      }
+      return;
+    }
+
+    const F = panel.getBoundingClientRect();
+    const C = originCard.getBoundingClientRect();
+    const clip = getClip(F, C);
+
+    dialog.animate([{ opacity: 1 }, { opacity: 0 }], {
+      duration: 900,
+      fill: "forwards",
+    });
+
+    const closeAnim = panel.animate(
+      [{ clipPath: FULL }, { clipPath: clip }],
+      {
+        duration: 900,
+        easing: EASE,
+        fill: "forwards",
+      }
+    );
+
+    closeAnim.onfinish = () => {
+      if (originCard) {
+        originCard.style.visibility = "";
+        originCard.focus();
+      }
+      onClose();
+    };
+  }, [originCard, onStartClose, onClose]);
+
+  // Open animation & focus management
+  useLayoutEffect(() => {
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+    const panel = panelRef.current;
+    const dialog = dialogRef.current;
+
+    if (!panel || !dialog) return;
+
     closeButtonRef.current?.focus();
 
+    if (prefersReducedMotion || !originCard) {
+      dialog.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 150,
+        fill: "forwards",
+      });
+      panel.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 150,
+        fill: "forwards",
+      });
+      return;
+    }
+
+    const F = panel.getBoundingClientRect();
+    const C = originCard.getBoundingClientRect();
+    const clip = getClip(F, C);
+
+    originCard.style.visibility = "hidden";
+
+    dialog.animate([{ opacity: 0 }, { opacity: 1 }], {
+      duration: 700,
+      fill: "forwards",
+    });
+
+    panel.animate([{ clipPath: clip }, { clipPath: FULL }], {
+      duration: 1200,
+      easing: EASE,
+      fill: "forwards",
+    });
+
+    Array.from(panel.children).forEach((child) => {
+      (child as HTMLElement).animate(
+        [{ opacity: 0 }, { opacity: 0, offset: 0.45 }, { opacity: 1 }],
+        { duration: 1200, fill: "forwards" }
+      );
+    });
+  }, [originCard]);
+
+  // Focus management: trap tab focus and handle Escape
+  useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
         e.preventDefault();
-        onClose();
+        requestClose();
         return;
       }
 
@@ -57,23 +188,24 @@ export function ProjectPanel({ project, onClose }: ProjectPanelProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  }, [requestClose]);
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="panel-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-[16px] sm:p-[24px] bg-black/60 backdrop-blur-md"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
-          onClose();
+          requestClose();
         }
       }}
     >
       <div
         ref={panelRef}
-        className="relative flex flex-col w-full max-w-[960px] max-h-[92vh] overflow-y-auto rounded-[20px] border border-white/15 bg-surface-container-lowest p-[20px] sm:p-[32px] shadow-2xl backdrop-blur-3xl animate-in fade-in zoom-in-95 duration-200"
+        className="relative flex flex-col w-full max-w-[960px] max-h-[92vh] overflow-y-auto rounded-[20px] border border-white/15 bg-surface-container-lowest p-[20px] sm:p-[32px] shadow-2xl backdrop-blur-3xl"
       >
         {/* Header with Title and Close Button */}
         <div className="flex items-start justify-between gap-[16px]">
@@ -92,7 +224,7 @@ export function ProjectPanel({ project, onClose }: ProjectPanelProps) {
           <button
             ref={closeButtonRef}
             type="button"
-            onClick={onClose}
+            onClick={requestClose}
             aria-label="Close"
             className="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 font-data-mono text-[16px] text-on-surface transition-colors hover:border-primary-container hover:text-primary-container focus-visible:border-primary-container focus-visible:outline-none"
           >

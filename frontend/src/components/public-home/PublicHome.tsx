@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useId, useMemo, useRef, useState } from "react";
+import React, { useCallback, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/layout/auth-provider";
 import { ProjectCard } from "./ProjectCard";
@@ -40,6 +40,7 @@ export function PublicHome() {
   );
   const triggerElementRef = useRef<HTMLElement | null>(null);
   const gridContainerRef = useRef<HTMLDivElement | null>(null);
+  const cardAnimsDataRef = useRef<{ element: HTMLElement; dx: number; dy: number }[]>([]);
 
   // SVG points for India decorative map outline
   const indiaPolygonPoints = useMemo(() => {
@@ -123,43 +124,89 @@ export function PublicHome() {
     if (!prefersReducedMotion && gridContainerRef.current) {
       const cx = window.innerWidth / 2;
       const cy = window.innerHeight / 2;
-      const cards = gridContainerRef.current.querySelectorAll<HTMLElement>(
-        ".project-card, .map-card"
+      const cards = Array.from(
+        gridContainerRef.current.querySelectorAll<HTMLElement>(
+          ".project-card, .map-card"
+        )
       );
 
+      cardAnimsDataRef.current = [];
       cards.forEach((c) => {
         if (c === cardElem) return;
         const b = c.getBoundingClientRect();
         const dx = (b.left + b.width / 2 - cx) * 0.9;
         const dy = (b.top + b.height / 2 - cy) * 0.9;
-        c.style.transition = "transform 0.8s cubic-bezier(0.45, 0, 0.2, 1), opacity 0.6s ease";
-        c.style.transform = `translate3d(${dx}px, ${dy}px, 800px) rotateY(${dx / 60}deg)`;
-        c.style.opacity = "0";
         c.style.pointerEvents = "none";
+        c.animate(
+          [
+            { transform: "translate3d(0px, 0px, 0px) rotateY(0deg)", opacity: 1 },
+            { transform: `translate3d(${dx}px, ${dy}px, 900px) rotateY(${dx / 60}deg)`, opacity: 0 }
+          ],
+          {
+            duration: 1200,
+            easing: "cubic-bezier(0.45, 0, 0.2, 1)",
+            fill: "forwards"
+          }
+        );
+        cardAnimsDataRef.current.push({ element: c, dx, dy });
       });
     }
   };
 
-  const handleClosePanel = () => {
-    setSelectedProject(null);
+  const handleStartClose = useCallback(() => {
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
 
+    if (!prefersReducedMotion) {
+      cardAnimsDataRef.current.forEach(({ element: c, dx, dy }) => {
+        c.animate(
+          [
+            { transform: `translate3d(${dx}px, ${dy}px, 900px) rotateY(${dx / 60}deg)`, opacity: 0 },
+            { transform: "translate3d(0px, 0px, 0px) rotateY(0deg)", opacity: 1 }
+          ],
+          {
+            duration: 900,
+            easing: "cubic-bezier(0.65, 0, 0.2, 1)",
+            fill: "forwards"
+          }
+        );
+      });
+    }
+  }, []);
+
+  const handleClosePanel = useCallback(() => {
     // Release cards
     if (gridContainerRef.current) {
-      const cards = gridContainerRef.current.querySelectorAll<HTMLElement>(
-        ".project-card, .map-card"
+      const cards = Array.from(
+        gridContainerRef.current.querySelectorAll<HTMLElement>(
+          ".project-card, .map-card"
+        )
       );
       cards.forEach((c) => {
+        c.getAnimations().forEach((a) => a.cancel());
         c.style.transform = "";
         c.style.opacity = "";
         c.style.pointerEvents = "";
       });
     }
+    cardAnimsDataRef.current = [];
 
-    // Return focus to triggering card
-    setTimeout(() => {
-      triggerElementRef.current?.focus();
-    }, 50);
-  };
+    if (triggerElementRef.current) {
+      triggerElementRef.current.style.visibility = "";
+      triggerElementRef.current.focus();
+    }
+
+    setSelectedProject(null);
+
+    // Ensure focus remains on triggering card after DOM update
+    requestAnimationFrame(() => {
+      if (triggerElementRef.current) {
+        triggerElementRef.current.style.visibility = "";
+        triggerElementRef.current.focus();
+      }
+    });
+  }, []);
 
   return (
     <div className="relative min-h-screen w-full bg-surface-container-lowest text-on-surface overflow-x-hidden">
@@ -353,7 +400,8 @@ export function PublicHome() {
         {/* Bento Grid */}
         <div
           ref={gridContainerRef}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[16px] [perspective:1400px]"
+          style={{ perspective: "1400px", transformStyle: "preserve-3d" }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[16px] [perspective:1400px] [transform-style:preserve-3d]"
         >
           {/* Big Map Card (The ONLY link to /map) */}
           <Link
@@ -448,6 +496,8 @@ export function PublicHome() {
       {selectedProject && (
         <ProjectPanel
           project={selectedProject}
+          originCard={triggerElementRef.current}
+          onStartClose={handleStartClose}
           onClose={handleClosePanel}
         />
       )}
