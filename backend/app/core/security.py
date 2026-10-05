@@ -21,14 +21,24 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(password: str, password_hash: str) -> bool:
-    salt, stored_hash = password_hash.split("$", maxsplit=1)
-    derived_key = hashlib.pbkdf2_hmac(
-        "sha256",
-        password.encode("utf-8"),
-        salt.encode("utf-8"),
-        PASSWORD_ITERATIONS,
-    )
-    return hmac.compare_digest(derived_key.hex(), stored_hash)
+    if not password_hash or not isinstance(password_hash, str) or "$" not in password_hash:
+        return False
+    parts = password_hash.split("$", maxsplit=1)
+    if len(parts) != 2:
+        return False
+    salt, stored_hash = parts
+    if not salt or not stored_hash:
+        return False
+    try:
+        derived_key = hashlib.pbkdf2_hmac(
+            "sha256",
+            password.encode("utf-8"),
+            salt.encode("utf-8"),
+            PASSWORD_ITERATIONS,
+        )
+        return hmac.compare_digest(derived_key.hex(), stored_hash)
+    except Exception:
+        return False
 
 
 def create_session_token() -> str:
