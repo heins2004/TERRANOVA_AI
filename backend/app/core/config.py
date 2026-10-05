@@ -11,6 +11,7 @@ load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 @dataclass(frozen=True)
 class Settings:
     app_name: str
+    app_env: str
     database_url: str
     frontend_origins: tuple[str, ...]
     session_cookie_name: str
@@ -38,8 +39,15 @@ def _parse_origins(value: str) -> tuple[str, ...]:
 
 @lru_cache
 def get_settings() -> Settings:
+    raw_env = os.getenv("APP_ENV", "development").strip().lower()
+    if raw_env not in {"development", "production"}:
+        raise ValueError(
+            f"Invalid APP_ENV '{raw_env}'. Allowed values are 'development' and 'production'."
+        )
+
     return Settings(
         app_name="TERRANOVA AI",
+        app_env=raw_env,
         database_url=os.getenv(
             "DATABASE_URL",
             "postgresql://postgres:postgres@localhost:5432/terranova_ai",

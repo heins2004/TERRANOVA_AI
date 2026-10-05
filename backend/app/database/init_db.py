@@ -1,3 +1,7 @@
+import psycopg
+from psycopg.rows import dict_row
+
+from app.core.config import get_settings
 from app.database.connection import get_connection
 
 
@@ -234,8 +238,17 @@ DEFAULT_DEMO_PROJECTS = [
 ]
 
 
-def init_db() -> None:
-    with get_connection() as connection:
+def init_db(database_url: str | None = None, app_env: str | None = None) -> None:
+    settings = get_settings()
+    current_env = app_env if app_env is not None else settings.app_env
+
+    connection_context = (
+        psycopg.connect(database_url, row_factory=dict_row)
+        if database_url
+        else get_connection()
+    )
+
+    with connection_context as connection:
         with connection.cursor() as cursor:
             cursor.execute(CREATE_USERS_TABLE_SQL)
             cursor.execute(ADD_ROLE_COLUMN_SQL)
@@ -255,51 +268,59 @@ def init_db() -> None:
             cursor.execute(CREATE_CANDIDATE_SITE_PROXIMITY_TABLE_SQL)
             cursor.execute(CREATE_OSM_LAYER_CACHE_TABLE_SQL)
 
-            # Ensure default test users exist on fresh setup
-            from app.core.security import hash_password
-            default_hash = hash_password("12345678")
-            for u in DEFAULT_TEST_USERS:
-                cursor.execute(
-                    """
-                    INSERT INTO users (full_name, email, role, password_hash)
-                    VALUES (%s, %s, %s, %s)
-                    ON CONFLICT (email) DO NOTHING
-                    """,
-                    (u["full_name"], u["email"], u["role"], default_hash),
-                )
-
-            # Ensure demo projects with varied statuses exist on setup
-            cursor.execute("SELECT id FROM users WHERE email = %s", ("planner@test.com",))
-            planner_row = cursor.fetchone()
-            planner_user_id = planner_row["id"] if planner_row else None
-            if not planner_user_id:
-                cursor.execute("SELECT id FROM users ORDER BY id ASC LIMIT 1")
-                first_row = cursor.fetchone()
-                planner_user_id = first_row["id"] if first_row else 1
-
-            for p in DEFAULT_DEMO_PROJECTS:
-                cursor.execute(
-                    """
-                    INSERT INTO projects (title, description, status, category, city, budget, location_lat, location_lng, created_by)
-                    SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s
-                    WHERE NOT EXISTS (
-                        SELECT 1 FROM projects WHERE title = %s
+            if current_env == "development":
+                # Ensure default test users exist on fresh setup
+                from app.core.security import hash_password
+                default_hash = hash_password("12345678")
+                for u in DEFAULT_TEST_USERS:
+                    cursor.execute(
+                        """
+                        INSERT INTO users (full_name, email, role, password_hash)
+                        VALUES (%s, %s, %s, %s)
+                        ON CONFLICT (email) DO NOTHING
+                        """,
+                        (u["full_name"], u["email"], u["role"], default_hash),
                     )
-                    """,
-                    (
-                        p["title"],
-                        p["description"],
-                        p["status"],
-                        p["category"],
-                        p["city"],
-                        p["budget"],
-                        p["location_lat"],
-                        p["location_lng"],
-                        planner_user_id,
-                        p["title"],
-                    ),
-                )
+
+                # Ensure demo projects with varied statuses exist on setup
+                cursor.execute("SELECT id FROM users WHERE email = %s", ("planner@test.com",))
+                planner_row = cursor.fetchone()
+                planner_user_id = planner_row["id"] if planner_row else None
+                if not planner_user_id:
+                    cursor.execute("SELECT id FROM users ORDER BY id ASC LIMIT 1")
+                    first_row = cursor.fetchone()
+                    planner_user_id = first_row["id"] if first_row else 1
+
+                for p in DEFAULT_DEMO_PROJECTS:
+                    cursor.execute(
+                        """
+                        INSERT INTO projects (title, description, status, category, city, budget, location_lat, location_lng, created_by)
+                        SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        WHERE NOT EXISTS (
+                            SELECT 1 FROM projects WHERE title = %s
+                        )
+                        """,
+                        (
+                            p["title"],
+                            p["description"],
+                            p["status"],
+                            p["category"],
+                            p["city"],
+                            p["budget"],
+                            p["location_lat"],
+                            p["location_lng"],
+                            planner_user_id,
+                            p["title"],
+                        ),
+                    )
+                seeded = True
+            else:
+                seeded = False
+
         connection.commit()
+
+    status_str = "seeded" if seeded else "not seeded"
+    print(f"APP_ENV={current_env}: test accounts and demo data {status_str}.")
 
 
 
