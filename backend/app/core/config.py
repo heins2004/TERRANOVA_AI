@@ -39,15 +39,24 @@ def _parse_origins(value: str) -> tuple[str, ...]:
 
 @lru_cache
 def get_settings() -> Settings:
-    raw_env = os.getenv("APP_ENV", "development").strip().lower()
-    if raw_env not in {"development", "production"}:
+    deployed = os.getenv("DEPLOYED", "").strip() == "1"
+    raw_app_env = os.getenv("APP_ENV")
+
+    if deployed and not raw_app_env:
         raise ValueError(
-            f"Invalid APP_ENV '{raw_env}'. Allowed values are 'development' and 'production'."
+            "APP_ENV must be explicitly set when DEPLOYED=1. "
+            "Allowed values are 'development' and 'production'."
+        )
+
+    app_env = (raw_app_env or "development").strip().lower()
+    if app_env not in {"development", "production"}:
+        raise ValueError(
+            f"Invalid APP_ENV '{app_env}'. Allowed values are 'development' and 'production'."
         )
 
     return Settings(
         app_name="TERRANOVA AI",
-        app_env=raw_env,
+        app_env=app_env,
         database_url=os.getenv(
             "DATABASE_URL",
             "postgresql://postgres:postgres@localhost:5432/terranova_ai",
