@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/components/layout/auth-provider";
 import { ProjectCard } from "./ProjectCard";
 import { ProjectPanel } from "./ProjectPanel";
+import { ParticleCloak } from "./ParticleCloak";
 import {
   INDIA_OUTLINE,
   ProjectCategory,
@@ -210,6 +211,9 @@ export function PublicHome() {
 
   return (
     <div className="relative min-h-screen w-full bg-surface-container-lowest text-on-surface overflow-x-hidden">
+      {/* Particle Cloak Background */}
+      <ParticleCloak />
+
       {/* Main Header */}
       <header className="relative z-10 mx-auto flex max-w-[1596px] flex-wrap items-center justify-between gap-[14px] px-[16px] py-[18px] sm:px-[32px] lg:px-[48px]">
         {/* Brand Text (not a link) */}
