@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 import psycopg
 
 from app.database.connection import get_db
+from app.schemas.comments import PublicCommentItem
 from app.schemas.public import PublicProjectItem, PublicProjectsResponse
+from app.services.comment_service import get_public_project_comments
 from app.services.public_project_service import (
     get_public_project,
     list_public_projects,
@@ -16,7 +18,7 @@ def get_public_projects_endpoint(
     q: str | None = Query(None, max_length=80, description="Search query across title, city, category"),
     category: str | None = Query(None, max_length=40, description="Exact category filter"),
     past: bool = Query(False, description="Filter active (false) vs completed/halted (true) projects"),
-    sort: str = Query("new", pattern="^(new|soon)$", description="Sort order: 'new' or 'soon'"),
+    sort: str = Query("new", pattern="^(new|soon|talk)$", description="Sort order: 'new', 'soon', or 'talk'"),
     limit: int = Query(24, ge=1, le=50, description="Page size"),
     offset: int = Query(0, ge=0, le=10000, description="Page offset"),
     connection: psycopg.Connection = Depends(get_db),
@@ -44,3 +46,18 @@ def get_public_project_endpoint(
             detail="Project not found",
         )
     return project
+
+
+@router.get("/projects/{project_id}/comments", response_model=list[PublicCommentItem])
+def get_project_comments_endpoint(
+    project_id: int,
+    limit: int = Query(20, ge=1, le=50, description="Comments limit"),
+    offset: int = Query(0, ge=0, le=10000, description="Comments offset"),
+    connection: psycopg.Connection = Depends(get_db),
+) -> list[PublicCommentItem]:
+    return get_public_project_comments(
+        connection,
+        project_id=project_id,
+        limit=limit,
+        offset=offset,
+    )
