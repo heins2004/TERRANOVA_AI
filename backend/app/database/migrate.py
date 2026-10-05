@@ -57,6 +57,36 @@ def compute_checksum(file_path: Path) -> str:
     return hashlib.sha256(content).hexdigest()
 
 
+def get_pending_migrations_count(db_url: str | None = None) -> int:
+    """Read-only check for the count of pending migration files."""
+    if db_url is None:
+        db_url = get_migration_database_url()
+
+    if not MIGRATIONS_DIR.exists():
+        return 0
+
+    migration_files = sorted(MIGRATIONS_DIR.glob("*.sql"))
+    if not migration_files:
+        return 0
+
+    with psycopg.connect(db_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT EXISTS ("
+                "  SELECT 1 FROM information_schema.tables "
+                "  WHERE table_schema = 'public' AND table_name = 'schema_migrations'"
+                ");"
+            )
+            table_exists = cur.fetchone()[0]
+            if not table_exists:
+                return len(migration_files)
+
+            cur.execute("SELECT version FROM schema_migrations")
+            applied = {row[0] for row in cur.fetchall()}
+
+    return sum(1 for f in migration_files if f.name not in applied)
+
+
 def run_migrations(status_only: bool = False, db_url: str | None = None) -> None:
     if db_url is None:
         db_url = get_migration_database_url()
