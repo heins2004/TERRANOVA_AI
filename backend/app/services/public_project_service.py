@@ -65,6 +65,10 @@ def serialize_public_project(row: dict[str, Any]) -> PublicProjectItem:
         days_left=days_left,
         halt_reason=halt_reason,
         is_demo=bool(row.get("is_demo", False)),
+        support_count=int(row.get("support_count", 0)),
+        concern_count=int(row.get("concern_count", 0)),
+        neutral_count=int(row.get("neutral_count", 0)),
+        participants=int(row.get("participants", 0)),
     )
 
 

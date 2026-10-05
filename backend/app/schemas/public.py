@@ -21,6 +21,10 @@ class PublicProjectItem(BaseModel):
     days_left: int | None = None
     halt_reason: str | None = None
     is_demo: bool
+    support_count: int = 0
+    concern_count: int = 0
+    neutral_count: int = 0
+    participants: int = 0
 
 
 class PublicProjectsResponse(BaseModel):

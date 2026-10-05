@@ -24,13 +24,13 @@ def get_public_projects(
 ) -> tuple[list[dict[str, Any]], int]:
     allowed_stages = list(PAST_PUBLIC_STAGES if past else ACTIVE_PUBLIC_STAGES)
 
-    where_clauses = ["stage = ANY(%s)"]
+    where_clauses = ["p.stage = ANY(%s)"]
     params: list[Any] = [allowed_stages]
 
     if category:
         clean_cat = category.strip()
         if clean_cat:
-            where_clauses.append("category ILIKE %s")
+            where_clauses.append("p.category ILIKE %s")
             params.append(clean_cat)
 
     if q:
@@ -39,32 +39,55 @@ def get_public_projects(
             escaped_q = escape_like(clean_q)
             pattern = f"%{escaped_q}%"
             where_clauses.append(
-                "(title ILIKE %s ESCAPE '\\' OR city ILIKE %s ESCAPE '\\' OR category ILIKE %s ESCAPE '\\')"
+                "(p.title ILIKE %s ESCAPE '\\' OR p.city ILIKE %s ESCAPE '\\' OR p.category ILIKE %s ESCAPE '\\')"
             )
             params.extend([pattern, pattern, pattern])
 
     where_sql = " AND ".join(where_clauses)
 
-    count_sql = f"SELECT count(*) AS total FROM projects WHERE {where_sql};"
+    count_sql = f"SELECT count(*) AS total FROM projects p WHERE {where_sql};"
 
-    if sort == "soon":
+    if sort == "talk":
+        order_sql = "ORDER BY participants DESC, p.deployed_at DESC NULLS LAST, p.id DESC"
+    elif sort == "soon":
         order_sql = """
             ORDER BY
-                CASE WHEN stage = 'OpenForResponse' AND response_deadline IS NOT NULL THEN 0 ELSE 1 END ASC,
-                response_deadline ASC,
-                deployed_at DESC NULLS LAST,
-                id DESC
+                CASE WHEN p.stage = 'OpenForResponse' AND p.response_deadline IS NOT NULL THEN 0 ELSE 1 END ASC,
+                p.response_deadline ASC,
+                p.deployed_at DESC NULLS LAST,
+                p.id DESC
         """
     else:
-        order_sql = "ORDER BY deployed_at DESC NULLS LAST, id DESC"
+        order_sql = "ORDER BY p.deployed_at DESC NULLS LAST, p.id DESC"
 
     select_sql = f"""
         SELECT
-            id, title, description, category, city,
-            location_lat, location_lng, budget,
-            start_date, end_date, stage,
-            response_deadline, halt_reason, is_demo
-        FROM projects
+            p.id, p.title, p.description, p.category, p.city,
+            p.location_lat, p.location_lng, p.budget,
+            p.start_date, p.end_date, p.stage,
+            p.response_deadline, p.halt_reason, p.is_demo,
+            COALESCE(stats.support_count, 0) AS support_count,
+            COALESCE(stats.concern_count, 0) AS concern_count,
+            COALESCE(stats.neutral_count, 0) AS neutral_count,
+            COALESCE(part.participants, 0) AS participants
+        FROM projects p
+        LEFT JOIN LATERAL (
+            SELECT
+                COUNT(*) FILTER (WHERE latest.stance = 'Support') AS support_count,
+                COUNT(*) FILTER (WHERE latest.stance = 'Concern') AS concern_count,
+                COUNT(*) FILTER (WHERE latest.stance = 'Neutral') AS neutral_count
+            FROM (
+                SELECT DISTINCT ON (c.user_id) c.user_id, c.stance
+                FROM comments c
+                WHERE c.project_id = p.id AND c.parent_id IS NULL AND c.stance IS NOT NULL
+                ORDER BY c.user_id, c.created_at DESC, c.id DESC
+            ) latest
+        ) stats ON true
+        LEFT JOIN LATERAL (
+            SELECT COUNT(DISTINCT c2.user_id) AS participants
+            FROM comments c2
+            WHERE c2.project_id = p.id
+        ) part ON true
         WHERE {where_sql}
         {order_sql}
         LIMIT %s OFFSET %s;
@@ -88,12 +111,33 @@ def get_public_project_by_id(
 ) -> dict[str, Any] | None:
     query = """
         SELECT
-            id, title, description, category, city,
-            location_lat, location_lng, budget,
-            start_date, end_date, stage,
-            response_deadline, halt_reason, is_demo
-        FROM projects
-        WHERE id = %s AND stage = ANY(%s);
+            p.id, p.title, p.description, p.category, p.city,
+            p.location_lat, p.location_lng, p.budget,
+            p.start_date, p.end_date, p.stage,
+            p.response_deadline, p.halt_reason, p.is_demo, p.created_by,
+            COALESCE(stats.support_count, 0) AS support_count,
+            COALESCE(stats.concern_count, 0) AS concern_count,
+            COALESCE(stats.neutral_count, 0) AS neutral_count,
+            COALESCE(part.participants, 0) AS participants
+        FROM projects p
+        LEFT JOIN LATERAL (
+            SELECT
+                COUNT(*) FILTER (WHERE latest.stance = 'Support') AS support_count,
+                COUNT(*) FILTER (WHERE latest.stance = 'Concern') AS concern_count,
+                COUNT(*) FILTER (WHERE latest.stance = 'Neutral') AS neutral_count
+            FROM (
+                SELECT DISTINCT ON (c.user_id) c.user_id, c.stance
+                FROM comments c
+                WHERE c.project_id = p.id AND c.parent_id IS NULL AND c.stance IS NOT NULL
+                ORDER BY c.user_id, c.created_at DESC, c.id DESC
+            ) latest
+        ) stats ON true
+        LEFT JOIN LATERAL (
+            SELECT COUNT(DISTINCT c2.user_id) AS participants
+            FROM comments c2
+            WHERE c2.project_id = p.id
+        ) part ON true
+        WHERE p.id = %s AND p.stage = ANY(%s);
     """
     with conn.cursor(row_factory=dict_row) as cur:
         cur.execute(query, [project_id, list(PUBLIC_STAGES)])
