@@ -38,12 +38,16 @@ def mask_database_url(url: str) -> str:
 def get_migration_database_url() -> str:
     """
     Read connection settings using the app's settings with optional
-    environment variable override (MIGRATION_DATABASE_URL or DATABASE_URL).
+    environment variable override (MIGRATION_DATABASE_URL, MIGRATION_DB_NAME, or DATABASE_URL).
     """
     override = os.getenv("MIGRATION_DATABASE_URL")
     if override:
         return override
     settings = get_settings()
+    override_db = os.getenv("MIGRATION_DB_NAME")
+    if override_db:
+        parts = urlsplit(settings.database_url)
+        return urlunsplit((parts.scheme, parts.netloc, f"/{override_db}", parts.query, parts.fragment))
     return settings.database_url
 
 
