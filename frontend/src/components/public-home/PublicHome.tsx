@@ -138,7 +138,9 @@ export function PublicHome() {
       })
       .catch((err) => {
         if (err.name !== "AbortError") {
-          setError(err.message || "Unable to load public projects.");
+          setError(
+            "Could not load projects. Check your connection and try again."
+          );
         }
       })
       .finally(() => {
