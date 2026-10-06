@@ -1,7 +1,11 @@
 "use client";
 
-import React from "react";
-import { ProjectStage } from "./sampleProjects";
+export type ProjectStage =
+  | "OpenForResponse"
+  | "InProgress"
+  | "Completed"
+  | "Halted"
+  | string;
 
 type StageTrackerProps = {
   stage: ProjectStage;

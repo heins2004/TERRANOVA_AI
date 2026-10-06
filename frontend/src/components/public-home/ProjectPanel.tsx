@@ -1,12 +1,24 @@
 "use client";
 
-import React, { useCallback, useEffect, useLayoutEffect, useRef } from "react";
-import { SampleProject } from "./sampleProjects";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import {
+  PublicComment,
+  PublicProject,
+  formatIndianBudget,
+  getProject,
+  listComments,
+} from "@/services/publicProjects";
 import { StageTracker } from "./StageTracker";
 import { StanceBar } from "./StanceBar";
 
 type ProjectPanelProps = {
-  project: SampleProject;
+  project: PublicProject;
   originCard: HTMLElement | null;
   onStartClose?: () => void;
   onClose: () => void;
@@ -29,8 +41,62 @@ export function ProjectPanel({
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const isClosingRef = useRef<boolean>(false);
 
-  const totalPeople =
-    project.stance.support + project.stance.concern + project.stance.neutral;
+  const [detail, setDetail] = useState<PublicProject>(project);
+  const [comments, setComments] = useState<PublicComment[]>([]);
+  const [isLoadingComments, setIsLoadingComments] = useState<boolean>(false);
+  const [hasMoreComments, setHasMoreComments] = useState<boolean>(true);
+  const [commentsOffset, setCommentsOffset] = useState<number>(0);
+
+  // Fetch full project detail on open
+  useEffect(() => {
+    const ac = new AbortController();
+    getProject(project.id, ac.signal)
+      .then((data) => {
+        setDetail(data);
+      })
+      .catch(() => {});
+    return () => ac.abort();
+  }, [project.id]);
+
+  // Fetch first 20 comments on open
+  useEffect(() => {
+    const ac = new AbortController();
+    setIsLoadingComments(true);
+    listComments(project.id, { limit: 20, offset: 0 }, ac.signal)
+      .then((data) => {
+        setComments(data);
+        setCommentsOffset(data.length);
+        if (data.length < 20) {
+          setHasMoreComments(false);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        setIsLoadingComments(false);
+      });
+    return () => ac.abort();
+  }, [project.id]);
+
+  // Load more comments
+  const handleLoadMoreComments = useCallback(async () => {
+    if (isLoadingComments || !hasMoreComments) return;
+    setIsLoadingComments(true);
+    try {
+      const more = await listComments(project.id, {
+        limit: 20,
+        offset: commentsOffset,
+      });
+      setComments((prev) => [...prev, ...more]);
+      setCommentsOffset((prev) => prev + more.length);
+      if (more.length < 20) {
+        setHasMoreComments(false);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setIsLoadingComments(false);
+    }
+  }, [isLoadingComments, hasMoreComments, project.id, commentsOffset]);
 
   // Request close animation sequence
   const requestClose = useCallback(() => {
@@ -164,7 +230,9 @@ export function ProjectPanel({
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         );
         const focusable = Array.from(focusableElements).filter(
-          (el) => !el.hasAttribute("disabled") && el.getAttribute("aria-disabled") !== "true"
+          (el) =>
+            !el.hasAttribute("disabled") &&
+            el.getAttribute("aria-disabled") !== "true"
         );
 
         if (focusable.length === 0) return;
@@ -190,6 +258,8 @@ export function ProjectPanel({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [requestClose]);
 
+  const cityName = detail.city_name || detail.city || "India";
+
   return (
     <div
       ref={dialogRef}
@@ -210,14 +280,21 @@ export function ProjectPanel({
         {/* Header with Title and Close Button */}
         <div className="flex items-start justify-between gap-[16px]">
           <div>
-            <h2
-              id="panel-title"
-              className="font-body-md text-[24px] sm:text-[32px] font-bold text-on-surface"
-            >
-              {project.name}
-            </h2>
+            <div className="flex items-center gap-[8px]">
+              <h2
+                id="panel-title"
+                className="font-body-md text-[24px] sm:text-[32px] font-bold text-on-surface"
+              >
+                {detail.title}
+              </h2>
+              {detail.is_demo && (
+                <span className="rounded-full border border-secondary/30 bg-secondary/15 px-[8px] py-[2px] font-data-mono text-[10px] font-semibold tracking-wider text-secondary uppercase">
+                  Demo
+                </span>
+              )}
+            </div>
             <p className="mt-[4px] font-body-md text-[14px] text-on-surface-variant">
-              {project.category} · {project.city}
+              {detail.category ?? "General"} · {cityName}
             </p>
           </div>
 
@@ -234,14 +311,17 @@ export function ProjectPanel({
 
         {/* 3-Step Stage Tracker or Halted Banner */}
         <div className="mt-[20px]">
-          <StageTracker stage={project.stage} haltReason={project.haltReason} />
+          <StageTracker
+            stage={detail.stage}
+            haltReason={detail.halt_reason ?? undefined}
+          />
         </div>
 
         {/* 3 Stats (Budget, Days Left, People) */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-[12px] my-[16px] rounded-[14px] border border-white/10 bg-white/5 p-[16px]">
           <div className="border-b sm:border-b-0 sm:border-r border-white/10 pb-[12px] sm:pb-0 sm:pr-[16px]">
             <b className="block font-data-mono text-[22px] text-on-surface">
-              ₹{project.budgetCrore.toLocaleString("en-IN")} Cr
+              {formatIndianBudget(detail.budget)}
             </b>
             <span className="font-body-md text-[12px] text-on-surface-variant">
               Estimated Budget
@@ -249,7 +329,9 @@ export function ProjectPanel({
           </div>
           <div className="border-b sm:border-b-0 sm:border-r border-white/10 pb-[12px] sm:pb-0 sm:pr-[16px]">
             <b className="block font-data-mono text-[22px] text-on-surface">
-              {project.stage === "OpenForResponse" ? project.daysLeft : "–"}
+              {detail.stage === "OpenForResponse" && detail.days_left != null
+                ? detail.days_left
+                : "–"}
             </b>
             <span className="font-body-md text-[12px] text-on-surface-variant">
               Days left to respond
@@ -257,7 +339,7 @@ export function ProjectPanel({
           </div>
           <div>
             <b className="block font-data-mono text-[22px] text-on-surface">
-              {totalPeople.toLocaleString("en-IN")}
+              {detail.participants.toLocaleString("en-IN")}
             </b>
             <span className="font-body-md text-[12px] text-on-surface-variant">
               People participated
@@ -271,9 +353,9 @@ export function ProjectPanel({
             What people think
           </h4>
           <StanceBar
-            support={project.stance.support}
-            concern={project.stance.concern}
-            neutral={project.stance.neutral}
+            support={detail.support_count}
+            concern={detail.concern_count}
+            neutral={detail.neutral_count}
             showLabels={true}
           />
         </div>
@@ -284,13 +366,14 @@ export function ProjectPanel({
             About this project
           </h4>
           <p className="font-body-md text-[14px] text-on-surface leading-relaxed">
-            {project.description}
+            {detail.description ?? "No project description has been recorded."}
           </p>
           <div className="mt-[16px]">
             <button
               type="button"
               disabled
               aria-disabled="true"
+              aria-label="Follow this project (Soon)"
               className="inline-flex items-center gap-[6px] rounded-full border border-white/15 bg-white/5 px-[18px] py-[8px] font-body-md text-[12px] text-on-surface-variant/60 cursor-not-allowed"
             >
               <span>Follow this project</span>
@@ -315,6 +398,7 @@ export function ProjectPanel({
                 type="button"
                 disabled
                 aria-disabled="true"
+                aria-label="Satellite view (Soon)"
                 className="flex items-center gap-[4px] rounded-full border border-white/15 bg-white/5 px-[10px] py-[3px] font-data-mono text-[11px] text-on-surface-variant/60 cursor-not-allowed"
               >
                 <span>Satellite</span>
@@ -327,7 +411,9 @@ export function ProjectPanel({
           <div className="rounded-[10px] border border-white/10 bg-surface-container-lowest/80 p-[14px] font-data-mono text-[13px] text-on-surface flex items-center justify-between">
             <span>Coordinates:</span>
             <span className="text-primary-container font-medium">
-              Lat: {project.lat.toFixed(4)}° N, Lng: {project.lng.toFixed(4)}° E
+              {detail.location_lat != null && detail.location_lng != null
+                ? `Lat: ${detail.location_lat.toFixed(4)}° N, Lng: ${detail.location_lng.toFixed(4)}° E`
+                : "Coordinates pending"}
             </span>
           </div>
         </div>
@@ -339,45 +425,64 @@ export function ProjectPanel({
           </h4>
 
           <div className="flex flex-col gap-[14px]">
-            {project.comments.map((c, idx) => (
+            {comments.length === 0 && !isLoadingComments && (
+              <p className="font-body-md text-[13px] text-on-surface-variant">
+                No comments recorded yet.
+              </p>
+            )}
+
+            {comments.map((c) => (
               <div
-                key={idx}
-                className={`pt-[10px] ${
-                  idx > 0 ? "border-t border-white/10" : ""
-                }`}
+                key={c.id}
+                className="pt-[10px] border-t border-white/10 first:border-t-0 first:pt-0"
               >
-                <div className="flex items-center gap-[8px]">
+                <div className="flex flex-wrap items-center gap-[8px]">
                   <b className="font-body-md text-[14px] text-on-surface">
-                    {c.author}
+                    {c.author_name}
                   </b>
-                  <span className="font-data-mono text-[11px] text-on-surface-variant">
-                    {c.stance}
-                  </span>
+                  {c.badge && (
+                    <span className="rounded-full border border-primary-container/60 bg-primary-container/15 px-[8px] py-[2px] font-data-mono text-[10px] uppercase tracking-wider text-primary-container">
+                      {c.badge}
+                    </span>
+                  )}
+                  {c.stance && (
+                    <span className="font-data-mono text-[11px] text-on-surface-variant">
+                      {c.stance}
+                    </span>
+                  )}
                 </div>
                 <div className="mt-[4px] font-body-md text-[14px] text-on-surface/90">
-                  {c.text}
+                  {c.body}
                 </div>
 
                 {/* Reply */}
-                {c.reply && (
-                  <div className="mt-[8px] ml-[14px] pl-[12px] border-l-2 border-primary-container/80">
-                    <div className="flex flex-wrap items-center gap-[8px]">
-                      <b className="font-body-md text-[13px] text-on-surface">
-                        {c.reply.author}
-                      </b>
-                      <span
-                        className={`rounded-full border px-[8px] py-[2px] font-data-mono text-[10px] uppercase tracking-wider ${
-                          c.reply.badge === "Government response"
-                            ? "border-primary-container/60 bg-primary-container/15 text-primary-container"
-                            : "border-secondary/60 bg-secondary/15 text-secondary"
-                        }`}
+                {c.replies && c.replies.length > 0 && (
+                  <div className="mt-[8px] flex flex-col gap-[8px]">
+                    {c.replies.map((reply) => (
+                      <div
+                        key={reply.id}
+                        className="ml-[14px] pl-[12px] border-l-2 border-primary-container/80"
                       >
-                        {c.reply.badge}
-                      </span>
-                    </div>
-                    <div className="mt-[4px] font-body-md text-[13px] text-on-surface/85">
-                      {c.reply.text}
-                    </div>
+                        <div className="flex flex-wrap items-center gap-[8px]">
+                          <b className="font-body-md text-[13px] text-on-surface">
+                            {reply.author_name}
+                          </b>
+                          {reply.badge && (
+                            <span className="rounded-full border border-primary-container/60 bg-primary-container/15 px-[8px] py-[2px] font-data-mono text-[10px] uppercase tracking-wider text-primary-container">
+                              {reply.badge}
+                            </span>
+                          )}
+                          {reply.stance && (
+                            <span className="font-data-mono text-[11px] text-on-surface-variant">
+                              {reply.stance}
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-[4px] font-body-md text-[13px] text-on-surface/85">
+                          {reply.body}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
 
@@ -386,6 +491,7 @@ export function ProjectPanel({
                     type="button"
                     disabled
                     aria-disabled="true"
+                    aria-label={`Reply to ${c.author_name} (Soon)`}
                     className="font-body-md text-[11px] text-on-surface-variant/50 cursor-not-allowed"
                   >
                     Reply (Soon)
@@ -394,6 +500,20 @@ export function ProjectPanel({
               </div>
             ))}
           </div>
+
+          {/* Load more comments */}
+          {hasMoreComments && comments.length > 0 && (
+            <div className="mt-[16px] pt-[8px] text-center border-t border-white/10">
+              <button
+                type="button"
+                onClick={handleLoadMoreComments}
+                disabled={isLoadingComments}
+                className="rounded-full border border-white/15 bg-white/5 px-[16px] py-[6px] font-body-md text-[12px] text-on-surface transition-colors hover:border-primary-container hover:text-primary-container disabled:opacity-50"
+              >
+                {isLoadingComments ? "Loading..." : "Load more comments"}
+              </button>
+            </div>
+          )}
 
           {/* Post Comment Input (Switched off) */}
           <div className="mt-[20px] pt-[16px] border-t border-white/10">
@@ -416,6 +536,7 @@ export function ProjectPanel({
             <textarea
               disabled
               aria-disabled="true"
+              aria-label="Comment input (Disabled for sample review)"
               rows={2}
               placeholder="Share your view (Disabled for sample review)"
               className="w-full rounded-[12px] border border-white/15 bg-white/5 p-[12px] font-body-md text-[13px] text-on-surface-variant/60 placeholder:text-on-surface-variant/40 cursor-not-allowed resize-none"
@@ -429,6 +550,7 @@ export function ProjectPanel({
                 type="button"
                 disabled
                 aria-disabled="true"
+                aria-label="Post comment (Soon)"
                 className="rounded-full border border-white/15 bg-white/5 px-[16px] py-[6px] font-body-md text-[12px] text-on-surface-variant/50 cursor-not-allowed"
               >
                 Post (Soon)

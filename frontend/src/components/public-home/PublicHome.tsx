@@ -1,19 +1,24 @@
 "use client";
 
-import React, { useCallback, useId, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/layout/auth-provider";
+import {
+  PublicProject,
+  listProjects,
+} from "@/services/publicProjects";
 import { ProjectCard } from "./ProjectCard";
 import { ProjectPanel } from "./ProjectPanel";
 import { ParticleCloak } from "./ParticleCloak";
-import {
-  INDIA_OUTLINE,
-  ProjectCategory,
-  SAMPLE_PROJECTS,
-  SampleProject,
-} from "./sampleProjects";
 
-const CATEGORIES: ("All" | ProjectCategory)[] = [
+const CATEGORIES = [
   "All",
   "Road",
   "Hospital",
@@ -21,100 +26,197 @@ const CATEGORIES: ("All" | ProjectCategory)[] = [
   "Stadium",
   "Mall",
   "Park",
+] as const;
+
+type ProjectCategoryOption = (typeof CATEGORIES)[number];
+
+const INDIA_OUTLINE: [number, number][] = [
+  [74, 37],
+  [77, 35.5],
+  [79, 34],
+  [78, 32.5],
+  [80, 30.5],
+  [84, 28.5],
+  [88, 27.5],
+  [89, 26.7],
+  [92, 27],
+  [95, 28.5],
+  [97, 28],
+  [95, 26],
+  [94, 24],
+  [93, 22],
+  [91, 24.5],
+  [89, 25],
+  [88.5, 22.5],
+  [87, 21.5],
+  [85, 19.5],
+  [83, 17.5],
+  [80.3, 15.5],
+  [80.2, 13],
+  [79.8, 10.5],
+  [78.2, 8.7],
+  [77.5, 8],
+  [76.5, 9],
+  [75.5, 11.5],
+  [74.8, 13.5],
+  [73.8, 16],
+  [72.8, 19],
+  [72.9, 21],
+  [70.5, 21],
+  [69, 22.3],
+  [68.2, 23.7],
+  [70, 24.5],
+  [71, 25.5],
+  [70.5, 28],
+  [72, 29.5],
+  [74, 31],
+  [74.5, 33],
+  [73.5, 34.5],
 ];
 
 export function PublicHome() {
   const { user, logout, isAuthenticated } = useAuth();
   const searchInputId = useId();
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<
-    "All" | ProjectCategory
-  >("All");
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
+  const [selectedCategory, setSelectedCategory] =
+    useState<ProjectCategoryOption>("All");
   const [selectedSort, setSelectedSort] = useState<"talk" | "new" | "soon">(
     "talk"
   );
   const [isPast, setIsPast] = useState(false);
 
-  const [selectedProject, setSelectedProject] = useState<SampleProject | null>(
+  const [projects, setProjects] = useState<PublicProject[]>([]);
+  const [total, setTotal] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [selectedProject, setSelectedProject] = useState<PublicProject | null>(
     null
   );
   const triggerElementRef = useRef<HTMLElement | null>(null);
   const gridContainerRef = useRef<HTMLDivElement | null>(null);
-  const cardAnimsDataRef = useRef<{ element: HTMLElement; dx: number; dy: number }[]>([]);
+  const cardAnimsDataRef = useRef<
+    { element: HTMLElement; dx: number; dy: number }[]
+  >([]);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // 300ms debounce for search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const cleaned = searchInput.trim().replace(/\s+/g, " ").slice(0, 80);
+      setDebouncedQ(cleaned);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Fetch projects with AbortController
+  const fetchProjects = useCallback(() => {
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    setLoading(true);
+    setError(null);
+
+    listProjects(
+      {
+        q: debouncedQ || undefined,
+        category: selectedCategory === "All" ? undefined : selectedCategory,
+        past: isPast,
+        sort: selectedSort,
+        limit: 24,
+        offset: 0,
+      },
+      controller.signal
+    )
+      .then((res) => {
+        setProjects(res.items);
+        setTotal(res.total);
+      })
+      .catch((err) => {
+        if (err.name !== "AbortError") {
+          setError(err.message || "Unable to load public projects.");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      });
+  }, [debouncedQ, selectedCategory, isPast, selectedSort]);
+
+  useEffect(() => {
+    fetchProjects();
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, [fetchProjects]);
+
+  // Load more handler
+  const handleLoadMore = useCallback(async () => {
+    if (loadingMore || projects.length >= total) return;
+    setLoadingMore(true);
+    try {
+      const res = await listProjects({
+        q: debouncedQ || undefined,
+        category: selectedCategory === "All" ? undefined : selectedCategory,
+        past: isPast,
+        sort: selectedSort,
+        limit: 24,
+        offset: projects.length,
+      });
+      setProjects((prev) => [...prev, ...res.items]);
+      setTotal(res.total);
+    } catch {
+      // keep current projects
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [
+    loadingMore,
+    projects.length,
+    total,
+    debouncedQ,
+    selectedCategory,
+    isPast,
+    selectedSort,
+  ]);
 
   // SVG points for India decorative map outline
   const indiaPolygonPoints = useMemo(() => {
     return INDIA_OUTLINE.map(([lng, lat]) =>
-      [((lng - 68) * 13 + 20).toFixed(1), ((37.5 - lat) * 13 + 10).toFixed(1)].join(
-        ","
-      )
+      [
+        ((lng - 68) * 13 + 20).toFixed(1),
+        ((37.5 - lat) * 13 + 10).toFixed(1),
+      ].join(",")
     ).join(" ");
   }, []);
 
-  // Filtered & sorted projects
-  const filteredProjects = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-
-    const matches = SAMPLE_PROJECTS.filter((p) => {
-      // Past switch: Completed or Halted are Past; OpenForResponse or InProgress are Open now
-      const isProjectPast = p.stage === "Completed" || p.stage === "Halted";
-      if (isPast !== isProjectPast) return false;
-
-      // Category filter
-      if (selectedCategory !== "All" && p.category !== selectedCategory) {
-        return false;
-      }
-
-      // Search filter
-      if (q) {
-        const hay = `${p.name} ${p.city} ${p.category}`.toLowerCase();
-        if (!hay.includes(q)) return false;
-      }
-
-      return true;
-    });
-
-    // Sorting
-    return matches.sort((a, b) => {
-      const pplA = a.stance.support + a.stance.concern + a.stance.neutral;
-      const pplB = b.stance.support + b.stance.concern + b.stance.neutral;
-
-      if (selectedSort === "talk") {
-        return pplB - pplA;
-      }
-      if (selectedSort === "new") {
-        return b.id - a.id;
-      }
-      // "soon": closing soon (ascending daysLeft, putting 0 days at end)
-      const daysA = a.daysLeft > 0 ? a.daysLeft : 999;
-      const daysB = b.daysLeft > 0 ? b.daysLeft : 999;
-      return daysA - daysB;
-    });
-  }, [searchQuery, selectedCategory, selectedSort, isPast]);
-
-  // Overall metric counts
+  // Summary counts
   const openCount = useMemo(
-    () =>
-      SAMPLE_PROJECTS.filter((p) => p.stage === "OpenForResponse").length,
-    []
+    () => projects.filter((p) => p.stage === "OpenForResponse").length,
+    [projects]
   );
   const cityCount = useMemo(
-    () => new Set(SAMPLE_PROJECTS.map((p) => p.city)).size,
-    []
+    () =>
+      new Set(
+        projects.map((p) => p.city_name || p.city).filter((c): c is string => Boolean(c))
+      ).size,
+    [projects]
   );
   const totalParticipation = useMemo(
-    () =>
-      SAMPLE_PROJECTS.reduce(
-        (sum, p) =>
-          sum + p.stance.support + p.stance.concern + p.stance.neutral,
-        0
-      ),
-    []
+    () => projects.reduce((sum, p) => sum + (p.participants || 0), 0),
+    [projects]
   );
 
   // Card fly animation & open panel
-  const handleSelectProject = (project: SampleProject, cardElem: HTMLElement) => {
+  const handleSelectProject = (
+    project: PublicProject,
+    cardElem: HTMLElement
+  ) => {
     triggerElementRef.current = cardElem;
     setSelectedProject(project);
 
@@ -140,13 +242,21 @@ export function PublicHome() {
         c.style.pointerEvents = "none";
         c.animate(
           [
-            { transform: "translate3d(0px, 0px, 0px) rotateY(0deg)", opacity: 1 },
-            { transform: `translate3d(${dx}px, ${dy}px, 900px) rotateY(${dx / 60}deg)`, opacity: 0 }
+            {
+              transform: "translate3d(0px, 0px, 0px) rotateY(0deg)",
+              opacity: 1,
+            },
+            {
+              transform: `translate3d(${dx}px, ${dy}px, 900px) rotateY(${
+                dx / 60
+              }deg)`,
+              opacity: 0,
+            },
           ],
           {
             duration: 1200,
             easing: "cubic-bezier(0.45, 0, 0.2, 1)",
-            fill: "forwards"
+            fill: "forwards",
           }
         );
         cardAnimsDataRef.current.push({ element: c, dx, dy });
@@ -163,13 +273,21 @@ export function PublicHome() {
       cardAnimsDataRef.current.forEach(({ element: c, dx, dy }) => {
         c.animate(
           [
-            { transform: `translate3d(${dx}px, ${dy}px, 900px) rotateY(${dx / 60}deg)`, opacity: 0 },
-            { transform: "translate3d(0px, 0px, 0px) rotateY(0deg)", opacity: 1 }
+            {
+              transform: `translate3d(${dx}px, ${dy}px, 900px) rotateY(${
+                dx / 60
+              }deg)`,
+              opacity: 0,
+            },
+            {
+              transform: "translate3d(0px, 0px, 0px) rotateY(0deg)",
+              opacity: 1,
+            },
           ],
           {
             duration: 900,
             easing: "cubic-bezier(0.65, 0, 0.2, 1)",
-            fill: "forwards"
+            fill: "forwards",
           }
         );
       });
@@ -226,15 +344,18 @@ export function PublicHome() {
           htmlFor={searchInputId}
           className="order-3 flex h-[46px] w-full flex-1 sm:order-2 sm:w-auto max-w-[640px] items-center gap-[10px] rounded-full border border-white/15 bg-white/5 px-[18px] shadow-sm backdrop-blur-[18px] transition-all focus-within:border-primary-container focus-within:shadow-[0_0_0_3px_rgba(34,211,238,0.25)]"
         >
-          <span className="text-[16px] text-on-surface-variant select-none" aria-hidden="true">
+          <span
+            className="text-[16px] text-on-surface-variant select-none"
+            aria-hidden="true"
+          >
             ⌕
           </span>
           <input
             id={searchInputId}
             type="search"
             maxLength={80}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value.slice(0, 80))}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value.slice(0, 80))}
             placeholder="Search a city, area or project"
             aria-label="Search a city, area or project"
             className="w-full min-w-0 bg-transparent font-body-md text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none"
@@ -307,6 +428,12 @@ export function PublicHome() {
         <div className="mt-[6px] mb-[18px] flex flex-wrap gap-x-[22px] gap-y-[6px] font-body-md text-[13px] text-on-surface-variant">
           <span>
             <b className="font-data-mono font-bold text-on-surface">
+              {total}
+            </b>{" "}
+            projects
+          </span>
+          <span>
+            <b className="font-data-mono font-bold text-on-surface">
               {openCount}
             </b>{" "}
             open for response
@@ -360,13 +487,22 @@ export function PublicHome() {
               aria-label="Sort projects"
               className="rounded-full border border-white/15 bg-white/5 px-[14px] py-[7px] font-body-md text-[13px] text-on-surface focus-visible:outline-none focus-visible:border-primary-container"
             >
-              <option value="talk" className="bg-surface-container-lowest text-on-surface">
+              <option
+                value="talk"
+                className="bg-surface-container-lowest text-on-surface"
+              >
                 Most discussed
               </option>
-              <option value="new" className="bg-surface-container-lowest text-on-surface">
+              <option
+                value="new"
+                className="bg-surface-container-lowest text-on-surface"
+              >
                 Newest
               </option>
-              <option value="soon" className="bg-surface-container-lowest text-on-surface">
+              <option
+                value="soon"
+                className="bg-surface-container-lowest text-on-surface"
+              >
                 Closing soon
               </option>
             </select>
@@ -413,7 +549,7 @@ export function PublicHome() {
             aria-label="Open interactive map of India"
             className="map-card group relative col-span-1 sm:col-span-2 row-span-1 sm:row-span-2 flex min-h-[300px] sm:min-h-[400px] flex-col justify-end overflow-hidden rounded-[16px] border border-white/10 bg-gradient-to-br from-white/5 to-transparent p-[22px] backdrop-blur-[20px] transition-all duration-300 hover:border-primary-container/60 hover:shadow-[0_0_30px_-6px_rgba(34,211,238,0.4)] hover:scale-[1.01] focus-visible:border-primary-container focus-visible:outline-none"
           >
-            {/* Decorative SVG Map of India from prototype */}
+            {/* Decorative SVG Map of India */}
             <svg
               viewBox="0 0 420 430"
               role="img"
@@ -425,29 +561,33 @@ export function PublicHome() {
                 className="fill-primary-container/10 stroke-primary-container/40"
                 strokeWidth="1.5"
               />
-              {/* Project coordinate markers */}
-              {SAMPLE_PROJECTS.map((p) => {
-                const x = (p.lng - 68) * 13 + 20;
-                const y = (37.5 - p.lat) * 13 + 10;
-                return (
-                  <g key={p.id}>
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r="4"
-                      className="fill-primary-container transition-all group-hover:r-5"
-                    />
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r="9"
-                      fill="none"
-                      className="stroke-primary-container/40"
-                      strokeWidth="1"
-                    />
-                  </g>
-                );
-              })}
+              {/* Project coordinate markers from loaded projects */}
+              {projects
+                .filter(
+                  (p) => p.location_lat != null && p.location_lng != null
+                )
+                .map((p) => {
+                  const x = ((p.location_lng! - 68) * 13 + 20).toFixed(1);
+                  const y = ((37.5 - p.location_lat!) * 13 + 10).toFixed(1);
+                  return (
+                    <g key={p.id}>
+                      <circle
+                        cx={x}
+                        cy={y}
+                        r="4"
+                        className="fill-primary-container transition-all group-hover:r-5"
+                      />
+                      <circle
+                        cx={x}
+                        cy={y}
+                        r="9"
+                        fill="none"
+                        className="stroke-primary-container/40"
+                        strokeWidth="1"
+                      />
+                    </g>
+                  );
+                })}
             </svg>
 
             <span className="absolute top-[14px] left-[14px] z-10 rounded-full border border-white/15 bg-surface-container-lowest/80 px-[10px] py-[3px] font-body-md text-[11px] text-primary-container font-medium">
@@ -459,28 +599,63 @@ export function PublicHome() {
                 India map
               </h3>
               <p className="font-body-md text-[13px] text-on-surface-variant max-w-md">
-                {filteredProjects.length} project
-                {filteredProjects.length === 1 ? "" : "s"} shown. Open the
+                {total} project{total === 1 ? "" : "s"} shown. Open the
                 interactive map to inspect sites and spatial telemetry.
               </p>
             </div>
           </Link>
 
+          {/* Error State with Retry Button */}
+          {error && (
+            <div className="col-span-full rounded-[16px] border border-danger/40 bg-danger/10 p-[36px] text-center font-body-md text-on-surface">
+              <p className="text-danger font-medium mb-[12px]">
+                {error}
+              </p>
+              <button
+                type="button"
+                onClick={fetchProjects}
+                className="rounded-full border border-danger/60 bg-danger/20 px-[20px] py-[8px] font-body-md text-[13px] text-on-surface hover:bg-danger/30 transition-colors focus-visible:outline-none"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          {/* Loading Skeletons */}
+          {loading &&
+            projects.length === 0 &&
+            [...Array(6)].map((_, idx) => (
+              <div
+                key={idx}
+                className="relative flex min-h-[200px] flex-col justify-end overflow-hidden rounded-[16px] border border-white/10 bg-white/5 p-[16px] animate-pulse"
+              >
+                <div className="h-[20px] w-[60px] rounded-full bg-white/10 mb-auto" />
+                <div className="h-[20px] w-3/4 rounded bg-white/10 mb-[8px]" />
+                <div className="h-[14px] w-1/2 rounded bg-white/10 mb-[12px]" />
+                <div className="h-[6px] w-full rounded bg-white/10 mb-[8px]" />
+                <div className="flex justify-between">
+                  <div className="h-[12px] w-[80px] rounded bg-white/10" />
+                  <div className="h-[12px] w-[60px] rounded bg-white/10" />
+                </div>
+              </div>
+            ))}
+
           {/* Project Cards */}
-          {filteredProjects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              onSelect={handleSelectProject}
-            />
-          ))}
+          {!error &&
+            projects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onSelect={handleSelectProject}
+              />
+            ))}
 
           {/* Empty State */}
-          {filteredProjects.length === 0 && (
+          {!loading && !error && projects.length === 0 && (
             <div className="col-span-full rounded-[16px] border border-dashed border-white/15 bg-white/5 p-[36px] text-center font-body-md text-on-surface-variant">
-              {searchQuery ? (
+              {debouncedQ ? (
                 <>
-                  No projects found for &ldquo;{searchQuery}&rdquo;. The live
+                  No projects found for &ldquo;{debouncedQ}&rdquo;. The live
                   site will also search within 10 km of any place you type.
                 </>
               ) : (
@@ -490,10 +665,19 @@ export function PublicHome() {
           )}
         </div>
 
-        {/* Required design review notice */}
-        <p className="mt-[24px] font-body-md text-[12px] text-on-surface-variant">
-          Sample data for design review.
-        </p>
+        {/* Load More Button */}
+        {!loading && !error && projects.length < total && (
+          <div className="mt-[32px] flex justify-center">
+            <button
+              type="button"
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              className="rounded-full border border-white/15 bg-white/5 px-[28px] py-[10px] font-body-md text-[14px] text-on-surface transition-all hover:border-primary-container hover:text-primary-container disabled:opacity-50 focus-visible:outline-none"
+            >
+              {loadingMore ? "Loading..." : "Load more"}
+            </button>
+          </div>
+        )}
       </main>
 
       {/* Detail Slideout Panel */}

@@ -1,19 +1,25 @@
 "use client";
 
 import React from "react";
-import { SampleProject } from "./sampleProjects";
+import { PublicProject, formatIndianBudget } from "@/services/publicProjects";
 import { StanceBar } from "./StanceBar";
 
 type ProjectCardProps = {
-  project: SampleProject;
-  onSelect: (project: SampleProject, element: HTMLElement) => void;
+  project: PublicProject;
+  onSelect: (project: PublicProject, element: HTMLElement) => void;
   cardRef?: (node: HTMLElement | null) => void;
 };
 
-export function ProjectCard({ project, onSelect, cardRef }: ProjectCardProps) {
-  const totalPeople =
-    project.stance.support + project.stance.concern + project.stance.neutral;
+const CATEGORY_GRADIENTS: Record<string, string> = {
+  Road: "radial-gradient(circle at 80% 20%, rgba(34,211,238,0.25) 0%, transparent 60%)",
+  Hospital: "radial-gradient(circle at 80% 20%, rgba(52,211,153,0.25) 0%, transparent 60%)",
+  School: "radial-gradient(circle at 80% 20%, rgba(251,191,36,0.25) 0%, transparent 60%)",
+  Stadium: "radial-gradient(circle at 80% 20%, rgba(168,85,247,0.25) 0%, transparent 60%)",
+  Mall: "radial-gradient(circle at 80% 20%, rgba(244,114,182,0.25) 0%, transparent 60%)",
+  Park: "radial-gradient(circle at 80% 20%, rgba(74,222,128,0.25) 0%, transparent 60%)",
+};
 
+export function ProjectCard({ project, onSelect, cardRef }: ProjectCardProps) {
   const stageLabel =
     project.stage === "Halted"
       ? "Halted"
@@ -21,7 +27,11 @@ export function ProjectCard({ project, onSelect, cardRef }: ProjectCardProps) {
       ? "Completed"
       : project.stage === "InProgress"
       ? "In progress"
-      : `${project.daysLeft} days left`;
+      : project.days_left != null
+      ? `${project.days_left} days left`
+      : project.stage === "OpenForResponse"
+      ? "Open for response"
+      : project.stage;
 
   const stageColor =
     project.stage === "Halted"
@@ -31,6 +41,11 @@ export function ProjectCard({ project, onSelect, cardRef }: ProjectCardProps) {
       : project.stage === "InProgress"
       ? "text-primary-container"
       : "text-on-surface-variant";
+
+  const cityName = project.city_name || project.city || "India";
+  const gradient =
+    (project.category && CATEGORY_GRADIENTS[project.category]) ||
+    "radial-gradient(circle at 80% 20%, rgba(34,211,238,0.2) 0%, transparent 60%)";
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -44,7 +59,7 @@ export function ProjectCard({ project, onSelect, cardRef }: ProjectCardProps) {
       ref={cardRef}
       tabIndex={0}
       role="button"
-      aria-label={`View ${project.name}, ${project.city}`}
+      aria-label={`View ${project.title}, ${cityName}`}
       onClick={(e) => {
         onSelect(project, e.currentTarget);
       }}
@@ -54,7 +69,7 @@ export function ProjectCard({ project, onSelect, cardRef }: ProjectCardProps) {
       {/* Category radial gradient backdrop */}
       <div
         className="pointer-events-none absolute inset-0 z-0 opacity-80 transition-opacity duration-300 group-hover:opacity-100"
-        style={{ background: project.gradient }}
+        style={{ background: gradient }}
         aria-hidden="true"
       />
       {/* Surface shade vignette */}
@@ -63,17 +78,26 @@ export function ProjectCard({ project, onSelect, cardRef }: ProjectCardProps) {
         aria-hidden="true"
       />
 
-      {/* Top category chip */}
-      <span className="absolute top-[12px] left-[14px] z-10 rounded-full border border-white/10 bg-surface-container-lowest/70 px-[10px] py-[3px] font-body-md text-[11px] text-on-surface-variant">
-        {project.category}
-      </span>
+      {/* Top badges: category chip & demo tag */}
+      <div className="absolute top-[12px] left-[14px] z-10 flex items-center gap-[6px]">
+        {project.category && (
+          <span className="rounded-full border border-white/10 bg-surface-container-lowest/70 px-[10px] py-[3px] font-body-md text-[11px] text-on-surface-variant">
+            {project.category}
+          </span>
+        )}
+        {project.is_demo && (
+          <span className="rounded-full border border-secondary/30 bg-secondary/15 px-[8px] py-[2px] font-data-mono text-[10px] font-semibold tracking-wider text-secondary uppercase">
+            Demo
+          </span>
+        )}
+      </div>
 
       {/* Top-right disabled Follow button */}
       <button
         type="button"
         disabled
         aria-disabled="true"
-        aria-label={`Follow ${project.name} (Soon)`}
+        aria-label={`Follow ${project.title} (Soon)`}
         onClick={(e) => e.stopPropagation()}
         className="absolute top-[10px] right-[12px] z-10 flex items-center gap-[4px] rounded-full border border-white/15 bg-white/5 px-[10px] py-[3px] font-body-md text-[11px] text-on-surface-variant/60 cursor-not-allowed"
       >
@@ -86,21 +110,21 @@ export function ProjectCard({ project, onSelect, cardRef }: ProjectCardProps) {
       {/* Card Content */}
       <div className="relative z-10 mt-auto flex flex-col gap-[4px]">
         <h3 className="font-body-md text-[17px] font-bold text-on-surface leading-snug">
-          {project.name}
+          {project.title}
         </h3>
         <p className="font-body-md text-[13px] text-on-surface-variant">
-          {project.city} · ₹{project.budgetCrore.toLocaleString("en-IN")} Cr
+          {cityName} · {formatIndianBudget(project.budget)}
         </p>
 
         {/* Display-only stance bar */}
         <StanceBar
-          support={project.stance.support}
-          concern={project.stance.concern}
-          neutral={project.stance.neutral}
+          support={project.support_count}
+          concern={project.concern_count}
+          neutral={project.neutral_count}
         />
 
         <div className="mt-[2px] flex items-center justify-between font-data-mono text-[12px] text-on-surface-variant">
-          <span>{totalPeople.toLocaleString("en-IN")} people</span>
+          <span>{project.participants.toLocaleString("en-IN")} people took part</span>
           <span className={stageColor}>{stageLabel}</span>
         </div>
       </div>

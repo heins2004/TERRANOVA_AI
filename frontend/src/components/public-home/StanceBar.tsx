@@ -16,9 +16,13 @@ export function StanceBar({
   showLabels = false,
 }: StanceBarProps) {
   const total = support + concern + neutral;
-  const supportPct = total > 0 ? Math.round((support / total) * 100) : 0;
-  const concernPct = total > 0 ? Math.round((concern / total) * 100) : 0;
-  const neutralPct = total > 0 ? Math.max(0, 100 - supportPct - concernPct) : 0;
+  if (total === 0) {
+    return null;
+  }
+
+  const supportPct = (support / total) * 100;
+  const concernPct = (concern / total) * 100;
+  const neutralPct = (neutral / total) * 100;
 
   return (
     <div className="w-full">
@@ -27,33 +31,39 @@ export function StanceBar({
         role="img"
         aria-label={`Support ${support}, concern ${concern}, neutral ${neutral} people`}
       >
-        <span
-          className="block h-full bg-success rounded-l-[4px] min-w-[3px]"
-          style={{ flex: support || 1 }}
-        />
-        <span
-          className="block h-full bg-danger min-w-[3px]"
-          style={{ flex: concern || 1 }}
-        />
-        <span
-          className="block h-full bg-muted-foreground rounded-r-[4px] min-w-[3px]"
-          style={{ flex: neutral || 1 }}
-        />
+        {support > 0 && (
+          <span
+            className="block h-full bg-success rounded-l-[4px] min-w-[3px]"
+            style={{ width: `${supportPct}%` }}
+          />
+        )}
+        {concern > 0 && (
+          <span
+            className="block h-full bg-danger min-w-[3px]"
+            style={{ width: `${concernPct}%` }}
+          />
+        )}
+        {neutral > 0 && (
+          <span
+            className="block h-full bg-muted-foreground rounded-r-[4px] min-w-[3px]"
+            style={{ width: `${neutralPct}%` }}
+          />
+        )}
       </div>
 
       {showLabels && (
         <div className="mt-[6px] flex flex-wrap gap-[16px] font-data-mono text-[11px] text-on-surface-variant">
           <span className="flex items-center gap-[6px]">
             <span className="h-[6px] w-[6px] rounded-full bg-success" />
-            Support {supportPct}%
+            Support {support} ({Math.round(supportPct)}%)
           </span>
           <span className="flex items-center gap-[6px]">
             <span className="h-[6px] w-[6px] rounded-full bg-danger" />
-            Concern {concernPct}%
+            Concern {concern} ({Math.round(concernPct)}%)
           </span>
           <span className="flex items-center gap-[6px]">
             <span className="h-[6px] w-[6px] rounded-full bg-muted-foreground" />
-            Neutral {neutralPct}%
+            Neutral {neutral} ({Math.round(neutralPct)}%)
           </span>
         </div>
       )}
