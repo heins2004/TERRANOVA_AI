@@ -139,10 +139,15 @@ export function ProjectPanel({
   const [liveMessage, setLiveMessage] = useState<string>("");
 
   useEffect(() => {
-    if (postedCommentId != null && newCommentRef.current) {
-      newCommentRef.current.focus();
+    if (postedCommentId != null) {
+      const timer = setTimeout(() => {
+        if (newCommentRef.current) {
+          newCommentRef.current.focus();
+        }
+      }, 50);
+      return () => clearTimeout(timer);
     }
-  }, [postedCommentId]);
+  }, [postedCommentId, comments]);
 
   // Fetch full project detail on open
   useEffect(() => {
@@ -695,6 +700,7 @@ export function ProjectPanel({
               return (
                 <div
                   key={c.id}
+                  data-comment-id={c.id}
                   ref={isNewlyCreatedComment ? newCommentRef : null}
                   tabIndex={isNewlyCreatedComment ? -1 : undefined}
                   className="pt-[10px] border-t border-white/10 first:border-t-0 first:pt-0 outline-none"
@@ -727,6 +733,7 @@ export function ProjectPanel({
                         return (
                           <div
                             key={reply.id}
+                            data-comment-id={reply.id}
                             ref={isNewlyCreatedReply ? newCommentRef : null}
                             tabIndex={isNewlyCreatedReply ? -1 : undefined}
                             className="ml-[14px] pl-[12px] border-l-2 border-primary-container/80 outline-none"
