@@ -60,44 +60,67 @@ export type ProjectFilters = {
   offset?: number;
 };
 
-export function formatIndianBudget(amount: number | null | undefined): string {
-  if (amount == null) return "–";
+export function formatIndianBudget(amount: unknown): string {
+  if (
+    amount == null ||
+    typeof amount !== "number" ||
+    isNaN(amount) ||
+    amount < 0
+  ) {
+    return "Not announced";
+  }
+
   if (amount === 0) return "₹0";
+
+  function formatNumber(num: number): string {
+    const rounded = Math.round(num * 100) / 100;
+    const parts = rounded.toString().split(".");
+    const intPart = parseInt(parts[0], 10).toLocaleString("en-IN");
+    return parts.length > 1 ? `${intPart}.${parts[1]}` : intPart;
+  }
 
   if (amount >= 10_000_000) {
     const cr = amount / 10_000_000;
-    const formatted = Number.isInteger(cr)
-      ? cr.toLocaleString("en-IN")
-      : parseFloat(cr.toFixed(2)).toLocaleString("en-IN");
-    return `₹${formatted} Cr`;
+    return `₹${formatNumber(cr)} Cr`;
   }
 
   if (amount >= 100_000) {
-    const lakh = amount / 100_000;
-    const formatted = Number.isInteger(lakh)
-      ? lakh.toLocaleString("en-IN")
-      : parseFloat(lakh.toFixed(2)).toLocaleString("en-IN");
-    return `₹${formatted} Lakh`;
+    const roundedLakh = Math.round((amount / 100_000) * 100) / 100;
+    if (roundedLakh >= 100) {
+      const cr = amount / 10_000_000;
+      return `₹${formatNumber(cr)} Cr`;
+    }
+    return `₹${formatNumber(roundedLakh)} Lakh`;
   }
 
-  return `₹${amount.toLocaleString("en-IN")}`;
+  const rounded = Math.round(amount * 100) / 100;
+  return `₹${rounded.toLocaleString("en-IN")}`;
 }
 
 export type BudgetTestCase = {
-  input: number | null | undefined;
+  input: unknown;
   expected: string;
 };
 
 export const BUDGET_TEST_CASES: BudgetTestCase[] = [
-  { input: 1_860_000_000, expected: "₹186 Cr" },
-  { input: 12_500_000_000, expected: "₹1,250 Cr" },
-  { input: 240_000_000, expected: "₹24 Cr" },
-  { input: 5_000_000, expected: "₹50 Lakh" },
-  { input: 75_000, expected: "₹75,000" },
+  { input: 0, expected: "₹0" },
+  { input: 99999, expected: "₹99,999" },
+  { input: 100000, expected: "₹1 Lakh" },
+  { input: 150000, expected: "₹1.5 Lakh" },
+  { input: 9999999, expected: "₹1 Cr" },
+  { input: 10000000, expected: "₹1 Cr" },
+  { input: 125000000, expected: "₹12.5 Cr" },
+  { input: 186000000, expected: "₹18.6 Cr" },
+  { input: 1860000000, expected: "₹186 Cr" },
+  { input: 12500000000, expected: "₹1,250 Cr" },
+  { input: null, expected: "Not announced" },
+  { input: -5, expected: "Not announced" },
+  { input: NaN, expected: "Not announced" },
+  { input: "abc", expected: "Not announced" },
 ];
 
 export function runBudgetTests(): {
-  input: number | null | undefined;
+  input: unknown;
   expected: string;
   actual: string;
   passed: boolean;
