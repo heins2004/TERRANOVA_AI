@@ -6,7 +6,10 @@ import { StanceBar } from "./StanceBar";
 
 type ProjectCardProps = {
   project: PublicProject;
+  isFollowed?: boolean;
+  isFollowInFlight?: boolean;
   onSelect: (project: PublicProject, element: HTMLElement) => void;
+  onToggleFollow?: (projectId: number) => void;
   cardRef?: (node: HTMLElement | null) => void;
 };
 
@@ -19,7 +22,14 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
   Park: "radial-gradient(circle at 80% 20%, rgba(74,222,128,0.25) 0%, transparent 60%)",
 };
 
-export function ProjectCard({ project, onSelect, cardRef }: ProjectCardProps) {
+export function ProjectCard({
+  project,
+  isFollowed = false,
+  isFollowInFlight = false,
+  onSelect,
+  onToggleFollow,
+  cardRef,
+}: ProjectCardProps) {
   const stageLabel =
     project.stage === "Halted"
       ? "Halted"
@@ -92,19 +102,28 @@ export function ProjectCard({ project, onSelect, cardRef }: ProjectCardProps) {
         )}
       </div>
 
-      {/* Top-right disabled Follow button */}
+      {/* Top-right Follow button */}
       <button
         type="button"
-        disabled
-        aria-disabled="true"
-        aria-label={`Follow ${project.title} (Soon)`}
-        onClick={(e) => e.stopPropagation()}
-        className="absolute top-[10px] right-[12px] z-10 flex items-center gap-[4px] rounded-full border border-white/15 bg-white/5 px-[10px] py-[3px] font-body-md text-[11px] text-on-surface-variant/60 cursor-not-allowed"
+        disabled={isFollowInFlight}
+        aria-label={`Follow ${project.title}`}
+        aria-pressed={isFollowed}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleFollow?.(project.id);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.stopPropagation();
+          }
+        }}
+        className={`absolute top-[10px] right-[12px] z-10 flex items-center gap-[4px] rounded-full border px-[10px] py-[3px] font-body-md text-[11px] transition-all ${
+          isFollowed
+            ? "border-primary-container/80 bg-primary-container/20 text-primary-container font-medium"
+            : "border-white/15 bg-white/5 text-on-surface-variant hover:border-white/30 hover:text-on-surface"
+        } ${isFollowInFlight ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
       >
-        <span>Follow</span>
-        <span className="text-[9px] uppercase tracking-wider text-on-surface-variant/50">
-          (Soon)
-        </span>
+        <span>{isFollowed ? "Following" : "Follow"}</span>
       </button>
 
       {/* Card Content */}

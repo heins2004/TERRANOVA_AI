@@ -20,6 +20,9 @@ import { StanceBar } from "./StanceBar";
 type ProjectPanelProps = {
   project: PublicProject;
   originCard: HTMLElement | null;
+  isFollowed?: boolean;
+  isFollowInFlight?: boolean;
+  onToggleFollow?: (projectId: number) => void;
   onStartClose?: () => void;
   onClose: () => void;
 };
@@ -33,6 +36,9 @@ const getClip = (F: DOMRect, C: DOMRect) =>
 export function ProjectPanel({
   project,
   originCard,
+  isFollowed = false,
+  isFollowInFlight = false,
+  onToggleFollow,
   onStartClose,
   onClose,
 }: ProjectPanelProps) {
@@ -371,15 +377,17 @@ export function ProjectPanel({
           <div className="mt-[16px]">
             <button
               type="button"
-              disabled
-              aria-disabled="true"
-              aria-label="Follow this project (Soon)"
-              className="inline-flex items-center gap-[6px] rounded-full border border-white/15 bg-white/5 px-[18px] py-[8px] font-body-md text-[12px] text-on-surface-variant/60 cursor-not-allowed"
+              disabled={isFollowInFlight}
+              aria-label={`Follow ${detail.title}`}
+              aria-pressed={isFollowed}
+              onClick={() => onToggleFollow?.(detail.id)}
+              className={`inline-flex items-center gap-[6px] rounded-full border px-[18px] py-[8px] font-body-md text-[12px] transition-all ${
+                isFollowed
+                  ? "border-primary-container/80 bg-primary-container/20 text-primary-container font-medium"
+                  : "border-white/15 bg-white/5 text-on-surface-variant hover:border-white/30 hover:text-on-surface"
+              } ${isFollowInFlight ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
             >
-              <span>Follow this project</span>
-              <span className="text-[10px] uppercase tracking-wider text-on-surface-variant/50">
-                (Soon)
-              </span>
+              <span>{isFollowed ? "Following" : "Follow"}</span>
             </button>
           </div>
         </div>

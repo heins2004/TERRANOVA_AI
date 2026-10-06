@@ -9,11 +9,17 @@ import React, {
   useState,
 } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/layout/auth-provider";
 import {
   PublicProject,
   listProjects,
 } from "@/services/publicProjects";
+import {
+  getMyFollows,
+  followProject,
+  unfollowProject,
+} from "@/services/follows";
 import { ProjectCard } from "./ProjectCard";
 import { ProjectPanel } from "./ProjectPanel";
 import { ParticleCloak } from "./ParticleCloak";
@@ -101,7 +107,103 @@ export function PublicHome() {
   const cardAnimsDataRef = useRef<
     { element: HTMLElement; dx: number; dy: number }[]
   >([]);
+  const router = useRouter();
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  const [followedIds, setFollowedIds] = useState<Set<number>>(new Set());
+  const [inFlightFollowIds, setInFlightFollowIds] = useState<Set<number>>(
+    new Set()
+  );
+  const [followError, setFollowError] = useState<string | null>(null);
+
+  // Load follows once when authenticated user is present; clear on logout
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      setFollowedIds(new Set());
+      return;
+    }
+
+    const ac = new AbortController();
+    getMyFollows(ac.signal)
+      .then((res) => {
+        setFollowedIds(new Set(res.project_ids));
+      })
+      .catch((err) => {
+        if (err.message === "not logged in") {
+          router.push("/login");
+        }
+      });
+
+    return () => ac.abort();
+  }, [isAuthenticated, user, router]);
+
+  // Auto-dismiss follow error after 4s
+  useEffect(() => {
+    if (followError) {
+      const timer = setTimeout(() => setFollowError(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [followError]);
+
+  const handleToggleFollow = useCallback(
+    async (projectId: number) => {
+      if (!isAuthenticated || !user) {
+        router.push("/login");
+        return;
+      }
+
+      if (inFlightFollowIds.has(projectId)) {
+        return;
+      }
+
+      const wasFollowed = followedIds.has(projectId);
+
+      // Optimistic update
+      setFollowedIds((prev) => {
+        const next = new Set(prev);
+        if (wasFollowed) {
+          next.delete(projectId);
+        } else {
+          next.add(projectId);
+        }
+        return next;
+      });
+
+      setInFlightFollowIds((prev) => new Set(prev).add(projectId));
+      setFollowError(null);
+
+      try {
+        if (wasFollowed) {
+          await unfollowProject(projectId);
+        } else {
+          await followProject(projectId);
+        }
+      } catch (err: any) {
+        if (err.message === "not logged in") {
+          router.push("/login");
+          return;
+        }
+        // Roll back on failure
+        setFollowedIds((prev) => {
+          const next = new Set(prev);
+          if (wasFollowed) {
+            next.add(projectId);
+          } else {
+            next.delete(projectId);
+          }
+          return next;
+        });
+        setFollowError("Could not update follow. Try again.");
+      } finally {
+        setInFlightFollowIds((prev) => {
+          const next = new Set(prev);
+          next.delete(projectId);
+          return next;
+        });
+      }
+    },
+    [isAuthenticated, user, router, followedIds, inFlightFollowIds]
+  );
 
   // 300ms debounce for search query
   useEffect(() => {
@@ -648,6 +750,9 @@ export function PublicHome() {
               <ProjectCard
                 key={project.id}
                 project={project}
+                isFollowed={followedIds.has(project.id)}
+                isFollowInFlight={inFlightFollowIds.has(project.id)}
+                onToggleFollow={handleToggleFollow}
                 onSelect={handleSelectProject}
               />
             ))}
@@ -687,9 +792,22 @@ export function PublicHome() {
         <ProjectPanel
           project={selectedProject}
           originCard={triggerElementRef.current}
+          isFollowed={followedIds.has(selectedProject.id)}
+          isFollowInFlight={inFlightFollowIds.has(selectedProject.id)}
+          onToggleFollow={handleToggleFollow}
           onStartClose={handleStartClose}
           onClose={handleClosePanel}
         />
+      )}
+
+      {/* Follow Error Toast */}
+      {followError && (
+        <div
+          role="status"
+          className="fixed bottom-[24px] right-[24px] z-50 rounded-xl border border-danger/60 bg-surface-container-lowest px-[16px] py-[12px] font-body-md text-[13px] text-danger shadow-2xl backdrop-blur-md"
+        >
+          {followError}
+        </div>
       )}
     </div>
   );
