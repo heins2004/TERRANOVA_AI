@@ -7,6 +7,9 @@ import React, {
   useRef,
   useState,
 } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/layout/auth-provider";
 import {
   PublicComment,
   PublicProject,
@@ -14,6 +17,10 @@ import {
   getProject,
   listComments,
 } from "@/services/publicProjects";
+import {
+  CommentApiError,
+  postComment,
+} from "@/services/comments";
 import { StageTracker } from "./StageTracker";
 import { StanceBar } from "./StanceBar";
 
@@ -25,6 +32,7 @@ type ProjectPanelProps = {
   onToggleFollow?: (projectId: number) => void;
   onStartClose?: () => void;
   onClose: () => void;
+  onProjectUpdated?: (updatedProject: PublicProject) => void;
 };
 
 const FULL = "inset(0px 0px 0px 0px round 20px)";
@@ -32,6 +40,54 @@ const EASE = "cubic-bezier(.65,0,.2,1)";
 
 const getClip = (F: DOMRect, C: DOMRect) =>
   `inset(${C.top - F.top}px ${F.right - C.right}px ${F.bottom - C.bottom}px ${C.left - F.left}px round 16px)`;
+
+function cleanCommentBody(raw: string): string {
+  return raw
+    .split("")
+    .filter((ch) => ch === "\n" || (ch.charCodeAt(0) >= 32 && ch.charCodeAt(0) !== 127))
+    .join("")
+    .trim();
+}
+
+function parseCommentError(err: unknown): {
+  message: string;
+  is401?: boolean;
+  is409Closed?: boolean;
+} {
+  if (err instanceof CommentApiError) {
+    if (err.status === 401) {
+      return { message: "You must be logged in to comment.", is401: true };
+    }
+    if (err.status === 409) {
+      const msg = err.serverMessage || "";
+      if (msg.toLowerCase().includes("closed")) {
+        return { message: "Comments are closed for this project.", is409Closed: true };
+      }
+      if (msg.toLowerCase().includes("identical") || msg.toLowerCase().includes("already")) {
+        return { message: "You already posted this comment." };
+      }
+      return { message: msg };
+    }
+    if (err.status === 429) {
+      const retryAfter = err.retryAfter ?? 60;
+      const minutes = Math.max(1, Math.ceil(retryAfter / 60));
+      return {
+        message: `You are posting too fast. Try again in ${minutes} minutes.`,
+      };
+    }
+    if (err.status === 403) {
+      return { message: err.serverMessage };
+    }
+    if (err.status === 422) {
+      return { message: "Check your comment and try again." };
+    }
+    if (err.status === 0) {
+      return { message: "Could not post. Check your connection and try again." };
+    }
+    return { message: err.serverMessage || "Could not post. Check your connection and try again." };
+  }
+  return { message: "Could not post. Check your connection and try again." };
+}
 
 export function ProjectPanel({
   project,
@@ -41,17 +97,52 @@ export function ProjectPanel({
   onToggleFollow,
   onStartClose,
   onClose,
+  onProjectUpdated,
 }: ProjectPanelProps) {
+  const router = useRouter();
+  const { user } = useAuth();
+
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const isClosingRef = useRef<boolean>(false);
+  const newCommentRef = useRef<HTMLDivElement | null>(null);
 
   const [detail, setDetail] = useState<PublicProject>(project);
   const [comments, setComments] = useState<PublicComment[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState<boolean>(false);
   const [hasMoreComments, setHasMoreComments] = useState<boolean>(true);
   const [commentsOffset, setCommentsOffset] = useState<number>(0);
+
+  // Comment posting state
+  const [isClosedLocally, setIsClosedLocally] = useState<boolean>(false);
+  const [topStance, setTopStance] = useState<"Support" | "Concern" | "Neutral" | null>(null);
+  const [topBody, setTopBody] = useState<string>("");
+  const [topStanceError, setTopStanceError] = useState<string | null>(null);
+  const [topBodyError, setTopBodyError] = useState<string | null>(null);
+  const [topFormError, setTopFormError] = useState<string | null>(null);
+  const [isPostingTop, setIsPostingTop] = useState<boolean>(false);
+
+  // Reply state
+  const [activeReplyTarget, setActiveReplyTarget] = useState<{
+    rootId: number;
+    clickedId: number;
+    authorName: string;
+  } | null>(null);
+  const [replyBody, setReplyBody] = useState<string>("");
+  const [replyBodyError, setReplyBodyError] = useState<string | null>(null);
+  const [replyFormError, setReplyFormError] = useState<string | null>(null);
+  const [isPostingReply, setIsPostingReply] = useState<boolean>(false);
+
+  // Focus & live announcements
+  const [postedCommentId, setPostedCommentId] = useState<number | null>(null);
+  const [liveMessage, setLiveMessage] = useState<string>("");
+
+  useEffect(() => {
+    if (postedCommentId != null && newCommentRef.current) {
+      newCommentRef.current.focus();
+    }
+  }, [postedCommentId]);
 
   // Fetch full project detail on open
   useEffect(() => {
@@ -264,6 +355,154 @@ export function ProjectPanel({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [requestClose]);
 
+  // Open vs closed state determination
+  const isOpen =
+    !isClosedLocally &&
+    detail.stage === "OpenForResponse" &&
+    detail.days_left != null &&
+    detail.days_left > 0;
+
+  const isGovOfficial = user?.role === "Government Official";
+
+  // Handle post top-level comment
+  const handlePostTopComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setTopStanceError(null);
+    setTopBodyError(null);
+    setTopFormError(null);
+
+    let hasClientError = false;
+
+    if (!topStance) {
+      setTopStanceError("Please select a stance.");
+      hasClientError = true;
+    }
+
+    const cleaned = cleanCommentBody(topBody);
+    if (cleaned.length < 3) {
+      setTopBodyError("Comment must be at least 3 characters.");
+      hasClientError = true;
+    } else if (cleaned.length > 500) {
+      setTopBodyError("Comment cannot exceed 500 characters.");
+      hasClientError = true;
+    }
+
+    if (hasClientError) {
+      return;
+    }
+
+    setIsPostingTop(true);
+    try {
+      const created = await postComment(detail.id, {
+        body: cleaned,
+        stance: topStance,
+      });
+
+      setTopBody("");
+      setTopStance(null);
+      setComments((prev) => [created, ...prev]);
+      setPostedCommentId(created.id);
+      setLiveMessage("Comment posted.");
+
+      try {
+        const fresh = await getProject(detail.id);
+        setDetail(fresh);
+        onProjectUpdated?.(fresh);
+      } catch {
+        // ignore
+      }
+    } catch (err: unknown) {
+      const parsed = parseCommentError(err);
+      if (parsed.is401) {
+        router.push("/login");
+        return;
+      }
+      if (parsed.is409Closed) {
+        setIsClosedLocally(true);
+      }
+      setTopFormError(parsed.message);
+    } finally {
+      setIsPostingTop(false);
+    }
+  };
+
+  // Handle post reply
+  const handlePostReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeReplyTarget) return;
+
+    setReplyBodyError(null);
+    setReplyFormError(null);
+
+    const cleaned = cleanCommentBody(replyBody);
+    if (cleaned.length < 3) {
+      setReplyBodyError("Comment must be at least 3 characters.");
+      return;
+    } else if (cleaned.length > 500) {
+      setReplyBodyError("Comment cannot exceed 500 characters.");
+      return;
+    }
+
+    setIsPostingReply(true);
+    try {
+      const created = await postComment(detail.id, {
+        body: cleaned,
+        parent_id: activeReplyTarget.clickedId,
+      });
+
+      setReplyBody("");
+      const targetRootId = activeReplyTarget.rootId;
+      setActiveReplyTarget(null);
+
+      setComments((prev) =>
+        prev.map((c) => {
+          if (c.id === targetRootId || c.id === created.parent_id) {
+            const existingReplies = c.replies || [];
+            return {
+              ...c,
+              replies: [
+                ...existingReplies,
+                {
+                  id: created.id,
+                  author_name: created.author_name,
+                  badge: created.badge,
+                  stance: created.stance,
+                  body: created.body,
+                  created_at: created.created_at,
+                  parent_id: created.parent_id,
+                },
+              ],
+            };
+          }
+          return c;
+        })
+      );
+
+      setPostedCommentId(created.id);
+      setLiveMessage("Comment posted.");
+
+      try {
+        const fresh = await getProject(detail.id);
+        setDetail(fresh);
+        onProjectUpdated?.(fresh);
+      } catch {
+        // ignore
+      }
+    } catch (err: unknown) {
+      const parsed = parseCommentError(err);
+      if (parsed.is401) {
+        router.push("/login");
+        return;
+      }
+      if (parsed.is409Closed) {
+        setIsClosedLocally(true);
+      }
+      setReplyFormError(parsed.message);
+    } finally {
+      setIsPostingReply(false);
+    }
+  };
+
   const cityName = detail.city_name || detail.city || "India";
 
   return (
@@ -432,6 +671,16 @@ export function ProjectPanel({
             Public Comments
           </h4>
 
+          {liveMessage && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="mb-[12px] rounded-lg border border-primary-container/40 bg-primary-container/10 px-[12px] py-[8px] font-body-md text-[13px] text-primary-container"
+            >
+              {liveMessage}
+            </div>
+          )}
+
           <div className="flex flex-col gap-[14px]">
             {comments.length === 0 && !isLoadingComments && (
               <p className="font-body-md text-[13px] text-on-surface-variant">
@@ -439,74 +688,201 @@ export function ProjectPanel({
               </p>
             )}
 
-            {comments.map((c) => (
-              <div
-                key={c.id}
-                className="pt-[10px] border-t border-white/10 first:border-t-0 first:pt-0"
-              >
-                <div className="flex flex-wrap items-center gap-[8px]">
-                  <b className="font-body-md text-[14px] text-on-surface">
-                    {c.author_name}
-                  </b>
-                  {c.badge && (
-                    <span className="rounded-full border border-primary-container/60 bg-primary-container/15 px-[8px] py-[2px] font-data-mono text-[10px] uppercase tracking-wider text-primary-container">
-                      {c.badge}
-                    </span>
-                  )}
-                  {c.stance && (
-                    <span className="font-data-mono text-[11px] text-on-surface-variant">
-                      {c.stance}
-                    </span>
-                  )}
-                </div>
-                <div className="mt-[4px] font-body-md text-[14px] text-on-surface/90">
-                  {c.body}
-                </div>
+            {comments.map((c) => {
+              const isNewlyCreatedComment = c.id === postedCommentId;
+              const allowReply = user && (isOpen || isGovOfficial);
 
-                {/* Reply */}
-                {c.replies && c.replies.length > 0 && (
-                  <div className="mt-[8px] flex flex-col gap-[8px]">
-                    {c.replies.map((reply) => (
-                      <div
-                        key={reply.id}
-                        className="ml-[14px] pl-[12px] border-l-2 border-primary-container/80"
-                      >
-                        <div className="flex flex-wrap items-center gap-[8px]">
-                          <b className="font-body-md text-[13px] text-on-surface">
-                            {reply.author_name}
-                          </b>
-                          {reply.badge && (
-                            <span className="rounded-full border border-primary-container/60 bg-primary-container/15 px-[8px] py-[2px] font-data-mono text-[10px] uppercase tracking-wider text-primary-container">
-                              {reply.badge}
-                            </span>
-                          )}
-                          {reply.stance && (
-                            <span className="font-data-mono text-[11px] text-on-surface-variant">
-                              {reply.stance}
-                            </span>
-                          )}
-                        </div>
-                        <div className="mt-[4px] font-body-md text-[13px] text-on-surface/85">
-                          {reply.body}
-                        </div>
-                      </div>
-                    ))}
+              return (
+                <div
+                  key={c.id}
+                  ref={isNewlyCreatedComment ? newCommentRef : null}
+                  tabIndex={isNewlyCreatedComment ? -1 : undefined}
+                  className="pt-[10px] border-t border-white/10 first:border-t-0 first:pt-0 outline-none"
+                >
+                  <div className="flex flex-wrap items-center gap-[8px]">
+                    <b className="font-body-md text-[14px] text-on-surface">
+                      {c.author_name}
+                    </b>
+                    {c.badge && (
+                      <span className="rounded-full border border-primary-container/60 bg-primary-container/15 px-[8px] py-[2px] font-data-mono text-[10px] uppercase tracking-wider text-primary-container">
+                        {c.badge}
+                      </span>
+                    )}
+                    {c.stance && (
+                      <span className="font-data-mono text-[11px] text-on-surface-variant">
+                        {c.stance}
+                      </span>
+                    )}
                   </div>
-                )}
 
-                <div className="mt-[8px]">
-                  <button
-                    type="button"
-                    disabled
-                    aria-disabled="true"
-                    aria-label={`Reply to ${c.author_name} (Soon)`}
-                    className="font-body-md text-[11px] text-on-surface-variant/50 cursor-not-allowed"
-                  >
-                    Reply (Soon)
-                  </button>
+                  <div className="mt-[4px] font-body-md text-[14px] text-on-surface/90 whitespace-pre-wrap break-words">
+                    {c.body}
+                  </div>
+
+                  {/* Replies inside this thread */}
+                  {c.replies && c.replies.length > 0 && (
+                    <div className="mt-[8px] flex flex-col gap-[8px]">
+                      {c.replies.map((reply) => {
+                        const isNewlyCreatedReply = reply.id === postedCommentId;
+                        return (
+                          <div
+                            key={reply.id}
+                            ref={isNewlyCreatedReply ? newCommentRef : null}
+                            tabIndex={isNewlyCreatedReply ? -1 : undefined}
+                            className="ml-[14px] pl-[12px] border-l-2 border-primary-container/80 outline-none"
+                          >
+                            <div className="flex flex-wrap items-center gap-[8px]">
+                              <b className="font-body-md text-[13px] text-on-surface">
+                                {reply.author_name}
+                              </b>
+                              {reply.badge && (
+                                <span className="rounded-full border border-primary-container/60 bg-primary-container/15 px-[8px] py-[2px] font-data-mono text-[10px] uppercase tracking-wider text-primary-container">
+                                  {reply.badge}
+                                </span>
+                              )}
+                              {reply.stance && (
+                                <span className="font-data-mono text-[11px] text-on-surface-variant">
+                                  {reply.stance}
+                                </span>
+                              )}
+                            </div>
+                            <div className="mt-[4px] font-body-md text-[13px] text-on-surface/85 whitespace-pre-wrap break-words">
+                              {reply.body}
+                            </div>
+
+                            {/* Reply button on a reply */}
+                            {allowReply && (
+                              <div className="mt-[4px]">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (activeReplyTarget?.clickedId === reply.id) {
+                                      setActiveReplyTarget(null);
+                                      setReplyBody("");
+                                      setReplyBodyError(null);
+                                      setReplyFormError(null);
+                                    } else {
+                                      setActiveReplyTarget({
+                                        rootId: c.id,
+                                        clickedId: reply.id,
+                                        authorName: reply.author_name,
+                                      });
+                                      setReplyBody("");
+                                      setReplyBodyError(null);
+                                      setReplyFormError(null);
+                                    }
+                                  }}
+                                  aria-label={`Reply to ${reply.author_name}`}
+                                  className="font-body-md text-[11px] text-primary-container hover:underline cursor-pointer"
+                                >
+                                  Reply
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Reply button on top-level comment */}
+                  {allowReply && (
+                    <div className="mt-[8px]">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (activeReplyTarget?.clickedId === c.id) {
+                            setActiveReplyTarget(null);
+                            setReplyBody("");
+                            setReplyBodyError(null);
+                            setReplyFormError(null);
+                          } else {
+                            setActiveReplyTarget({
+                              rootId: c.id,
+                              clickedId: c.id,
+                              authorName: c.author_name,
+                            });
+                            setReplyBody("");
+                            setReplyBodyError(null);
+                            setReplyFormError(null);
+                          }
+                        }}
+                        aria-label={`Reply to ${c.author_name}`}
+                        className="font-body-md text-[11px] text-primary-container hover:underline cursor-pointer"
+                      >
+                        Reply
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Inline Reply Box under thread (only one open at a time) */}
+                  {activeReplyTarget?.rootId === c.id && (
+                    <form
+                      onSubmit={handlePostReply}
+                      className="mt-[12px] ml-[14px] p-[12px] rounded-[10px] border border-white/10 bg-white/5 flex flex-col gap-[8px]"
+                    >
+                      <div className="flex items-center justify-between">
+                        <label
+                          htmlFor={`reply-box-${c.id}`}
+                          className="font-body-md text-[12px] font-semibold text-on-surface"
+                        >
+                          Replying to {activeReplyTarget.authorName}
+                        </label>
+                        <span className="font-data-mono text-[11px] text-on-surface-variant">
+                          {replyBody.length}/500
+                        </span>
+                      </div>
+
+                      <textarea
+                        id={`reply-box-${c.id}`}
+                        rows={2}
+                        value={replyBody}
+                        onChange={(e) => {
+                          setReplyBody(e.target.value);
+                          setReplyBodyError(null);
+                          setReplyFormError(null);
+                        }}
+                        placeholder="Write your reply..."
+                        className="w-full rounded-[8px] border border-white/15 bg-surface-container-lowest p-[8px] font-body-md text-[13px] text-on-surface placeholder:text-on-surface-variant/40 focus:border-primary-container focus:outline-none resize-none"
+                      />
+
+                      {replyBodyError && (
+                        <p role="alert" className="font-body-md text-[12px] text-danger">
+                          {replyBodyError}
+                        </p>
+                      )}
+
+                      <div className="flex items-center gap-[10px] flex-wrap mt-[4px]">
+                        <button
+                          type="submit"
+                          disabled={isPostingReply}
+                          className="rounded-full bg-primary-container px-[16px] py-[5px] font-body-md text-[12px] font-semibold text-on-primary hover:opacity-90 disabled:opacity-50 transition-all cursor-pointer disabled:cursor-not-allowed"
+                        >
+                          {isPostingReply ? "Posting..." : "Post reply"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveReplyTarget(null);
+                            setReplyBody("");
+                            setReplyBodyError(null);
+                            setReplyFormError(null);
+                          }}
+                          className="rounded-full border border-white/15 bg-white/5 px-[14px] py-[5px] font-body-md text-[12px] text-on-surface-variant hover:text-on-surface hover:border-white/30 cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        {replyFormError && (
+                          <div role="alert" className="font-body-md text-[12px] text-danger">
+                            {replyFormError}
+                          </div>
+                        )}
+                      </div>
+                    </form>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Load more comments */}
@@ -523,47 +899,117 @@ export function ProjectPanel({
             </div>
           )}
 
-          {/* Post Comment Input (Switched off) */}
+          {/* Comment Section Footer: Guest vs Logged In (Open vs Closed) */}
           <div className="mt-[20px] pt-[16px] border-t border-white/10">
-            <div className="flex items-center gap-[8px] mb-[8px]">
-              <select
-                disabled
-                aria-disabled="true"
-                aria-label="Your stance (Soon)"
-                className="rounded-full border border-white/15 bg-white/5 px-[12px] py-[6px] font-body-md text-[12px] text-on-surface-variant/60 cursor-not-allowed"
-              >
-                <option>Support</option>
-                <option>Concern</option>
-                <option>Neutral</option>
-              </select>
-              <span className="font-body-md text-[11px] text-on-surface-variant/60">
-                Stance selector (Soon)
-              </span>
-            </div>
+            {!user ? (
+              /* Guest: Read-only comments with Log in button */
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-[12px]">
+                <p className="font-body-md text-[13px] text-on-surface-variant">
+                  Sign in to join the discussion and share your stance.
+                </p>
+                <Link
+                  href="/login"
+                  className="rounded-full bg-primary-container px-[20px] py-[8px] font-body-md text-[13px] font-semibold text-on-primary hover:opacity-90 transition-all cursor-pointer inline-flex items-center"
+                >
+                  Log in to comment
+                </Link>
+              </div>
+            ) : !isOpen ? (
+              /* Logged in, but project is not open */
+              <div>
+                <p className="font-body-md text-[13px] text-on-surface-variant">
+                  Comments are closed for this project.
+                </p>
+              </div>
+            ) : (
+              /* Logged in and project is open: Top-level Comment Form */
+              <form onSubmit={handlePostTopComment} className="flex flex-col gap-[14px]">
+                {/* Stance Selector */}
+                <fieldset className="flex flex-col gap-[6px]">
+                  <legend className="font-body-md text-[13px] font-semibold text-on-surface">
+                    Your stance
+                  </legend>
+                  <div className="flex items-center gap-[16px] mt-[2px]">
+                    {(["Support", "Concern", "Neutral"] as const).map((s) => (
+                      <label
+                        key={s}
+                        className="flex items-center gap-[6px] cursor-pointer font-body-md text-[13px] text-on-surface"
+                      >
+                        <input
+                          type="radio"
+                          name="top-stance"
+                          value={s}
+                          checked={topStance === s}
+                          onChange={() => {
+                            setTopStance(s);
+                            setTopStanceError(null);
+                            setTopFormError(null);
+                          }}
+                          className="text-primary-container focus:ring-primary-container"
+                        />
+                        <span>{s}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <p className="font-body-md text-[11px] text-on-surface-variant mt-[2px]">
+                    Your latest stance counts once.
+                  </p>
+                  {topStanceError && (
+                    <p role="alert" className="font-body-md text-[12px] text-danger mt-[2px]">
+                      {topStanceError}
+                    </p>
+                  )}
+                </fieldset>
 
-            <textarea
-              disabled
-              aria-disabled="true"
-              aria-label="Comment input (Disabled for sample review)"
-              rows={2}
-              placeholder="Share your view (Disabled for sample review)"
-              className="w-full rounded-[12px] border border-white/15 bg-white/5 p-[12px] font-body-md text-[13px] text-on-surface-variant/60 placeholder:text-on-surface-variant/40 cursor-not-allowed resize-none"
-            />
+                {/* Comment Body */}
+                <div className="flex flex-col gap-[6px]">
+                  <div className="flex items-center justify-between">
+                    <label
+                      htmlFor="top-comment-body"
+                      className="font-body-md text-[13px] font-semibold text-on-surface"
+                    >
+                      Your comment
+                    </label>
+                    <span className="font-data-mono text-[11px] text-on-surface-variant">
+                      {topBody.length}/500
+                    </span>
+                  </div>
+                  <textarea
+                    id="top-comment-body"
+                    rows={3}
+                    value={topBody}
+                    onChange={(e) => {
+                      setTopBody(e.target.value);
+                      setTopBodyError(null);
+                      setTopFormError(null);
+                    }}
+                    placeholder="Share your perspective on this project..."
+                    className="w-full rounded-[12px] border border-white/15 bg-white/5 p-[12px] font-body-md text-[13px] text-on-surface placeholder:text-on-surface-variant/40 focus:border-primary-container focus:outline-none resize-none"
+                  />
+                  {topBodyError && (
+                    <p role="alert" className="font-body-md text-[12px] text-danger">
+                      {topBodyError}
+                    </p>
+                  )}
+                </div>
 
-            <div className="mt-[10px] flex items-center justify-between">
-              <span className="font-body-md text-[11px] text-on-surface-variant">
-                Comments are read-only in design review.
-              </span>
-              <button
-                type="button"
-                disabled
-                aria-disabled="true"
-                aria-label="Post comment (Soon)"
-                className="rounded-full border border-white/15 bg-white/5 px-[16px] py-[6px] font-body-md text-[12px] text-on-surface-variant/50 cursor-not-allowed"
-              >
-                Post (Soon)
-              </button>
-            </div>
+                {/* Submit Row with Alert Region */}
+                <div className="flex items-center gap-[12px] flex-wrap">
+                  <button
+                    type="submit"
+                    disabled={isPostingTop}
+                    className="rounded-full bg-primary-container px-[20px] py-[8px] font-body-md text-[13px] font-semibold text-on-primary hover:opacity-90 disabled:opacity-50 transition-all cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    {isPostingTop ? "Posting..." : "Post comment"}
+                  </button>
+                  {topFormError && (
+                    <div role="alert" className="font-body-md text-[13px] text-danger">
+                      {topFormError}
+                    </div>
+                  )}
+                </div>
+              </form>
+            )}
           </div>
         </div>
       </div>

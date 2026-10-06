@@ -797,6 +797,12 @@ export function PublicHome() {
           onToggleFollow={handleToggleFollow}
           onStartClose={handleStartClose}
           onClose={handleClosePanel}
+          onProjectUpdated={(freshProject) => {
+            setSelectedProject(freshProject);
+            setProjects((prev) =>
+              prev.map((p) => (p.id === freshProject.id ? freshProject : p))
+            );
+          }}
         />
       )}
 
