@@ -930,7 +930,7 @@ export function ProjectPanel({
                     Your stance
                   </legend>
                   <div className="flex items-center gap-[16px] mt-[2px]">
-                    {(["Support", "Concern", "Neutral"] as const).map((s) => (
+                    {(["Support", "Concern", "Neutral"] as const).map((s, idx, arr) => (
                       <label
                         key={s}
                         className="flex items-center gap-[6px] cursor-pointer font-body-md text-[13px] text-on-surface"
@@ -944,6 +944,27 @@ export function ProjectPanel({
                             setTopStance(s);
                             setTopStanceError(null);
                             setTopFormError(null);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+                              e.preventDefault();
+                              const cur = topStance ? arr.indexOf(topStance) : -1;
+                              const nxt = (cur + 1) % arr.length;
+                              setTopStance(arr[nxt]);
+                              setTopStanceError(null);
+                              setTopFormError(null);
+                            } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+                              e.preventDefault();
+                              const cur = topStance ? arr.indexOf(topStance) : 0;
+                              const prv = (cur - 1 + arr.length) % arr.length;
+                              setTopStance(arr[prv]);
+                              setTopStanceError(null);
+                              setTopFormError(null);
+                            } else if (e.key === " ") {
+                              setTopStance(s);
+                              setTopStanceError(null);
+                              setTopFormError(null);
+                            }
                           }}
                           className="text-primary-container focus:ring-primary-container"
                         />
