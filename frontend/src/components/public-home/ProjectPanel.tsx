@@ -856,6 +856,12 @@ export function ProjectPanel({
                         <button
                           type="submit"
                           disabled={isPostingReply}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              handlePostReply(e);
+                            }
+                          }}
                           className="rounded-full bg-primary-container px-[16px] py-[5px] font-body-md text-[12px] font-semibold text-on-primary hover:opacity-90 disabled:opacity-50 transition-all cursor-pointer disabled:cursor-not-allowed"
                         >
                           {isPostingReply ? "Posting..." : "Post reply"}
@@ -1019,6 +1025,12 @@ export function ProjectPanel({
                   <button
                     type="submit"
                     disabled={isPostingTop}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handlePostTopComment(e);
+                      }
+                    }}
                     className="rounded-full bg-primary-container px-[20px] py-[8px] font-body-md text-[13px] font-semibold text-on-primary hover:opacity-90 disabled:opacity-50 transition-all cursor-pointer disabled:cursor-not-allowed"
                   >
                     {isPostingTop ? "Posting..." : "Post comment"}
