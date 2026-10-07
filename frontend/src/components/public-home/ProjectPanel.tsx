@@ -49,7 +49,7 @@ function cleanCommentBody(raw: string): string {
     .trim();
 }
 
-function parseCommentError(err: unknown): {
+export function parseCommentError(err: unknown): {
   message: string;
   is401?: boolean;
   is409Closed?: boolean;
@@ -71,8 +71,9 @@ function parseCommentError(err: unknown): {
     if (err.status === 429) {
       const retryAfter = err.retryAfter ?? 60;
       const minutes = Math.max(1, Math.ceil(retryAfter / 60));
+      const unit = minutes === 1 ? "minute" : "minutes";
       return {
-        message: `You are posting too fast. Try again in ${minutes} minutes.`,
+        message: `You are posting too fast. Try again in ${minutes} ${unit}.`,
       };
     }
     if (err.status === 403) {
@@ -88,6 +89,8 @@ function parseCommentError(err: unknown): {
   }
   return { message: "Could not post. Check your connection and try again." };
 }
+
+export const normalizeCommentError = parseCommentError;
 
 export function ProjectPanel({
   project,
