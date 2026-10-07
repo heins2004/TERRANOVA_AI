@@ -16,20 +16,23 @@ from app.schemas.workflow import (
     ReassignPlannerRequest,
     SiteProposalRequest,
 )
+from app.services import notification_service
 
 # Allowed stage transitions map: from_stage -> set of (to_stage, allowed_actor_role)
 ALLOWED_TRANSITIONS = {
     ("Draft", "Planner invited"): "Government Official",
     ("Planner invited", "Draft"): {"Government Official", "Urban Planner"},
     ("Planner invited", "Site proposed"): "Urban Planner",
-    ("Planner invited", "Planner invited"): "Government Official",      # Reassign planner
+    ("Planner invited", "Planner invited"): {"Government Official", "Urban Planner"},  # Reassign or Accept invite
     ("Site proposed", "Under consideration"): "Government Official",
     ("Site proposed", "Planner invited"): "Government Official",        # Reassign planner
     ("Under consideration", "Planner invited"): "Government Official",  # Rejection or Reassign
     ("Under consideration", "Approved"): "Government Official",         # Approval
+    ("Approved", "Approved"): "Urban Planner",                          # Grant deploy permission
     ("Approved", "OpenForResponse"): "Government Official",             # Deploy
     ("Approved", "Planner invited"): "Government Official",             # Reassign planner
     ("Approved", "Draft"): "Government Official",                       # Reassign planner after deadline
+    ("OpenForResponse", "OpenForResponse"): "Government Official",      # Extend deadline
     ("OpenForResponse", "InProgress"): "Government Official",
     ("InProgress", "Completed"): "Government Official",
     ("OpenForResponse", "Halted"): "Government Official",
@@ -46,11 +49,15 @@ def transition_project_stage(
     to_stage: str,
     note: str | None = None,
     extra_updates: dict[str, Any] | None = None,
+    notification_kind: str | None = None,
+    notification_target_user_ids: list[int] | None = None,
+    public_reason: str | None = None,
 ) -> dict[str, Any]:
     """
     Central transition function for government workflow.
     Validates from_stage -> to_stage legality and actor role & ownership.
-    Writes a row to project_events and updates the project.
+    Writes a row to project_events and updates the project in the same transaction
+    together with any corresponding notification rows.
     Illegal transitions return 409. Wrong owner or role returns 403.
     """
     project = project_repository.get_project_by_id(connection, project_id)
@@ -108,16 +115,31 @@ def transition_project_stage(
     updates = dict(extra_updates or {})
     updates["stage"] = to_stage
 
-    updated = workflow_repository.update_project_fields(connection, project_id, updates)
-    workflow_repository.create_project_event(
-        connection,
-        project_id=project_id,
-        actor_id=actor_id,
-        from_stage=from_stage,
-        to_stage=to_stage,
-        note=note,
-    )
+    with connection.transaction():
+        updated = workflow_repository.update_project_fields(
+            connection, project_id, updates, auto_commit=False
+        )
+        event = workflow_repository.create_project_event(
+            connection,
+            project_id=project_id,
+            actor_id=actor_id,
+            from_stage=from_stage,
+            to_stage=to_stage,
+            note=note,
+            auto_commit=False,
+        )
+        notification_service.dispatch_stage_notifications(
+            connection,
+            project=project,
+            event_id=event["id"],
+            actor_id=actor_id,
+            notification_kind=notification_kind,
+            notification_target_user_ids=notification_target_user_ids,
+            public_reason=public_reason,
+        )
+
     return updated
+
 
 
 def search_planners(
@@ -311,6 +333,12 @@ def invite_planner(
     if payload.planner_deadline:
         extra_updates["planner_deadline"] = payload.planner_deadline
 
+    workflow_repository.create_project_invite(
+        connection,
+        project_id=project_id,
+        planner_id=payload.planner_id,
+        invited_by=user.id,
+    )
     updated = transition_project_stage(
         connection,
         project_id=project_id,
@@ -319,12 +347,8 @@ def invite_planner(
         to_stage="Planner invited",
         note=f"Invited planner {target_user['full_name']} (ID {target_user['id']})",
         extra_updates=extra_updates,
-    )
-    workflow_repository.create_project_invite(
-        connection,
-        project_id=project_id,
-        planner_id=payload.planner_id,
-        invited_by=user.id,
+        notification_kind="planner_invited",
+        notification_target_user_ids=[payload.planner_id],
     )
     return updated
 
@@ -349,6 +373,10 @@ def cancel_invite(
         raise HTTPException(status_code=409, detail="Project does not have a pending planner invite.")
 
     active_invite = workflow_repository.get_active_project_invite(connection, project_id)
+    removed_planner_id = active_invite["planner_id"] if active_invite else None
+    if active_invite:
+        workflow_repository.update_invite_status(connection, active_invite["id"], "cancelled")
+
     updated = transition_project_stage(
         connection,
         project_id=project_id,
@@ -356,9 +384,9 @@ def cancel_invite(
         actor_role=user.role,
         to_stage="Draft",
         note="Planner invite cancelled by official",
+        notification_kind="invite_cancelled" if removed_planner_id else None,
+        notification_target_user_ids=[removed_planner_id] if removed_planner_id else None,
     )
-    if active_invite:
-        workflow_repository.update_invite_status(connection, active_invite["id"], "cancelled")
     return updated
 
 
@@ -429,6 +457,7 @@ def reassign_planner(
         )
 
     active_invite = workflow_repository.get_active_project_invite(connection, project_id)
+    old_planner_id = project.get("planner_id") or (active_invite["planner_id"] if active_invite else None)
     if active_invite:
         if active_invite["planner_id"] == target_user["id"]:
             raise HTTPException(
@@ -444,6 +473,13 @@ def reassign_planner(
     if payload.planner_deadline:
         extra_updates["planner_deadline"] = payload.planner_deadline
 
+    workflow_repository.create_project_invite(
+        connection,
+        project_id=project_id,
+        planner_id=payload.planner_id,
+        invited_by=user.id,
+    )
+
     updated = transition_project_stage(
         connection,
         project_id=project_id,
@@ -452,14 +488,18 @@ def reassign_planner(
         to_stage="Planner invited",
         note=f"Reassigned planner to {target_user['full_name']} (ID {target_user['id']}) after deadline",
         extra_updates=extra_updates,
+        notification_kind="planner_reassigned" if old_planner_id else None,
+        notification_target_user_ids=[old_planner_id] if old_planner_id else None,
     )
-
-    workflow_repository.create_project_invite(
-        connection,
-        project_id=project_id,
-        planner_id=payload.planner_id,
-        invited_by=user.id,
-    )
+    if payload.planner_id:
+        notification_service.dispatch_stage_notifications(
+            connection,
+            project=project,
+            event_id=0,
+            actor_id=user.id,
+            notification_kind="planner_invited",
+            notification_target_user_ids=[payload.planner_id],
+        )
     return updated
 
 
@@ -475,6 +515,8 @@ def decline_invite(
     if not active_invite or active_invite["planner_id"] != user.id:
         raise HTTPException(status_code=403, detail="No active invite found for you on this project.")
 
+    workflow_repository.update_invite_status(connection, active_invite["id"], "declined")
+    proj = project_repository.get_project_by_id(connection, project_id)
     updated = transition_project_stage(
         connection,
         project_id=project_id,
@@ -482,8 +524,9 @@ def decline_invite(
         actor_role=user.role,
         to_stage="Draft",
         note="Planner declined the invitation",
+        notification_kind="invite_declined",
+        notification_target_user_ids=[proj["created_by"]],
     )
-    workflow_repository.update_invite_status(connection, active_invite["id"], "declined")
     return updated
 
 
@@ -505,18 +548,17 @@ def accept_invite(
         )
 
     workflow_repository.update_invite_status(connection, active_invite["id"], "accepted")
-    updated = workflow_repository.update_project_fields(
-        connection,
-        project_id,
-        {"planner_id": user.id},
-    )
-    workflow_repository.create_project_event(
+    proj = project_repository.get_project_by_id(connection, project_id)
+    updated = transition_project_stage(
         connection,
         project_id=project_id,
         actor_id=user.id,
-        from_stage="Planner invited",
+        actor_role=user.role,
         to_stage="Planner invited",
         note="Planner accepted invitation and is now assigned",
+        extra_updates={"planner_id": user.id},
+        notification_kind="invite_accepted",
+        notification_target_user_ids=[proj["created_by"]],
     )
     return updated
 
@@ -550,6 +592,8 @@ def propose_site(
             "proposed_site_lng": payload.location_lng,
             "proposal_rejection_reason": None,
         },
+        notification_kind="site_proposed",
+        notification_target_user_ids=[project["created_by"]],
     )
 
 
@@ -562,6 +606,7 @@ def reject_proposal(
 ) -> dict[str, Any]:
     if user.role != "Government Official":
         raise HTTPException(status_code=403, detail="Only Government Officials can reject proposals.")
+    project = project_repository.get_project_by_id(connection, project_id)
     return transition_project_stage(
         connection,
         project_id=project_id,
@@ -570,6 +615,8 @@ def reject_proposal(
         to_stage="Planner invited",
         note=f"Proposal rejected: {payload.reason}",
         extra_updates={"proposal_rejection_reason": payload.reason},
+        notification_kind="proposal_rejected",
+        notification_target_user_ids=[project.get("planner_id")],
     )
 
 
@@ -598,6 +645,8 @@ def approve_proposal(
         to_stage="Approved",
         note="Site proposal approved by official",
         extra_updates=extra,
+        notification_kind="proposal_approved",
+        notification_target_user_ids=[project.get("planner_id")],
     )
 
 
@@ -617,20 +666,18 @@ def grant_planner_permission(
     if project["stage"] != "Approved":
         raise HTTPException(status_code=409, detail="Can only grant deploy permission in Approved stage.")
 
-    updated = workflow_repository.update_project_fields(
-        connection,
-        project_id,
-        {"planner_deploy_permitted": True},
-    )
-    workflow_repository.create_project_event(
+    return transition_project_stage(
         connection,
         project_id=project_id,
         actor_id=user.id,
-        from_stage="Approved",
+        actor_role=user.role,
         to_stage="Approved",
         note="Deploy permission granted by planner",
+        extra_updates={"planner_deploy_permitted": True},
+        notification_kind="planner_permission_granted",
+        notification_target_user_ids=[project["created_by"]],
     )
-    return updated
+
 
 
 def deploy_project(
@@ -672,6 +719,7 @@ def deploy_project(
             "deployed_at": now,
             "response_deadline": payload.response_deadline,
         },
+        notification_kind="project_deployed",
     )
 
 
@@ -702,20 +750,16 @@ def extend_deadline(
                 detail="Deadline can only be extended, never shortened or unchanged.",
             )
 
-    updated = workflow_repository.update_project_fields(
-        connection,
-        project_id,
-        {"response_deadline": payload.response_deadline},
-    )
-    workflow_repository.create_project_event(
+    return transition_project_stage(
         connection,
         project_id=project_id,
         actor_id=user.id,
-        from_stage="OpenForResponse",
+        actor_role=user.role,
         to_stage="OpenForResponse",
         note=f"Response deadline extended to {payload.response_deadline.isoformat()}",
+        extra_updates={"response_deadline": payload.response_deadline},
+        notification_kind="deadline_extended",
     )
-    return updated
 
 
 def halt_project(
@@ -735,6 +779,8 @@ def halt_project(
         to_stage="Halted",
         note=f"Project halted: {payload.reason}",
         extra_updates={"halt_reason": payload.reason},
+        notification_kind="project_halted",
+        public_reason=payload.reason,
     )
 
 
@@ -755,6 +801,8 @@ def recall_project(
         to_stage="Recalled",
         note=f"Project recalled: {payload.reason}",
         extra_updates={"halt_reason": payload.reason},
+        notification_kind="project_recalled",
+        public_reason=payload.reason,
     )
 
 
@@ -773,6 +821,7 @@ def start_in_progress(
         actor_role=user.role,
         to_stage="InProgress",
         note="Project moved to InProgress",
+        notification_kind="stage_in_progress",
     )
 
 
@@ -791,7 +840,9 @@ def complete_project(
         actor_role=user.role,
         to_stage="Completed",
         note="Project marked as Completed",
+        notification_kind="project_completed",
     )
+
 
 
 def list_planner_invites(

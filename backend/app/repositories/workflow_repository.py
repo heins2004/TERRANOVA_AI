@@ -112,6 +112,7 @@ def create_project_event(
     from_stage: str,
     to_stage: str,
     note: str | None = None,
+    auto_commit: bool = True,
 ) -> dict[str, Any]:
     with connection.cursor() as cursor:
         cursor.execute(
@@ -123,7 +124,8 @@ def create_project_event(
             (project_id, actor_id, from_stage, to_stage, note),
         )
         row = cursor.fetchone()
-    connection.commit()
+    if auto_commit:
+        connection.commit()
     return row
 
 
@@ -145,6 +147,7 @@ def update_project_fields(
     connection: Connection,
     project_id: int,
     updates: dict[str, Any],
+    auto_commit: bool = True,
 ) -> dict[str, Any]:
     assignments = [f"{field} = %s" for field in updates]
     assignments.append("updated_at = NOW()")
@@ -153,7 +156,8 @@ def update_project_fields(
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
         row = cursor.fetchone()
-    connection.commit()
+    if auto_commit:
+        connection.commit()
     return row
 
 
