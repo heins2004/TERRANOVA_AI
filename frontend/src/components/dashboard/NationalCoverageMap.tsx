@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import L from "leaflet";
 import { useEffect, useState } from "react";
 import { MapContainer, Marker, TileLayer, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import { useAuth } from "@/components/layout/auth-provider";
 
 // 8 supported metropolitan cities defined in TERRANOVA AI
 const SUPPORTED_CITIES = [
@@ -60,11 +62,23 @@ function MapController() {
 }
 
 export function NationalCoverageMap() {
+  const { isAuthenticated, isReady } = useAuth();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  if (isReady && !isAuthenticated) {
+    return (
+      <div className="flex h-full min-h-[260px] w-full flex-col items-center justify-center p-[20px] text-center">
+        <p className="text-on-surface">Log in to see this</p>
+        <Link className="mt-[8px] inline-block font-semibold text-primary hover:underline pointer-events-auto" href="/login">
+          Log in
+        </Link>
+      </div>
+    );
+  }
 
   if (!mounted) {
     return (

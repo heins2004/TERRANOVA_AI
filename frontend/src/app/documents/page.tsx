@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { DocumentCard } from "@/components/documents/DocumentCard";
 import { DocumentUploadForm } from "@/components/documents/DocumentUploadForm";
@@ -68,27 +69,38 @@ export default function DocumentsPage() {
               <DocumentUploadForm projects={projects} onSubmit={submit} />
             </div>
           )}
-          {error && <p className="mt-[24px] text-danger">{error}</p>}
-          <section className="mt-[32px]">
-            <h2 className="font-display-md text-[26px]">Available documents</h2>
-            <div className="mt-[16px] grid gap-[16px] md:grid-cols-2">
-              {documents.map((document) => (
-                <DocumentCard
-                  canDelete={Boolean(
-                    user && (user.role === "Administrator" || user.id === document.uploaded_by)
-                  )}
-                  document={document}
-                  key={document.id}
-                  onDelete={remove}
-                />
-              ))}
-              {!error && !documents.length && (
-                <p className="font-data-mono text-sm text-on-surface-variant">
-                  NO PLANNING DOCUMENTS ARE AVAILABLE.
-                </p>
-              )}
+          {!user || (error && (error.includes("Authentication required") || error.includes("401"))) ? (
+            <div className="mt-[24px]">
+              <p className="text-on-surface">Log in to see this</p>
+              <Link className="mt-[8px] inline-block font-semibold text-primary hover:underline" href="/login">
+                Log in
+              </Link>
             </div>
-          </section>
+          ) : (
+            <>
+              {error && <p className="mt-[24px] text-danger">{error}</p>}
+              <section className="mt-[32px]">
+                <h2 className="font-display-md text-[26px]">Available documents</h2>
+                <div className="mt-[16px] grid gap-[16px] md:grid-cols-2">
+                  {documents.map((document) => (
+                    <DocumentCard
+                      canDelete={Boolean(
+                        user && (user.role === "Administrator" || user.id === document.uploaded_by)
+                      )}
+                      document={document}
+                      key={document.id}
+                      onDelete={remove}
+                    />
+                  ))}
+                  {!error && !documents.length && (
+                    <p className="font-data-mono text-sm text-on-surface-variant">
+                      NO PLANNING DOCUMENTS ARE AVAILABLE.
+                    </p>
+                  )}
+                </div>
+              </section>
+            </>
+          )}
         </div>
       </main>
     </div>

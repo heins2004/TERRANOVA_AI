@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ConsultationCard } from "@/components/consultations/ConsultationCard";
 import { ConsultationForm } from "@/components/consultations/ConsultationForm";
@@ -101,43 +102,54 @@ export default function ConsultationsPage() {
               <ConsultationForm projects={projects} onSubmit={submit} />
             </div>
           )}
-          {error && <p className="mt-[24px] text-danger">{error}</p>}
-          <section className="mt-[32px]">
-            <h2 className="font-display-md text-[26px]">Scheduled consultations</h2>
-            <div className="mt-[16px] grid gap-[16px] md:grid-cols-2">
-              {consultations.map((item) => (
-                <ConsultationCard
-                  canEdit={canEdit}
-                  consultation={item}
-                  key={item.id}
-                  selected={selected?.id === item.id}
-                  onSelect={() => void select(item)}
-                  onStatusChange={(status) => changeStatus(item, status)}
-                />
-              ))}
-              {!error && !consultations.length && (
-                <p className="font-data-mono text-sm text-on-surface-variant">
-                  NO CONSULTATIONS ARE CURRENTLY SCHEDULED.
-                </p>
-              )}
+          {!user || (error && (error.includes("Authentication required") || error.includes("401"))) ? (
+            <div className="mt-[24px]">
+              <p className="text-on-surface">Log in to see this</p>
+              <Link className="mt-[8px] inline-block font-semibold text-primary hover:underline" href="/login">
+                Log in
+              </Link>
             </div>
-          </section>
-          {selected && (
-            <section className="mt-[32px]">
-              <div className="glass-card rounded-xl p-[24px]">
-                <p className="font-data-mono text-[11px] uppercase tracking-[0.16em] text-primary">
-                  Consultation details
-                </p>
-                <h2 className="mt-[8px] font-display-md text-[28px]">{selected.title}</h2>
-                <p className="mt-[16px] whitespace-pre-wrap text-sm leading-6 text-on-surface-variant">
-                  {selected.description}
-                </p>
-              </div>
-              <div className="mt-[16px] grid gap-[16px] lg:grid-cols-2">
-                <FeedbackForm onSubmit={submitFeedback} />
-                <FeedbackList feedback={feedback} />
-              </div>
-            </section>
+          ) : (
+            <>
+              {error && <p className="mt-[24px] text-danger">{error}</p>}
+              <section className="mt-[32px]">
+                <h2 className="font-display-md text-[26px]">Scheduled consultations</h2>
+                <div className="mt-[16px] grid gap-[16px] md:grid-cols-2">
+                  {consultations.map((item) => (
+                    <ConsultationCard
+                      canEdit={canEdit}
+                      consultation={item}
+                      key={item.id}
+                      selected={selected?.id === item.id}
+                      onSelect={() => void select(item)}
+                      onStatusChange={(status) => changeStatus(item, status)}
+                    />
+                  ))}
+                  {!error && !consultations.length && (
+                    <p className="font-data-mono text-sm text-on-surface-variant">
+                      NO CONSULTATIONS ARE CURRENTLY SCHEDULED.
+                    </p>
+                  )}
+                </div>
+              </section>
+              {selected && (
+                <section className="mt-[32px]">
+                  <div className="glass-card rounded-xl p-[24px]">
+                    <p className="font-data-mono text-[11px] uppercase tracking-[0.16em] text-primary">
+                      Consultation details
+                    </p>
+                    <h2 className="mt-[8px] font-display-md text-[28px]">{selected.title}</h2>
+                    <p className="mt-[16px] whitespace-pre-wrap text-sm leading-6 text-on-surface-variant">
+                      {selected.description}
+                    </p>
+                  </div>
+                  <div className="mt-[16px] grid gap-[16px] lg:grid-cols-2">
+                    <FeedbackForm onSubmit={submitFeedback} />
+                    <FeedbackList feedback={feedback} />
+                  </div>
+                </section>
+              )}
+            </>
           )}
         </div>
       </main>

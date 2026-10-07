@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ComplaintCard } from "@/components/citizen/ComplaintCard";
 import { ComplaintForm } from "@/components/citizen/ComplaintForm";
@@ -68,25 +69,36 @@ export default function ComplaintsPage() {
           <div className="mt-[24px]">
             <ComplaintForm projects={projects} onSubmit={submit} />
           </div>
-          {error && <p className="mt-[24px] text-danger">{error}</p>}
-          <section className="mt-[32px]">
-            <h2 className="font-display-md text-[26px]">Submitted complaints</h2>
-            <div className="mt-[16px] grid gap-[16px] md:grid-cols-2">
-              {complaints.map((complaint) => (
-                <ComplaintCard
-                  canUpdate={canUpdate}
-                  complaint={complaint}
-                  key={complaint.id}
-                  onStatusChange={changeStatus}
-                />
-              ))}
-              {!error && !complaints.length && (
-                <p className="font-data-mono text-sm text-on-surface-variant">
-                  NO COMPLAINTS HAVE BEEN SUBMITTED.
-                </p>
-              )}
+          {error && (error.includes("Authentication required") || error.includes("401")) || !user ? (
+            <div className="mt-[24px]">
+              <p className="text-on-surface">Log in to see this</p>
+              <Link className="mt-[8px] inline-block font-semibold text-primary hover:underline" href="/login">
+                Log in
+              </Link>
             </div>
-          </section>
+          ) : (
+            <>
+              {error && <p className="mt-[24px] text-danger">{error}</p>}
+              <section className="mt-[32px]">
+                <h2 className="font-display-md text-[26px]">Submitted complaints</h2>
+                <div className="mt-[16px] grid gap-[16px] md:grid-cols-2">
+                  {complaints.map((complaint) => (
+                    <ComplaintCard
+                      canUpdate={canUpdate}
+                      complaint={complaint}
+                      key={complaint.id}
+                      onStatusChange={changeStatus}
+                    />
+                  ))}
+                  {!error && !complaints.length && (
+                    <p className="font-data-mono text-sm text-on-surface-variant">
+                      NO COMPLAINTS HAVE BEEN SUBMITTED.
+                    </p>
+                  )}
+                </div>
+              </section>
+            </>
+          )}
         </div>
       </main>
     </div>

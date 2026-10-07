@@ -221,7 +221,16 @@ export function CityMap() {
         </div>
 
         {error ? (
-          <p className="mt-[12px] font-data-mono text-[11px] text-danger">{error}</p>
+          error.includes("Authentication required") || error.includes("401") ? (
+            <div className="mt-[12px]">
+              <p className="text-on-surface">Log in to see this</p>
+              <Link className="mt-[8px] inline-block font-semibold text-primary hover:underline" href="/login">
+                Log in
+              </Link>
+            </div>
+          ) : (
+            <p className="mt-[12px] font-data-mono text-[11px] text-danger">{error}</p>
+          )
         ) : !locatedProjects.length ? (
           <p className="mt-[12px] font-data-mono text-[11px] leading-5 text-on-surface-variant">
             NO RECORDS WITH COORDINATES YET.
