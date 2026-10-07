@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/layout/auth-provider";
 import {
   PublicProject,
+  getProject,
   listProjects,
 } from "@/services/publicProjects";
 import {
@@ -20,6 +21,7 @@ import {
   followProject,
   unfollowProject,
 } from "@/services/follows";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ProjectCard } from "./ProjectCard";
 import { ProjectPanel } from "./ProjectPanel";
 import { ParticleCloak } from "./ParticleCloak";
@@ -144,6 +146,28 @@ export function PublicHome() {
       return () => clearTimeout(timer);
     }
   }, [followError]);
+
+  // Deep link: open project panel if query parameter ?project={id} is present
+  useEffect(() => {
+    const handleDeepLink = (e?: Event) => {
+      if (typeof window === "undefined") return;
+      let targetId: number | null = null;
+      if (e && "detail" in e && typeof (e as CustomEvent).detail === "number") {
+        targetId = (e as CustomEvent).detail;
+      } else {
+        const urlParams = new URLSearchParams(window.location.search);
+        const param = urlParams.get("project");
+        if (param) targetId = parseInt(param, 10);
+      }
+      if (targetId && !isNaN(targetId)) {
+        getProject(targetId).then((proj) => setSelectedProject(proj)).catch(() => {});
+      }
+    };
+
+    handleDeepLink();
+    window.addEventListener("deep-link-project", handleDeepLink);
+    return () => window.removeEventListener("deep-link-project", handleDeepLink);
+  }, []);
 
   const handleToggleFollow = useCallback(
     async (projectId: number) => {
@@ -482,17 +506,7 @@ export function PublicHome() {
           {/* User Auth Controls */}
           {isAuthenticated && user ? (
             <div className="flex items-center gap-[8px]">
-              {/* Switched-off Messages Bell */}
-              <button
-                type="button"
-                disabled
-                aria-disabled="true"
-                aria-label="Messages (Soon)"
-                className="relative flex h-[42px] w-[42px] items-center justify-center rounded-full border border-white/15 bg-white/5 text-[15px] text-on-surface-variant/60 cursor-not-allowed"
-              >
-                <span>✉</span>
-                <span className="absolute top-[8px] right-[8px] h-[7px] w-[7px] rounded-full bg-danger opacity-70" />
-              </button>
+              <NotificationBell />
 
               <button
                 type="button"

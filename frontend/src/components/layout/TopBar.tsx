@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/components/layout/auth-provider";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { AuthUser } from "@/lib/auth";
 
 type TopBarProps = {
@@ -135,6 +136,8 @@ export function TopBar({
             </span>
             <span className="hidden sm:inline">Home</span>
           </Link>
+
+          {isLoggedIn && <NotificationBell />}
 
           {isLoggedIn ? (
             <button
