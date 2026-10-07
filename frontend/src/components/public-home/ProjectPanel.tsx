@@ -90,8 +90,6 @@ export function parseCommentError(err: unknown): {
   return { message: "Could not post. Check your connection and try again." };
 }
 
-export const normalizeCommentError = parseCommentError;
-
 export function ProjectPanel({
   project,
   originCard,
