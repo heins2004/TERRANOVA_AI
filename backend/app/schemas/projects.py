@@ -91,3 +91,5 @@ class ProjectResponse(BaseModel):
     planner_deadline: datetime | None = None
     response_deadline: datetime | None = None
     halt_reason: str | None = None
+    planner_deploy_permitted: bool = False
+    proposal_rejection_reason: str | None = None

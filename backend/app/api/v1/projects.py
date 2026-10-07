@@ -16,6 +16,7 @@ from app.schemas.workflow import (
     PlannerSearchItem,
     ProjectEventResponse,
     ReasonRequest,
+    ReassignPlannerRequest,
     SiteProposalRequest,
 )
 from app.services import project_service, workflow_service
@@ -145,6 +146,21 @@ def cancel_invite_endpoint(
         connection=connection,
         user=user,
         project_id=project_id,
+    )
+
+
+@projects_router.post("/{project_id}/reassign", response_model=ProjectResponse)
+def reassign_planner_endpoint(
+    project_id: int,
+    payload: ReassignPlannerRequest,
+    connection: Connection = Depends(get_db),
+    user: UserResponse = Depends(require_role("Government Official")),
+) -> dict:
+    return workflow_service.reassign_planner(
+        connection=connection,
+        user=user,
+        project_id=project_id,
+        payload=payload,
     )
 
 

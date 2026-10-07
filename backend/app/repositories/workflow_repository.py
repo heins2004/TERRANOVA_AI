@@ -176,7 +176,8 @@ def get_projects_for_user(
         clauses.append("planner_id = %s")
         params.append(user_id)
     elif role == "Administrator":
-        pass  # Administrators can see all or owned
+        clauses.append("stage = ANY(%s)")
+        params.append(["OpenForResponse", "InProgress", "Completed", "Halted"])
     else:
         # Citizens see none via this internal management endpoint
         return []
@@ -195,4 +196,8 @@ def get_projects_for_user(
     sql = f"SELECT * FROM projects{where} ORDER BY created_at DESC"
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
-        return cursor.fetchall()
+        rows = cursor.fetchall()
+        if role == "Administrator":
+            for row in rows:
+                row["created_by"] = None
+        return rows

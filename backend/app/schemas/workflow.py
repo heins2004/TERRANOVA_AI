@@ -93,6 +93,11 @@ class ReasonRequest(BaseModel):
     reason: str = Field(min_length=10, max_length=500)
 
 
+class ReassignPlannerRequest(BaseModel):
+    planner_id: int
+    planner_deadline: datetime | None = None
+
+
 class ProjectEventResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int

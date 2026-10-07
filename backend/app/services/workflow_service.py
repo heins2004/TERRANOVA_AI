@@ -13,6 +13,7 @@ from app.schemas.workflow import (
     PlannerSearchItem,
     ProjectCreateWorkflow,
     ReasonRequest,
+    ReassignPlannerRequest,
     SiteProposalRequest,
 )
 
@@ -21,10 +22,13 @@ ALLOWED_TRANSITIONS = {
     ("Draft", "Planner invited"): "Government Official",
     ("Planner invited", "Draft"): {"Government Official", "Urban Planner"},
     ("Planner invited", "Site proposed"): "Urban Planner",
+    ("Planner invited", "Planner invited"): "Government Official",      # Reassign planner
     ("Site proposed", "Under consideration"): "Government Official",
-    ("Under consideration", "Planner invited"): "Government Official",  # Rejection
+    ("Site proposed", "Planner invited"): "Government Official",        # Reassign planner
+    ("Under consideration", "Planner invited"): "Government Official",  # Rejection or Reassign
     ("Under consideration", "Approved"): "Government Official",         # Approval
     ("Approved", "OpenForResponse"): "Government Official",             # Deploy
+    ("Approved", "Planner invited"): "Government Official",             # Reassign planner
     ("Approved", "Draft"): "Government Official",                       # Reassign planner after deadline
     ("OpenForResponse", "InProgress"): "Government Official",
     ("InProgress", "Completed"): "Government Official",
@@ -355,6 +359,107 @@ def cancel_invite(
     )
     if active_invite:
         workflow_repository.update_invite_status(connection, active_invite["id"], "cancelled")
+    return updated
+
+
+def reassign_planner(
+    connection: Connection,
+    *,
+    user: UserResponse,
+    project_id: int,
+    payload: ReassignPlannerRequest,
+) -> dict[str, Any]:
+    if user.role != "Government Official":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only Government Officials can reassign planners.",
+        )
+    project = project_repository.get_project_by_id(connection, project_id)
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found.",
+        )
+    if project["created_by"] != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the owning official can reassign a planner.",
+        )
+    if project["stage"] not in ("Planner invited", "Site proposed", "Under consideration", "Approved"):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Cannot reassign planner when project is in '{project['stage']}' stage.",
+        )
+
+    deadline = project.get("planner_deadline")
+    if not deadline:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Planner deadline has not passed.",
+        )
+    if deadline.tzinfo is None:
+        deadline = deadline.replace(tzinfo=timezone.utc)
+    now = datetime.now(timezone.utc)
+    if now <= deadline:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Planner deadline has not passed.",
+        )
+
+    target_user = workflow_repository.get_user_by_id(connection, payload.planner_id)
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Target planner not found.",
+        )
+    if target_user["role"] != "Urban Planner":
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Target user does not have the Urban Planner role.",
+        )
+    if not target_user["is_active"]:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Target planner is inactive.",
+        )
+    if project.get("planner_id") == target_user["id"]:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot reassign to the currently assigned planner.",
+        )
+
+    active_invite = workflow_repository.get_active_project_invite(connection, project_id)
+    if active_invite:
+        if active_invite["planner_id"] == target_user["id"]:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Cannot reassign to the currently invited planner.",
+            )
+        workflow_repository.update_invite_status(connection, active_invite["id"], "cancelled")
+
+    extra_updates: dict[str, Any] = {
+        "planner_id": None,
+        "planner_deploy_permitted": False,
+    }
+    if payload.planner_deadline:
+        extra_updates["planner_deadline"] = payload.planner_deadline
+
+    updated = transition_project_stage(
+        connection,
+        project_id=project_id,
+        actor_id=user.id,
+        actor_role=user.role,
+        to_stage="Planner invited",
+        note=f"Reassigned planner to {target_user['full_name']} (ID {target_user['id']}) after deadline",
+        extra_updates=extra_updates,
+    )
+
+    workflow_repository.create_project_invite(
+        connection,
+        project_id=project_id,
+        planner_id=payload.planner_id,
+        invited_by=user.id,
+    )
     return updated
 
 

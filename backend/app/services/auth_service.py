@@ -127,14 +127,6 @@ def get_current_authenticated_user(
     settings = get_settings()
     session_token = request.cookies.get(settings.session_cookie_name)
     if not session_token:
-        auth_header = request.headers.get("Authorization")
-        if auth_header and auth_header.startswith("Bearer "):
-            session_token = auth_header[7:].strip()
-        elif auth_header:
-            session_token = auth_header.strip()
-        else:
-            session_token = request.headers.get("X-Session-Token")
-    if not session_token:
         return None
 
     user_row = get_authenticated_user_by_session_token(connection, session_token)
