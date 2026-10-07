@@ -201,3 +201,30 @@ def get_projects_for_user(
             for row in rows:
                 row["created_by"] = None
         return rows
+
+
+def get_pending_invites_for_planner(
+    connection: Connection,
+    planner_id: int,
+) -> list[dict[str, Any]]:
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT
+                pi.project_id,
+                p.title,
+                p.city,
+                u.full_name AS official_name,
+                p.planner_deadline,
+                pi.created_at AS invited_at
+            FROM project_invites pi
+            JOIN projects p ON p.id = pi.project_id
+            LEFT JOIN users u ON u.id = pi.invited_by
+            WHERE pi.planner_id = %s
+              AND pi.status = 'pending'
+              AND p.stage = 'Planner invited'
+            ORDER BY pi.created_at DESC
+            """,
+            (planner_id,),
+        )
+        return cursor.fetchall()

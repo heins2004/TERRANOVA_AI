@@ -792,3 +792,20 @@ def complete_project(
         to_stage="Completed",
         note="Project marked as Completed",
     )
+
+
+def list_planner_invites(
+    connection: Connection,
+    *,
+    user: UserResponse,
+) -> list[dict[str, Any]]:
+    if user.role != "Urban Planner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only Urban Planners can view planner invites.",
+        )
+    return workflow_repository.get_pending_invites_for_planner(
+        connection,
+        planner_id=user.id,
+    )
+

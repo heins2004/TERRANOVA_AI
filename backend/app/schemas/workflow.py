@@ -107,3 +107,14 @@ class ProjectEventResponse(BaseModel):
     to_stage: str
     note: str | None = None
     created_at: datetime
+
+
+class PlannerInviteResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    project_id: int
+    title: str
+    city: str | None = None
+    official_name: str | None = None
+    planner_deadline: datetime | None = None
+    invited_at: datetime
+

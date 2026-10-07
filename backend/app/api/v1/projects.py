@@ -107,13 +107,18 @@ def update_project(
 def delete_project(
     project_id: int,
     connection: Connection = Depends(get_db),
-    user: UserResponse = Depends(require_role("Government Official", "Administrator")),
+    user: UserResponse = Depends(require_role("Government Official")),
 ) -> Response:
     existing = project_service.get_project(project_id=project_id, connection=connection)
-    if user.role == "Government Official" and existing["created_by"] != user.id:
+    if existing["created_by"] != user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only the owning official can delete this project.",
+        )
+    if existing.get("stage") != "Draft":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Cannot delete project in '{existing.get('stage')}' stage. Only Draft projects can be deleted.",
         )
     project_service.delete_project(project_id=project_id, connection=connection)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
