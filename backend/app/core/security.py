@@ -69,3 +69,19 @@ def require_role(*allowed_roles: str):
         return user
 
     return dependency
+
+
+def require_authenticated_user():
+    """Return a dependency that enforces any authenticated active user."""
+    def dependency(
+        request: Request,
+        connection = Depends(_get_db),
+    ) -> UserResponse:
+        from app.services.auth_service import get_current_authenticated_user
+
+        user = get_current_authenticated_user(request=request, connection=connection)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required.")
+        return user
+
+    return dependency
