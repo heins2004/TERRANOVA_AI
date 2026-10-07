@@ -14,8 +14,8 @@ const prefixProtectedRoutes = [
   "/admin",
   "/planning",
   "/gov",
+  "/planner",
 ];
-const authRoutes = ["/login", "/register"];
 
 export function proxy(request: NextRequest) {
   const isAuthenticated = request.cookies.has(getSessionCookieName());
@@ -51,6 +51,8 @@ export const config = {
     "/planning/:path*",
     "/gov",
     "/gov/:path*",
+    "/planner",
+    "/planner/:path*",
     "/login",
     "/register",
   ],

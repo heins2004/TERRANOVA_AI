@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useRef, useState } from "react";
 import {
   approveProposal,
   cancelInvite,
@@ -28,11 +28,7 @@ export function GovStageActions({ project, onRefresh, onOpenEdit }: GovStageActi
   const [reasonModal, setReasonModal] = useState<{ action: "reject" | "halt" | "recall"; title: string } | null>(null);
   const [deployDeadline, setDeployDeadline] = useState("");
 
-  const nowTime = useSyncExternalStore(
-    () => () => {},
-    () => Date.now(),
-    () => 0
-  );
+  const [nowTime] = useState(() => (typeof window !== "undefined" ? Date.now() : 0));
 
   const deadlinePassed = Boolean(
     project.planner_deadline && nowTime > 0 && nowTime > new Date(project.planner_deadline).getTime()
