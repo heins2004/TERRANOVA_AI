@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   approveProposal,
   cancelInvite,
@@ -28,7 +28,14 @@ export function GovStageActions({ project, onRefresh, onOpenEdit }: GovStageActi
   const [reasonModal, setReasonModal] = useState<{ action: "reject" | "halt" | "recall"; title: string } | null>(null);
   const [deployDeadline, setDeployDeadline] = useState("");
 
-  const [nowTime] = useState(() => (typeof window !== "undefined" ? Date.now() : 0));
+  const [nowTime, setNowTime] = useState(() => (typeof window !== "undefined" ? Date.now() : 0));
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNowTime(Date.now());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   const deadlinePassed = Boolean(
     project.planner_deadline && nowTime > 0 && nowTime > new Date(project.planner_deadline).getTime()

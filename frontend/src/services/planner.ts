@@ -67,8 +67,21 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+export interface PlannerPendingInvite {
+  project_id: number;
+  title: string;
+  city: string | null;
+  official_name: string | null;
+  planner_deadline: string | null;
+  invited_at: string;
+}
+
 export function getPlannerProjects(): Promise<PlannerProject[]> {
   return request<PlannerProject[]>("/api/projects");
+}
+
+export function getPendingInvites(): Promise<PlannerPendingInvite[]> {
+  return request<PlannerPendingInvite[]>("/api/planner/invites");
 }
 
 export function getPlannerProject(id: number): Promise<PlannerProject> {

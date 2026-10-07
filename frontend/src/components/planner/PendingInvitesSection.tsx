@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { PlannerProject } from "@/services/planner";
+import { PlannerPendingInvite } from "@/services/planner";
 
 interface PendingInvitesSectionProps {
-  invites: PlannerProject[];
+  invites: PlannerPendingInvite[];
   loading: boolean;
   actionLoadingId: number | null;
   onAccept: (id: number) => void;
@@ -39,13 +39,13 @@ export function PendingInvitesSection({
         <div className="mt-[16px] grid gap-[16px] md:grid-cols-2">
           {invites.map((proj) => (
             <div
-              key={proj.id}
+              key={proj.project_id}
               className="glass-card rounded-xl border border-white/10 bg-white/[0.02] p-[20px] transition hover:border-primary-container/50"
             >
               <div className="flex items-start justify-between gap-[12px]">
                 <div>
                   <span className="font-data-mono text-[11px] uppercase text-primary">
-                    PROJECT #{proj.id} • {proj.city || "ALL CITIES"}
+                    PROJECT #{proj.project_id} • {proj.city || "ALL CITIES"}
                   </span>
                   <h3 className="mt-[4px] font-display-md text-[18px] font-medium text-foreground">
                     {proj.title}
@@ -60,7 +60,7 @@ export function PendingInvitesSection({
                 <div>
                   <span className="text-muted-foreground">OFFICIAL:</span>{" "}
                   <span className="text-foreground">
-                    {proj.official_name ?? (proj.created_by ? `Official #${proj.created_by}` : "Government Official")}
+                    {proj.official_name ?? "Government Official"}
                   </span>
                 </div>
                 <div>
@@ -76,24 +76,24 @@ export function PendingInvitesSection({
               <div className="mt-[20px] flex items-center justify-end gap-[10px]">
                 <button
                   type="button"
-                  id={`planner-decline-invite-${proj.id}`}
-                  onClick={() => onDecline(proj.id)}
-                  disabled={actionLoadingId === proj.id}
+                  id={`planner-decline-invite-${proj.project_id}`}
+                  onClick={() => onDecline(proj.project_id)}
+                  disabled={actionLoadingId === proj.project_id}
                   className="rounded border border-danger/60 px-[14px] py-[8px] font-data-mono text-[11px] font-semibold uppercase tracking-wider text-danger hover:bg-danger/10 disabled:opacity-50"
                 >
-                  {actionLoadingId === proj.id ? "DECLINING..." : "DECLINE"}
+                  {actionLoadingId === proj.project_id ? "DECLINING..." : "DECLINE"}
                 </button>
                 <button
                   type="button"
-                  id={`planner-accept-invite-${proj.id}`}
-                  onClick={() => onAccept(proj.id)}
-                  disabled={actionLoadingId === proj.id}
+                  id={`planner-accept-invite-${proj.project_id}`}
+                  onClick={() => onAccept(proj.project_id)}
+                  disabled={actionLoadingId === proj.project_id}
                   className="rounded border border-primary-container bg-primary-container/20 px-[16px] py-[8px] font-data-mono text-[11px] font-semibold uppercase tracking-wider text-primary hover:bg-primary-container/30 disabled:opacity-50"
                 >
-                  {actionLoadingId === proj.id ? "ACCEPTING..." : "ACCEPT"}
+                  {actionLoadingId === proj.project_id ? "ACCEPTING..." : "ACCEPT"}
                 </button>
                 <Link
-                  href={`/planner/${proj.id}`}
+                  href={`/planner/${proj.project_id}`}
                   className="rounded border border-white/20 px-[14px] py-[8px] font-data-mono text-[11px] uppercase text-foreground hover:bg-white/5"
                 >
                   DETAILS

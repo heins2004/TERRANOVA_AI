@@ -1,15 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/layout/auth-provider";
 import { TopBar } from "@/components/layout/TopBar";
 import {
   acceptInvite,
   declineInvite,
-  getPlannerProject,
+  getPendingInvites,
   getPlannerProjects,
+  PlannerPendingInvite,
   PlannerProject,
 } from "@/services/planner";
 import { PendingInvitesSection } from "@/components/planner/PendingInvitesSection";
@@ -27,17 +28,26 @@ const STAGE_GROUPS = [
 
 function PlannerDashboardContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user, isReady, isAuthenticated } = useAuth();
   const [projects, setProjects] = useState<PlannerProject[]>([]);
-  const [invites, setInvites] = useState<PlannerProject[]>([]);
-  const [inviteIdInput, setInviteIdInput] = useState("");
+  const [invites, setInvites] = useState<PlannerPendingInvite[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const isSubmittingRef = useRef(false);
 
   const isPlanner = user?.role === "Urban Planner";
+
+  const loadData = useCallback(() => {
+    Promise.all([getPendingInvites(), getPlannerProjects()])
+      .then(([invList, projList]) => {
+        setInvites(invList);
+        setProjects(projList.filter((p) => p.stage !== "Draft" && p.stage !== "Planner invited"));
+        setError("");
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : "Unable to load planner data."))
+      .finally(() => setLoading(false));
+  }, []);
 
   useEffect(() => {
     if (!isReady) return;
@@ -49,54 +59,8 @@ function PlannerDashboardContent() {
       router.push("/");
       return;
     }
-
-    getPlannerProjects()
-      .then(async (list) => {
-        setProjects(list.filter((p) => p.stage !== "Draft" && p.stage !== "Planner invited"));
-
-        const pendingFromList = list.filter((p) => p.stage === "Planner invited");
-        const foundInvites = [...pendingFromList];
-
-        const urlInviteId = searchParams.get("invite");
-        if (urlInviteId && !foundInvites.some((p) => p.id === Number(urlInviteId))) {
-          try {
-            const invProj = await getPlannerProject(Number(urlInviteId));
-            if (invProj.stage === "Planner invited") {
-              foundInvites.push(invProj);
-            }
-          } catch {
-            // Ignore
-          }
-        }
-        setInvites(foundInvites);
-      })
-      .catch((err) => setError(err instanceof Error ? err.message : "Unable to load planner data."))
-      .finally(() => setLoading(false));
-  }, [isReady, isAuthenticated, isPlanner, router, searchParams]);
-
-  async function handleFindInvite(e: React.FormEvent) {
-    e.preventDefault();
-    const pid = parseInt(inviteIdInput.trim(), 10);
-    if (isNaN(pid) || pid <= 0) return;
-    if (isSubmittingRef.current) return;
-    isSubmittingRef.current = true;
-    try {
-      setError("");
-      const p = await getPlannerProject(pid);
-      if (p.stage === "Planner invited") {
-        if (!invites.some((item) => item.id === p.id)) {
-          setInvites((prev) => [p, ...prev]);
-        }
-      } else {
-        router.push(`/planner/${p.id}`);
-      }
-      setInviteIdInput("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to find invitation for project.");
-    } finally {
-      isSubmittingRef.current = false;
-    }
-  }
+    loadData();
+  }, [isReady, isAuthenticated, isPlanner, router, loadData]);
 
   async function handleAccept(projectId: number) {
     if (isSubmittingRef.current) return;
@@ -105,9 +69,10 @@ function PlannerDashboardContent() {
     try {
       setError("");
       await acceptInvite(projectId);
-      router.push(`/planner/${projectId}`);
+      loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to accept invite.");
+    } finally {
       isSubmittingRef.current = false;
       setActionLoadingId(null);
     }
@@ -120,7 +85,7 @@ function PlannerDashboardContent() {
     try {
       setError("");
       await declineInvite(projectId);
-      setInvites((prev) => prev.filter((p) => p.id !== projectId));
+      loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to decline invite.");
     } finally {
@@ -155,22 +120,6 @@ function PlannerDashboardContent() {
                 Manage invitations, site proposals, and deploy approvals.
               </p>
             </div>
-            <form onSubmit={handleFindInvite} className="flex items-center gap-[8px]">
-              <input
-                type="number"
-                placeholder="Project ID invite"
-                value={inviteIdInput}
-                onChange={(e) => setInviteIdInput(e.target.value)}
-                className="w-[160px] rounded border border-white/15 bg-white/[0.03] px-[12px] py-[8px] font-data-mono text-[12px] text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary-container/80 focus:outline-none"
-              />
-              <button
-                type="submit"
-                disabled={!inviteIdInput.trim()}
-                className="h-[34px] rounded border border-primary-container/60 px-[14px] font-data-mono text-[11px] font-semibold uppercase tracking-wider text-primary hover:bg-primary-container/10 disabled:opacity-40"
-              >
-                OPEN
-              </button>
-            </form>
           </header>
 
           {error && <p className="mt-[20px] font-data-mono text-sm text-danger">{error}</p>}
