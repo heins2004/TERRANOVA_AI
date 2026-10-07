@@ -1,7 +1,11 @@
 from psycopg import Connection
 
 
-FIELDS = ("title", "description", "status", "category", "city", "location_lat", "location_lng", "budget", "start_date", "end_date", "candidate_site_id")
+FIELDS = (
+    "title", "description", "status", "category", "city",
+    "location_lat", "location_lng", "budget", "start_date", "end_date",
+    "candidate_site_id", "stage", "planner_id", "planner_deadline",
+)
 
 
 def create_project(connection: Connection, *, created_by: int, **values: object) -> dict:
