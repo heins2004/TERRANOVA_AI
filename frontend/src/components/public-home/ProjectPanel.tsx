@@ -125,6 +125,7 @@ export function ProjectPanel({
   const [topBodyError, setTopBodyError] = useState<string | null>(null);
   const [topFormError, setTopFormError] = useState<string | null>(null);
   const [isPostingTop, setIsPostingTop] = useState<boolean>(false);
+  const isPostingTopRef = useRef<boolean>(false);
 
   // Reply state
   const [activeReplyTarget, setActiveReplyTarget] = useState<{
@@ -136,6 +137,7 @@ export function ProjectPanel({
   const [replyBodyError, setReplyBodyError] = useState<string | null>(null);
   const [replyFormError, setReplyFormError] = useState<string | null>(null);
   const [isPostingReply, setIsPostingReply] = useState<boolean>(false);
+  const isPostingReplyRef = useRef<boolean>(false);
 
   // Focus & live announcements
   const [postedCommentId, setPostedCommentId] = useState<number | null>(null);
@@ -375,6 +377,7 @@ export function ProjectPanel({
   // Handle post top-level comment
   const handlePostTopComment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isPostingTopRef.current) return;
     setTopStanceError(null);
     setTopBodyError(null);
     setTopFormError(null);
@@ -399,6 +402,7 @@ export function ProjectPanel({
       return;
     }
 
+    isPostingTopRef.current = true;
     setIsPostingTop(true);
     try {
       const created = await postComment(detail.id, {
@@ -431,6 +435,7 @@ export function ProjectPanel({
       setTopFormError(parsed.message);
     } finally {
       setIsPostingTop(false);
+      isPostingTopRef.current = false;
     }
   };
 
@@ -438,6 +443,7 @@ export function ProjectPanel({
   const handlePostReply = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeReplyTarget) return;
+    if (isPostingReplyRef.current) return;
 
     setReplyBodyError(null);
     setReplyFormError(null);
@@ -451,6 +457,7 @@ export function ProjectPanel({
       return;
     }
 
+    isPostingReplyRef.current = true;
     setIsPostingReply(true);
     try {
       const created = await postComment(detail.id, {
@@ -508,6 +515,7 @@ export function ProjectPanel({
       setReplyFormError(parsed.message);
     } finally {
       setIsPostingReply(false);
+      isPostingReplyRef.current = false;
     }
   };
 
@@ -866,12 +874,6 @@ export function ProjectPanel({
                         <button
                           type="submit"
                           disabled={isPostingReply}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              handlePostReply(e);
-                            }
-                          }}
                           className="rounded-full bg-primary-container px-[16px] py-[5px] font-body-md text-[12px] font-semibold text-on-primary hover:opacity-90 disabled:opacity-50 transition-all cursor-pointer disabled:cursor-not-allowed"
                         >
                           {isPostingReply ? "Posting..." : "Post reply"}
@@ -1035,12 +1037,6 @@ export function ProjectPanel({
                   <button
                     type="submit"
                     disabled={isPostingTop}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        handlePostTopComment(e);
-                      }
-                    }}
                     className="rounded-full bg-primary-container px-[20px] py-[8px] font-body-md text-[13px] font-semibold text-on-primary hover:opacity-90 disabled:opacity-50 transition-all cursor-pointer disabled:cursor-not-allowed"
                   >
                     {isPostingTop ? "Posting..." : "Post comment"}
