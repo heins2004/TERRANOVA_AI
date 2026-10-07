@@ -68,7 +68,16 @@ export default function ProjectsPage() {
             />
           </div>
           {error ? (
-            <p className="mt-[24px] text-danger">{error}</p>
+            error.includes("Authentication required") || error.includes("401") ? (
+              <div className="mt-[24px]">
+                <p className="text-on-surface">Log in to see this</p>
+                <Link className="mt-[8px] inline-block font-semibold text-primary hover:underline" href="/login">
+                  Log in
+                </Link>
+              </div>
+            ) : (
+              <p className="mt-[24px] text-danger">{error}</p>
+            )
           ) : (
             <div className="mt-[24px] grid gap-[16px] md:grid-cols-2 xl:grid-cols-3">
               {projects.map((project) => (

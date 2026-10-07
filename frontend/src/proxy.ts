@@ -13,6 +13,7 @@ const prefixProtectedRoutes = [
   "/documents",
   "/admin",
   "/planning",
+  "/gov",
 ];
 const authRoutes = ["/login", "/register"];
 
@@ -48,6 +49,8 @@ export const config = {
     "/admin/:path*",
     "/planning",
     "/planning/:path*",
+    "/gov",
+    "/gov/:path*",
     "/login",
     "/register",
   ],

@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { TopBar } from "@/components/layout/TopBar";
@@ -48,7 +49,16 @@ export default function CityBrowsePage() {
             </div>
           </header>
           {error ? (
-            <p className="mt-[24px] text-danger">{error}</p>
+            error.includes("Authentication required") || error.includes("401") ? (
+              <div className="mt-[24px]">
+                <p className="text-on-surface">Log in to see this</p>
+                <Link className="mt-[8px] inline-block font-semibold text-primary hover:underline" href="/login">
+                  Log in
+                </Link>
+              </div>
+            ) : (
+              <p className="mt-[24px] text-danger">{error}</p>
+            )
           ) : loading ? (
             <p className="mt-[24px] font-data-mono text-[12px] text-on-surface-variant">
               LOADING PROJECTS...
