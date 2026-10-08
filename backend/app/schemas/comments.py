@@ -12,6 +12,8 @@ class CommentReply(BaseModel):
     body: str
     created_at: datetime
     parent_id: int | None = None
+    is_mine: bool = False
+    can_delete: bool = False
 
 
 class PublicCommentItem(BaseModel):
@@ -25,6 +27,8 @@ class PublicCommentItem(BaseModel):
     created_at: datetime
     parent_id: int | None = None
     replies: list[CommentReply] = []
+    is_mine: bool = False
+    can_delete: bool = False
 
 
 class PublicCommentsResponse(BaseModel):

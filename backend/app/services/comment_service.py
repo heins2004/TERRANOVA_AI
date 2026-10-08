@@ -15,6 +15,9 @@ from app.schemas.comments import (
 )
 
 
+from app.core.security import get_current_request
+
+
 def format_author_name(full_name: str) -> str:
     """Format full name as 'First L.' or single name as-is."""
     parts = full_name.strip().split()
@@ -22,9 +25,23 @@ def format_author_name(full_name: str) -> str:
         return ""
     if len(parts) == 1:
         return parts[0]
-    first = parts[0]
-    last_initial = parts[-1][0].upper()
-    return f"{first} {last_initial}."
+    return f"{parts[0]} {parts[-1][0].upper()}."
+
+
+def _can_delete(
+    author_id: int,
+    project_created_by: int | None,
+    current_user: UserResponse | None,
+) -> tuple[bool, bool]:
+    if not current_user:
+        return False, False
+    is_mine = author_id == current_user.id
+    can_del = (
+        is_mine
+        or current_user.role == "Administrator"
+        or (project_created_by == current_user.id and current_user.role == "Government Official")
+    )
+    return is_mine, can_del
 
 
 def get_public_project_comments(
@@ -33,6 +50,7 @@ def get_public_project_comments(
     project_id: int,
     limit: int = 20,
     offset: int = 0,
+    current_user: UserResponse | None = None,
 ) -> list[PublicCommentItem]:
     project = get_public_project_by_id(conn, project_id)
     if not project:
@@ -40,6 +58,13 @@ def get_public_project_comments(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
         )
+
+    if current_user is None:
+        req = get_current_request()
+        if req is not None:
+            from app.services.auth_service import get_current_authenticated_user
+
+            current_user = get_current_authenticated_user(request=req, connection=conn)
 
     top_comments, replies, total = repo.get_public_comments_for_project(
         conn, project_id, limit=limit, offset=offset
@@ -53,6 +78,7 @@ def get_public_project_comments(
             and r["author_role"] == "Government Official"
         )
         badge = "Government response" if is_gov_response else None
+        is_mine, can_del = _can_delete(r["author_id"], r["project_created_by"], current_user)
         reply_item = CommentReply(
             id=r["id"],
             author_name=format_author_name(r["author_full_name"]),
@@ -61,6 +87,8 @@ def get_public_project_comments(
             body=r["body"],
             created_at=r["created_at"],
             parent_id=p_id,
+            is_mine=is_mine,
+            can_delete=can_del,
         )
         replies_by_parent.setdefault(p_id, []).append(reply_item)
 
@@ -72,6 +100,7 @@ def get_public_project_comments(
             and c["author_role"] == "Government Official"
         )
         badge = "Government response" if is_gov_response else None
+        is_mine, can_del = _can_delete(c["author_id"], c["project_created_by"], current_user)
         item = PublicCommentItem(
             id=c_id,
             author_name=format_author_name(c["author_full_name"]),
@@ -80,6 +109,8 @@ def get_public_project_comments(
             body=c["body"],
             created_at=c["created_at"],
             replies=replies_by_parent.get(c_id, []),
+            is_mine=is_mine,
+            can_delete=can_del,
         )
         items.append(item)
 
@@ -96,42 +127,23 @@ def create_comment(
     # 1. Project visibility check (404 if not publicly visible)
     project = get_public_project_by_id(conn, project_id)
     if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found",
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
     # 2. Check open / closed rules
-    is_owner = (
-        project.get("created_by") == current_user.id
-        and current_user.role == "Government Official"
-    )
+    is_owner = project.get("created_by") == current_user.id and current_user.role == "Government Official"
     now = datetime.now(timezone.utc)
     deadline = project.get("response_deadline")
     if deadline and deadline.tzinfo is None:
         deadline = deadline.replace(tzinfo=timezone.utc)
 
-    is_open = (
-        project["stage"] == "OpenForResponse"
-        and (deadline is None or deadline > now)
-    )
-
+    is_open = project["stage"] == "OpenForResponse" and (deadline is None or deadline > now)
     if not is_open:
-        # Only the project's owning official may still reply
-        if payload.parent_id is not None and is_owner:
-            pass
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Comments are closed for this project.",
-            )
+        if not (payload.parent_id is not None and is_owner):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Comments are closed for this project.")
 
     # 3. Clean and validate body (strip whitespace, remove control chars except newline, 3-500 chars)
     raw_body = payload.body or ""
-    cleaned_body = "".join(
-        ch for ch in raw_body if ch == "\n" or (ord(ch) >= 32 and ord(ch) != 127)
-    ).strip()
-
+    cleaned_body = "".join(ch for ch in raw_body if ch == "\n" or (ord(ch) >= 32 and ord(ch) != 127)).strip()
     if len(cleaned_body) < 3 or len(cleaned_body) > 500:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -141,10 +153,7 @@ def create_comment(
     # 4. Top-level vs Reply validation
     if payload.parent_id is None:
         if is_owner:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="owners can only reply",
-            )
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="owners can only reply")
         if not payload.stance or payload.stance not in {"Support", "Concern", "Neutral"}:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -164,10 +173,7 @@ def create_comment(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Parent comment does not exist or does not belong to this project.",
             )
-        # If parent is itself a reply, attach to its parent (the thread root)
-        effective_parent_id = (
-            parent["parent_id"] if parent["parent_id"] is not None else parent["id"]
-        )
+        effective_parent_id = parent["parent_id"] if parent["parent_id"] is not None else parent["id"]
         effective_stance = None
 
     # 5. Rate limit and duplicate check
@@ -211,6 +217,8 @@ def create_comment(
         created_at=row["created_at"],
         parent_id=effective_parent_id,
         replies=[],
+        is_mine=True,
+        can_delete=True,
     )
 
 
@@ -227,14 +235,8 @@ def delete_comment(
             detail="Comment not found.",
         )
 
-    is_author = comment["user_id"] == current_user.id
-    is_admin = current_user.role == "Administrator"
-    is_project_owner = (
-        comment["project_owner_id"] == current_user.id
-        and current_user.role == "Government Official"
-    )
-
-    if not (is_author or is_admin or is_project_owner):
+    _, can_del = _can_delete(comment["user_id"], comment["project_owner_id"], current_user)
+    if not can_del:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to delete this comment.",

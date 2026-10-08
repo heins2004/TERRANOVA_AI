@@ -44,18 +44,26 @@ app.add_middleware(
 )
 
 
+from app.core.security import reset_current_request, set_current_request
+
+
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
-    if request.url.path.startswith("/api/public"):
-        try:
-            check_public_rate_limit(request)
-        except HTTPException as exc:
-            return JSONResponse(
-                status_code=exc.status_code,
-                content={"detail": exc.detail},
-                headers=exc.headers,
-            )
-    return await call_next(request)
+    token = set_current_request(request)
+    try:
+        if request.url.path.startswith("/api/public"):
+            try:
+                check_public_rate_limit(request)
+            except HTTPException as exc:
+                return JSONResponse(
+                    status_code=exc.status_code,
+                    content={"detail": exc.detail},
+                    headers=exc.headers,
+                )
+        return await call_next(request)
+    finally:
+        reset_current_request(token)
+
 
 
 @app.get("/")

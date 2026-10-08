@@ -146,6 +146,24 @@ export function CommentSection({
     }
   };
 
+  const handleCommentDeleted = async (deletedId: number) => {
+    setComments((prev) =>
+      prev
+        .filter((c) => c.id !== deletedId)
+        .map((c) => ({
+          ...c,
+          replies: (c.replies || []).filter((r) => r.id !== deletedId),
+        }))
+    );
+    setLiveMessage("Comment deleted.");
+    try {
+      const fresh = await getProject(projectId);
+      onProjectUpdated?.(fresh);
+    } catch {
+      // ignore
+    }
+  };
+
   return (
     <div className="rounded-[14px] border border-white/10 bg-white/5 p-[16px]">
       <h4 className="font-body-md text-[13px] font-semibold text-on-surface-variant uppercase tracking-wider mb-[12px]">
@@ -188,6 +206,7 @@ export function CommentSection({
             replyFormError={replyFormError}
             isPostingReply={isPostingReply}
             onPostReply={handlePostReply}
+            onCommentDeleted={handleCommentDeleted}
           />
         ))}
       </div>

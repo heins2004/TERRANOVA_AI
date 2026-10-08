@@ -2,6 +2,7 @@
 
 import React from "react";
 import { PublicComment } from "@/services/publicProjects";
+import { CommentDeleteControl } from "./CommentDeleteControl";
 
 type ReplyTarget = {
   rootId: number;
@@ -22,6 +23,7 @@ type CommentItemProps = {
   replyFormError: string | null;
   isPostingReply: boolean;
   onPostReply: (e: React.FormEvent) => void;
+  onCommentDeleted: (commentId: number) => void;
 };
 
 export function CommentItem({
@@ -37,6 +39,7 @@ export function CommentItem({
   replyFormError,
   isPostingReply,
   onPostReply,
+  onCommentDeleted,
 }: CommentItemProps) {
   const isNewlyCreatedComment = comment.id === postedCommentId;
 
@@ -99,27 +102,35 @@ export function CommentItem({
                   {reply.body}
                 </div>
 
-                {/* Reply button on a reply */}
-                {allowReply && (
-                  <div className="mt-[4px]">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (activeReplyTarget?.clickedId === reply.id) {
-                          onReplyTargetSelect(null);
-                        } else {
-                          onReplyTargetSelect({
-                            rootId: comment.id,
-                            clickedId: reply.id,
-                            authorName: reply.author_name,
-                          });
-                        }
-                      }}
-                      aria-label={`Reply to ${reply.author_name}`}
-                      className="font-body-md text-[11px] text-primary-container hover:underline cursor-pointer"
-                    >
-                      Reply
-                    </button>
+                {/* Action buttons on reply */}
+                {(allowReply || reply.can_delete) && (
+                  <div className="mt-[4px] flex items-center gap-[10px]">
+                    {allowReply && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (activeReplyTarget?.clickedId === reply.id) {
+                            onReplyTargetSelect(null);
+                          } else {
+                            onReplyTargetSelect({
+                              rootId: comment.id,
+                              clickedId: reply.id,
+                              authorName: reply.author_name,
+                            });
+                          }
+                        }}
+                        aria-label={`Reply to ${reply.author_name}`}
+                        className="font-body-md text-[11px] text-primary-container hover:underline cursor-pointer"
+                      >
+                        Reply
+                      </button>
+                    )}
+                    {reply.can_delete && (
+                      <CommentDeleteControl
+                        commentId={reply.id}
+                        onDeleted={onCommentDeleted}
+                      />
+                    )}
                   </div>
                 )}
               </div>
@@ -128,27 +139,35 @@ export function CommentItem({
         </div>
       )}
 
-      {/* Reply button on top-level comment */}
-      {allowReply && (
-        <div className="mt-[8px]">
-          <button
-            type="button"
-            onClick={() => {
-              if (activeReplyTarget?.clickedId === comment.id) {
-                onReplyTargetSelect(null);
-              } else {
-                onReplyTargetSelect({
-                  rootId: comment.id,
-                  clickedId: comment.id,
-                  authorName: comment.author_name,
-                });
-              }
-            }}
-            aria-label={`Reply to ${comment.author_name}`}
-            className="font-body-md text-[11px] text-primary-container hover:underline cursor-pointer"
-          >
-            Reply
-          </button>
+      {/* Actions on top-level comment */}
+      {(allowReply || comment.can_delete) && (
+        <div className="mt-[8px] flex items-center gap-[10px]">
+          {allowReply && (
+            <button
+              type="button"
+              onClick={() => {
+                if (activeReplyTarget?.clickedId === comment.id) {
+                  onReplyTargetSelect(null);
+                } else {
+                  onReplyTargetSelect({
+                    rootId: comment.id,
+                    clickedId: comment.id,
+                    authorName: comment.author_name,
+                  });
+                }
+              }}
+              aria-label={`Reply to ${comment.author_name}`}
+              className="font-body-md text-[11px] text-primary-container hover:underline cursor-pointer"
+            >
+              Reply
+            </button>
+          )}
+          {comment.can_delete && (
+            <CommentDeleteControl
+              commentId={comment.id}
+              onDeleted={onCommentDeleted}
+            />
+          )}
         </div>
       )}
 

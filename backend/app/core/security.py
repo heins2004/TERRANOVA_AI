@@ -124,3 +124,20 @@ def require_authenticated_user():
         return user
 
     return dependency
+
+
+from contextvars import ContextVar
+_current_request_cv: ContextVar[Request | None] = ContextVar("_current_request_cv", default=None)
+
+
+def set_current_request(request: Request | None):
+    return _current_request_cv.set(request)
+
+
+def reset_current_request(token) -> None:
+    _current_request_cv.reset(token)
+
+
+def get_current_request() -> Request | None:
+    return _current_request_cv.get()
+

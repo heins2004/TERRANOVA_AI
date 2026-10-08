@@ -70,3 +70,43 @@ export async function postComment(
 
   throw new CommentApiError(response.status, serverMessage, retryAfter);
 }
+
+export async function deleteComment(
+  commentId: number,
+  signal?: AbortSignal
+): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/api/comments/${commentId}`, {
+      method: "DELETE",
+      credentials: "include",
+      signal,
+    });
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw err;
+    }
+    throw new CommentApiError(0, "Could not delete comment. Check your connection and try again.");
+  }
+
+  if (response.status === 204) {
+    return;
+  }
+
+  let serverMessage = `Request failed with status ${response.status}`;
+  try {
+    const errorBody = await response.json();
+    if (errorBody && errorBody.detail) {
+      if (typeof errorBody.detail === "string") {
+        serverMessage = errorBody.detail;
+      } else if (Array.isArray(errorBody.detail) && errorBody.detail.length > 0) {
+        serverMessage = errorBody.detail[0]?.msg ?? JSON.stringify(errorBody.detail);
+      }
+    }
+  } catch {
+    // ignore parse failure
+  }
+
+  throw new CommentApiError(response.status, serverMessage);
+}
+

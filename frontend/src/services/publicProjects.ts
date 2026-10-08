@@ -38,6 +38,8 @@ export type PublicCommentReply = {
   body: string;
   created_at: string;
   parent_id?: number | null;
+  is_mine?: boolean;
+  can_delete?: boolean;
 };
 
 export type PublicComment = {
@@ -49,6 +51,8 @@ export type PublicComment = {
   created_at: string;
   parent_id?: number | null;
   replies: PublicCommentReply[];
+  is_mine?: boolean;
+  can_delete?: boolean;
 };
 
 export type ProjectFilters = {
@@ -194,6 +198,7 @@ export async function listComments(
   const url = `${API_BASE_URL}/api/public/projects/${id}/comments${qs ? `?${qs}` : ""}`;
   const response = await fetch(url, {
     signal,
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
   });
 
