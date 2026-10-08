@@ -18,29 +18,6 @@ ALL_ROLES = ("Citizen", "Urban Planner", "Government Official", "Administrator")
 router = APIRouter(tags=["comments and follows"])
 
 
-@router.get(
-    "/api/projects/{project_id}/comments",
-    response_model=list[PublicCommentItem],
-)
-def get_comments_endpoint(
-    project_id: int,
-    request: Request,
-    limit: int = Query(20, ge=1, le=50, description="Comments limit"),
-    offset: int = Query(0, ge=0, le=10000, description="Comments offset"),
-    connection: psycopg.Connection = Depends(get_db),
-) -> list[PublicCommentItem]:
-    from app.services.auth_service import get_current_authenticated_user
-
-    current_user = get_current_authenticated_user(request=request, connection=connection)
-    return comment_service.get_public_project_comments(
-        connection,
-        project_id=project_id,
-        limit=limit,
-        offset=offset,
-        current_user=current_user,
-    )
-
-
 @router.post(
     "/api/projects/{project_id}/comments",
     response_model=PublicCommentItem,
