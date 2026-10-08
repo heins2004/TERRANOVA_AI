@@ -1,0 +1,66 @@
+=== TERRANOVA AI: ADMIN MANAGEMENT E2E RERUN TEST ===
+Backend Target: http://127.0.0.1:8000
+
+--- 1. Logged Out Access Control (Expected: 401) ---
+GET /api/admin/users (Anon) -> Expected: 401, Actual: 401
+GET /api/admin/stats (Anon) -> Expected: 401, Actual: 401
+POST /api/admin/officials (Anon) -> Expected: 401, Actual: 401
+
+--- 2. Non-Admin Role Access Control (Expected: 403) ---
+GET /api/admin/users (Citizen) -> Expected: 403, Actual: 403
+GET /api/admin/stats (Citizen) -> Expected: 403, Actual: 403
+POST /api/admin/officials (Citizen) -> Expected: 403, Actual: 403
+GET /api/admin/users (Urban Planner) -> Expected: 403, Actual: 403
+GET /api/admin/stats (Urban Planner) -> Expected: 403, Actual: 403
+POST /api/admin/officials (Urban Planner) -> Expected: 403, Actual: 403
+GET /api/admin/users (Government Official) -> Expected: 403, Actual: 403
+GET /api/admin/stats (Government Official) -> Expected: 403, Actual: 403
+POST /api/admin/officials (Government Official) -> Expected: 403, Actual: 403
+
+--- 3. Administrator Listing & Safeguards ---
+Admin logged in successfully: ID=5, Email=admin@test.com
+GET /api/admin/users (Admin) -> Expected: 200, Actual: 200
+Returned 25 users in default list
+Password/Hash in response -> Expected: False, Actual: False
+Demo users in default list -> Expected: False, Actual: False
+
+--- 4. Official Provisioning Validations ---
+POST /api/admin/officials (Name with digits) -> Expected: 422, Actual: 422 (Official name cannot contain digits and cannot be blank.)
+POST /api/admin/officials (Bad phone starting with 1) -> Expected: 422, Actual: 422 (Phone number must be a valid 10-digit Indian number starting with 6-9.)
+POST /api/admin/officials (Short password) -> Expected: 422, Actual: 422 ([{'type': 'string_too_short', 'loc': ['body', 'password'], 'msg': 'String should have at least 8 characters', 'input': 'short', 'ctx': {'min_length': 8}}])
+POST /api/admin/officials (Valid payload) -> Expected: 201, Actual: 201
+Created Official ID=513, Email=test_official_a9d733@example.com, Role=Government Official
+Login with created official -> Expected: 200, Actual: 200
+POST /api/admin/officials (Duplicate email) -> Expected: 409, Actual: 409 (A user with this email already exists.)
+
+--- 5. Deactivation & Reactivation Lifecycle ---
+Registered test user for deactivation: ID=514, Email=test_deact_a9d733@example.com
+Test user active session verified (GET /api/auth/me -> 200)
+POST /api/admin/users/514/deactivate -> Expected: 200, Actual: 200
+Old session after deactivation (GET /api/auth/me) -> Expected: 401, Actual: 401
+New login while deactivated -> Expected: 401, Actual: 401 (Account is deactivated.)
+POST /api/admin/users/514/reactivate -> Expected: 200, Actual: 200
+Login after reactivation -> Expected: 200, Actual: 200
+
+--- 6. Self-Deactivation & Last Admin Protection ---
+POST /api/admin/users/5/deactivate (Self) -> Expected: 409 or 403, Actual: 409 (Administrators cannot deactivate their own account.)
+
+--- 7. Aggregates Stats Check ---
+GET /api/admin/stats -> Expected: 200, Actual: 200
+Stats keys: ['users_by_role', 'active_vs_inactive', 'deployed_projects_by_stage', 'comments_last_7_days', 'logins_last_7_days', 'logins_tracking_status']
+Users by role: {'Citizen': 17, 'Urban Planner': 7, 'Government Official': 2, 'Administrator': 1}
+Active vs inactive: {'active': 27, 'inactive': 0}
+Deployed projects by stage: {'OpenForResponse': 8, 'InProgress': 1, 'Completed': 1, 'Halted': 1, 'Recalled': 0}
+Comments last 7 days: 62
+Logins last 7 days: None (Logins are not tracked in this system.)
+Project titles in stats -> Expected: False, Actual: False
+
+--- 8. Audit Log (admin_actions) Row Verification ---
+Found 3 admin_action rows for test users:
+  Action #14: admin=5, action=create_official, target=513, note='Created Government Official test_official_a9d733@example.com'
+  Action #15: admin=5, action=deactivate_user, target=514, note='Deactivated user test_deact_a9d733@example.com'
+  Action #16: admin=5, action=reactivate_user, target=514, note='Reactivated user test_deact_a9d733@example.com'
+Actions verified: Expected create_official, deactivate_user, reactivate_user; Actual: {'deactivate_user', 'reactivate_user', 'create_official'}
+
+Recorded test user IDs for cleanup: [513, 514]
+ALL E2E ADMIN CHECKS PASSED PERFECTLY.

@@ -1,0 +1,60 @@
+=== TERRANOVA AI: SECURITY HARDENING E2E TEST ===
+Test Instance: http://127.0.0.1:8005
+Database: postgresql://postgres:12345@localhost:5432/terranova_ai
+
+--- ITEM 6: Session Cookie Tests (development vs production) ---
+APP_ENV=development Set-Cookie: terranova_session=Vjf-WfBh9ADzmDSGdVcTRZG_WxR0Nf3puPim5yExiKc; HttpOnly; Max-Age=604800; Path=/; SameSite=lax
+  HttpOnly -> Expected: True, Actual: True
+  SameSite=lax -> Expected: True, Actual: True
+  Secure -> Expected: False, Actual: False
+APP_ENV=production Set-Cookie: terranova_session=GN_GLC-vm4MG4qHh9uRA9QdBvZMOA8hJkiw_uGvbB5M; HttpOnly; Max-Age=604800; Path=/; SameSite=lax; Secure
+  HttpOnly -> Expected: True, Actual: True
+  SameSite=lax -> Expected: True, Actual: True
+  Secure -> Expected: True, Actual: True
+
+--- ITEMS 7 & 8: Rate Limiting & PBKDF2 Iteration Upgrades ---
+
+1. Public API Rate Limiting Check:
+  Public request #1 -> Expected: 200, Actual: 200
+  Public request #2 -> Expected: 200, Actual: 200
+  Public request #3 -> Expected: 200, Actual: 200
+  Public request #4 -> Expected: 200, Actual: 200
+  Public request #5 -> Expected: 200, Actual: 200
+  Public request #6 (over limit) -> Expected: 429, Actual: 429
+  Retry-After header present -> Expected: True, Actual: True (Value: 3)
+  Non-public endpoint /health during block -> Expected: 200, Actual: 200
+  Waiting 3.5s for public rate limit window reset...
+  Public request after window reset -> Expected: 200, Actual: 200
+
+2. Login Failure Rate Limiting Check:
+  Login failure attempt #1 -> Expected: 401, Actual: 401
+  Login failure attempt #2 -> Expected: 401, Actual: 401
+  Login failure attempt #3 -> Expected: 401, Actual: 401
+  Login attempt #4 (after limit) -> Expected: 429, Actual: 429
+  Retry-After header present -> Expected: True, Actual: True (Value: 3)
+  Error message: 'Too many failed login attempts. Please try again later.'
+  Waiting 3.5s for login rate limit window reset...
+  Login attempt after window reset -> Expected: 401 (reset from 429), Actual: 401
+
+3. Password Hashing & PBKDF2 Iteration Upgrade Check:
+  Created test user ID=512 with 100k legacy hash: 375f75c43dccd05eb2429e3164e4c5...
+  Initial stored iterations -> Expected: 100000, Actual: 100000
+  Wrong password login -> Expected: 401, Actual: 401
+  Old hash login -> Expected: 200, Actual: 200
+  Stored hash after login: 600000$62637e0fa9816c81047a6a0ba178...
+  Stored iteration count rose -> Expected: 600000, Actual: 600000
+  New 600k hash login -> Expected: 200, Actual: 200
+  Malformed hash in DB login -> Expected: 401 (not 500), Actual: 401
+  Cleaned up temporary test user.
+
+4. Four Core Test Accounts Verification:
+  Account #2 (citizen@test.com): stored iterations=600000 (Expected: 600000)
+    Login status -> Expected: 200, Actual: 200
+  Account #3 (planner@test.com): stored iterations=600000 (Expected: 600000)
+    Login status -> Expected: 200, Actual: 200
+  Account #4 (gov@test.com): stored iterations=600000 (Expected: 600000)
+    Login status -> Expected: 200, Actual: 200
+  Account #5 (admin@test.com): stored iterations=600000 (Expected: 600000)
+    Login status -> Expected: 200, Actual: 200
+
+ALL SECURITY HARDENING E2E CHECKS PASSED PERFECTLY.
