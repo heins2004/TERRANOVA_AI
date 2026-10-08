@@ -67,7 +67,7 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-label-caps: var(--font-jetbrains-mono);
-  --font-display-md: var(--font-sora);
+  --font-display-md: var(--font-inter);
   --font-body-md: var(--font-inter);
   --font-data-mono: var(--font-jetbrains-mono);
   --text-label-caps: 12px;
