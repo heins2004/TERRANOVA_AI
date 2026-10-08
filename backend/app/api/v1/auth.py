@@ -24,11 +24,12 @@ def register(
 
 @router.post("/login", response_model=AuthResponse)
 def login(
+    request: Request,
     payload: LoginRequest,
     response: Response,
     connection: Connection = Depends(get_db),
 ) -> AuthResponse:
-    return login_user(payload=payload, response=response, connection=connection)
+    return login_user(payload=payload, response=response, connection=connection, request=request)
 
 
 @router.get("/me", response_model=UserResponse)

@@ -6,39 +6,78 @@ from collections.abc import Generator
 from fastapi import Depends, HTTPException, Request, status
 from app.schemas.auth import UserResponse
 
-PASSWORD_ITERATIONS = 100_000
+LEGACY_PASSWORD_ITERATIONS = 100_000
+NEW_PASSWORD_ITERATIONS = 600_000
+PASSWORD_ITERATIONS = NEW_PASSWORD_ITERATIONS
 
 
-def hash_password(password: str) -> str:
+def hash_password(password: str, iterations: int = NEW_PASSWORD_ITERATIONS) -> str:
     salt = secrets.token_hex(16)
     derived_key = hashlib.pbkdf2_hmac(
         "sha256",
         password.encode("utf-8"),
         salt.encode("utf-8"),
-        PASSWORD_ITERATIONS,
+        iterations,
     )
-    return f"{salt}${derived_key.hex()}"
+    return f"{iterations}${salt}${derived_key.hex()}"
+
+
+def get_hash_iterations(password_hash: str) -> int | None:
+    if not password_hash or not isinstance(password_hash, str) or "$" not in password_hash:
+        return None
+    parts = password_hash.split("$")
+    try:
+        if len(parts) == 2:
+            return LEGACY_PASSWORD_ITERATIONS
+        elif len(parts) == 3:
+            return int(parts[0])
+        elif len(parts) == 4 and parts[0] in ("pbkdf2", "pbkdf2_sha256"):
+            return int(parts[1])
+    except (ValueError, TypeError):
+        return None
+    return None
 
 
 def verify_password(password: str, password_hash: str) -> bool:
     if not password_hash or not isinstance(password_hash, str) or "$" not in password_hash:
         return False
-    parts = password_hash.split("$", maxsplit=1)
-    if len(parts) != 2:
-        return False
-    salt, stored_hash = parts
-    if not salt or not stored_hash:
-        return False
+    parts = password_hash.split("$")
     try:
+        if len(parts) == 2:
+            salt, stored_hash = parts
+            iterations = LEGACY_PASSWORD_ITERATIONS
+        elif len(parts) == 3:
+            iter_str, salt, stored_hash = parts
+            iterations = int(iter_str)
+        elif len(parts) == 4 and parts[0] in ("pbkdf2", "pbkdf2_sha256"):
+            _, iter_str, salt, stored_hash = parts
+            iterations = int(iter_str)
+        else:
+            return False
+
+        if not salt or not stored_hash or iterations <= 0:
+            return False
+
+        # Ensure valid hex strings
+        int(salt, 16)
+        int(stored_hash, 16)
+
         derived_key = hashlib.pbkdf2_hmac(
             "sha256",
             password.encode("utf-8"),
             salt.encode("utf-8"),
-            PASSWORD_ITERATIONS,
+            iterations,
         )
         return hmac.compare_digest(derived_key.hex(), stored_hash)
     except Exception:
         return False
+
+
+def needs_rehash(password_hash: str) -> bool:
+    iters = get_hash_iterations(password_hash)
+    if iters is None or iters < NEW_PASSWORD_ITERATIONS:
+        return True
+    return False
 
 
 def create_session_token() -> str:

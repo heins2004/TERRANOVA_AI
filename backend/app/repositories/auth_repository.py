@@ -82,3 +82,17 @@ def delete_session_by_token(connection: Connection, session_token: str) -> None:
     with connection.cursor() as cursor:
         cursor.execute("DELETE FROM user_sessions WHERE session_token = %s", (session_token,))
     connection.commit()
+
+
+def update_user_password_hash(
+    connection: Connection,
+    *,
+    user_id: int,
+    password_hash: str,
+) -> None:
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "UPDATE users SET password_hash = %s WHERE id = %s",
+            (password_hash, user_id),
+        )
+    connection.commit()

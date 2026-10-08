@@ -4,13 +4,25 @@ from fastapi import HTTPException, Request, Response, status
 from psycopg import Connection
 
 from app.core.config import get_settings
-from app.core.security import create_session_token, hash_password, verify_password
+from app.core.rate_limit import (
+    check_login_rate_limit,
+    clear_login_failures,
+    get_client_ip,
+    record_login_failure,
+)
+from app.core.security import (
+    create_session_token,
+    hash_password,
+    needs_rehash,
+    verify_password,
+)
 from app.repositories.auth_repository import (
     create_user,
     delete_session_by_token,
     get_authenticated_user_by_session_token,
     get_user_by_email,
     replace_user_session,
+    update_user_password_hash,
 )
 from app.schemas.auth import AuthResponse, LoginRequest, RegisterRequest, UserResponse
 
@@ -96,9 +108,14 @@ def login_user(
     payload: LoginRequest,
     response: Response,
     connection: Connection,
+    request: Request | None = None,
 ) -> AuthResponse:
+    ip = get_client_ip(request) if request else "127.0.0.1"
+    check_login_rate_limit(ip=ip, email=payload.email)
+
     user_row = get_user_by_email(connection, payload.email)
     if not user_row or not verify_password(payload.password, user_row["password_hash"]):
+        record_login_failure(ip=ip, email=payload.email)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password.",
@@ -108,6 +125,16 @@ def login_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Account is deactivated.",
+        )
+
+    clear_login_failures(email=payload.email)
+
+    if needs_rehash(user_row["password_hash"]):
+        new_hash = hash_password(payload.password)
+        update_user_password_hash(
+            connection,
+            user_id=user_row["id"],
+            password_hash=new_hash,
         )
 
     session_token = _create_session(connection, user_row["id"])

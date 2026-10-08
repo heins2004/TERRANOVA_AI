@@ -18,6 +18,11 @@ class Settings:
     session_max_age_seconds: int
     session_cookie_secure: bool
     session_cookie_samesite: str
+    rate_limit_public_max_requests: int
+    rate_limit_public_window_seconds: int
+    rate_limit_login_max_failures: int
+    rate_limit_login_window_seconds: int
+    rate_limit_real_ip_header: str | None
 
 
 def _parse_bool(value: str, default: bool) -> bool:
@@ -54,6 +59,12 @@ def get_settings() -> Settings:
             f"Invalid APP_ENV '{app_env}'. Allowed values are 'development' and 'production'."
         )
 
+    # Secure cookie flag: set Secure when DEPLOYED=1 or APP_ENV=production, never in development.
+    if app_env == "development" and not deployed:
+        session_cookie_secure = False
+    else:
+        session_cookie_secure = bool(deployed or app_env == "production")
+
     return Settings(
         app_name="TERRANOVA AI",
         app_env=app_env,
@@ -66,6 +77,11 @@ def get_settings() -> Settings:
         ),
         session_cookie_name=os.getenv("SESSION_COOKIE_NAME", "terranova_session"),
         session_max_age_seconds=int(os.getenv("SESSION_MAX_AGE_SECONDS", "604800")),
-        session_cookie_secure=_parse_bool(os.getenv("SESSION_COOKIE_SECURE", "false"), False),
+        session_cookie_secure=session_cookie_secure,
         session_cookie_samesite=os.getenv("SESSION_COOKIE_SAMESITE", "lax"),
+        rate_limit_public_max_requests=int(os.getenv("RATE_LIMIT_PUBLIC_MAX_REQUESTS", "120")),
+        rate_limit_public_window_seconds=int(os.getenv("RATE_LIMIT_PUBLIC_WINDOW_SECONDS", "60")),
+        rate_limit_login_max_failures=int(os.getenv("RATE_LIMIT_LOGIN_MAX_FAILURES", "10")),
+        rate_limit_login_window_seconds=int(os.getenv("RATE_LIMIT_LOGIN_WINDOW_SECONDS", "900")),
+        rate_limit_real_ip_header=os.getenv("RATE_LIMIT_REAL_IP_HEADER"),
     )
