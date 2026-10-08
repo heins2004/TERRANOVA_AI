@@ -106,8 +106,8 @@ def login_user(
 
     if not user_row["is_active"]:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Your account has been deactivated",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Account is deactivated.",
         )
 
     session_token = _create_session(connection, user_row["id"])
