@@ -19,7 +19,6 @@ type AdminUserTableProps = {
   onPageChange: (newPage: number) => void;
   onLimitChange: (newLimit: number) => void;
   onOpenConfirm: (user: AdminUser, action: "deactivate" | "reactivate") => void;
-  onRoleChange: (userId: number, role: UserRole) => void;
   onStatusChange: (userId: number, isActive: boolean) => void;
 };
 
@@ -39,7 +38,6 @@ export function AdminUserTable({
   onPageChange,
   onLimitChange,
   onOpenConfirm,
-  onRoleChange,
   onStatusChange,
 }: AdminUserTableProps) {
   const pageNavRef = useRef(false);
@@ -176,17 +174,11 @@ export function AdminUserTable({
                       {item.email}
                     </td>
 
-                    {/* Column 2: Role (Matches test_j4 select aria-label) */}
+                    {/* Column 2: Role */}
                     <td className="py-[12px] px-[12px]">
-                      <select
-                        aria-label={`Role for ${displayName}`}
-                        value={item.role}
-                        disabled={isSelf}
-                        onChange={(e) => onRoleChange(item.id, e.target.value as UserRole)}
-                        className="h-[30px] px-[8px] rounded-[6px] bg-surface-muted/60 border border-white/15 text-[12px] text-foreground font-sans focus:outline-none focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {userRoles.map((r) => (<option key={r} value={r}>{r}</option>))}
-                      </select>
+                      <span className="inline-block px-[8px] py-[2px] rounded-[6px] bg-surface-muted/60 border border-white/10 text-[12px] font-sans font-medium text-foreground">
+                        {item.role}
+                      </span>
                     </td>
 
                     {/* Column 3: City */}

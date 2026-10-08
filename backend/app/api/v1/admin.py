@@ -9,7 +9,6 @@ from app.schemas.admin import (
     AdminUserItem,
     AdminUsersResponse,
     CreateOfficialRequest,
-    UserRoleUpdate,
     UserStatusUpdate,
 )
 from app.schemas.auth import UserResponse
@@ -99,21 +98,6 @@ def get_stats(
 
 
 # Backward compatibility for existing suite tests
-@router.patch("/users/{user_id}/role", response_model=AdminUserItem)
-def update_user_role(
-    user_id: int,
-    payload: UserRoleUpdate,
-    connection: Connection = Depends(get_db),
-    current_user: UserResponse = Depends(require_role("Administrator")),
-) -> dict[str, Any]:
-    return user_admin_service.update_user_role(
-        user_id=user_id,
-        new_role=payload.role,
-        current_user_id=current_user.id,
-        connection=connection,
-    )
-
-
 @router.patch("/users/{user_id}/status", response_model=AdminUserItem)
 def update_user_status(
     user_id: int,

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/layout/auth-provider";
 import { TopBar } from "@/components/layout/TopBar";
-import { AdminUser, getUsers, updateUserRole, updateUserStatus, userRoles, UserRole } from "@/services/admin";
+import { AdminUser, getUsers, updateUserStatus, UserRole } from "@/services/admin";
 
 export default function OldAdminPage() {
   const { user, isReady } = useAuth();
@@ -25,18 +25,6 @@ export default function OldAdminPage() {
     setUsers((current) =>
       current.map((item) => (item.id === updated.id ? updated : item))
     );
-  }
-
-  async function changeRole(id: number, role: UserRole) {
-    try {
-      setError("");
-      setUpdatingId(id);
-      replaceUser(await updateUserRole(id, role));
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Unable to update the user role.");
-    } finally {
-      setUpdatingId(null);
-    }
   }
 
   async function changeStatus(id: number, is_active: boolean) {
@@ -127,21 +115,9 @@ export default function OldAdminPage() {
                         {account.email}
                       </td>
                       <td className="px-[12px] py-[16px]">
-                        <select
-                          aria-label={`Role for ${account.full_name}`}
-                          className="rounded-[8px] border border-border bg-surface px-[10px] py-[8px] disabled:cursor-not-allowed disabled:opacity-50"
-                          disabled={isSelf || isUpdating}
-                          onChange={(event) =>
-                            void changeRole(account.id, event.target.value as UserRole)
-                          }
-                          value={account.role}
-                        >
-                          {userRoles.map((role) => (
-                            <option key={role} value={role}>
-                              {role}
-                            </option>
-                          ))}
-                        </select>
+                        <span className="font-medium text-foreground">
+                          {account.role}
+                        </span>
                       </td>
                       <td className="px-[12px] py-[16px]">
                         <label className="inline-flex items-center gap-[8px]">

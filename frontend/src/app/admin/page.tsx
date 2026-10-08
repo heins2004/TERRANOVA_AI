@@ -11,7 +11,6 @@ import {
   getUsers,
   deactivateUser,
   reactivateUser,
-  updateUserRole,
   updateUserStatus,
   UserRole,
 } from "@/services/admin";
@@ -135,17 +134,6 @@ export default function AdminPage() {
     setReloadKey((k) => k + 1);
   }
 
-  async function handleRoleChange(userId: number, role: UserRole) {
-    try {
-      const updated = await updateUserRole(userId, role);
-      setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
-      setFeedback({ message: `Updated role for ID #${userId} to ${role}`, type: "success" });
-      setReloadKey((k) => k + 1);
-    } catch (err) {
-      setFeedback({ message: err instanceof Error ? err.message : "Failed to change user role.", type: "error" });
-    }
-  }
-
   async function handleStatusChange(userId: number, isActive: boolean) {
     try {
       const updated = await updateUserStatus(userId, isActive);
@@ -258,7 +246,6 @@ export default function AdminPage() {
             onPageChange={setPage}
             onLimitChange={(newLimit) => { setLimit(newLimit); setPage(1); }}
             onOpenConfirm={(target, action) => setConfirmDialog({ isOpen: true, targetUser: target, action })}
-            onRoleChange={handleRoleChange}
             onStatusChange={handleStatusChange}
           />
         </div>

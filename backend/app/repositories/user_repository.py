@@ -10,17 +10,6 @@ def list_users(connection: Connection) -> list[dict]:
         return cursor.fetchall()
 
 
-def update_user_role(connection: Connection, user_id: int, new_role: str) -> dict | None:
-    with connection.cursor() as cursor:
-        cursor.execute(
-            f"UPDATE users SET role = %s WHERE id = %s RETURNING {USER_COLUMNS}",
-            (new_role, user_id),
-        )
-        user = cursor.fetchone()
-    connection.commit()
-    return user
-
-
 def update_user_active_status(connection: Connection, user_id: int, is_active: bool) -> dict | None:
     with connection.cursor() as cursor:
         cursor.execute(

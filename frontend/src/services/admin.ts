@@ -128,14 +128,6 @@ export function reactivateUser(id: number): Promise<AdminUser> {
   });
 }
 
-// Backward compatibility
-export function updateUserRole(id: number, role: UserRole) {
-  return request<AdminUser>(`/api/admin/users/${id}/role`, {
-    method: "PATCH",
-    body: JSON.stringify({ role }),
-  });
-}
-
 export function updateUserStatus(id: number, is_active: boolean) {
   return request<AdminUser>(`/api/admin/users/${id}/status`, {
     method: "PATCH",

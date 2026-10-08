@@ -18,16 +18,6 @@ def _ensure_not_self(*, user_id: int, current_user_id: int) -> None:
         )
 
 
-def update_user_role(*, user_id: int, new_role: str, current_user_id: int, connection: Connection) -> dict:
-    _ensure_not_self(user_id=user_id, current_user_id=current_user_id)
-    if new_role not in KNOWN_ROLES:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid user role.")
-    user = user_repository.update_user_role(connection, user_id, new_role)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
-    return user
-
-
 def update_user_active_status(*, user_id: int, is_active: bool, current_user_id: int, connection: Connection) -> dict:
     _ensure_not_self(user_id=user_id, current_user_id=current_user_id)
     user = user_repository.update_user_active_status(connection, user_id, is_active)

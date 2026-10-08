@@ -58,9 +58,5 @@ class AdminUserResponse(BaseModel):
     last_login_at: datetime | None = None
 
 
-class UserRoleUpdate(BaseModel):
-    role: str = Field(min_length=1, max_length=50)
-
-
 class UserStatusUpdate(BaseModel):
     is_active: bool
