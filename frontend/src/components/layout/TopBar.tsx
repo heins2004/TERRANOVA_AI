@@ -120,6 +120,25 @@ export function TopBar({
             </Link>
           )}
 
+          {currentUser?.role === "Administrator" && (
+            <Link
+              href="/admin"
+              id="topbar-admin-link"
+              aria-label="Admin Portal"
+              aria-current={pathname.startsWith("/admin") ? "page" : undefined}
+              className={`h-[32px] inline-flex items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
+                pathname.startsWith("/admin")
+                  ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
+                  : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
+                admin_panel_settings
+              </span>
+              <span className="hidden sm:inline">Admin Portal</span>
+            </Link>
+          )}
+
           <Link
             href="/"
             id="topbar-home-link"
