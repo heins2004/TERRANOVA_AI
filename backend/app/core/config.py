@@ -65,13 +65,22 @@ def get_settings() -> Settings:
     else:
         session_cookie_secure = bool(deployed or app_env == "production")
 
+    dev_default_db_url = "postgresql://postgres:postgres@localhost:5432/terranova_ai"
+    raw_database_url = os.getenv("DATABASE_URL")
+    database_url = raw_database_url or dev_default_db_url
+
+    if deployed or app_env == "production":
+        if not raw_database_url or raw_database_url.strip() == "" or database_url == dev_default_db_url:
+            raise ValueError(
+                "DATABASE_URL must be explicitly configured with non-default production credentials "
+                "when APP_ENV=production or DEPLOYED=1. "
+                "Refusing to start with missing or development default database credentials."
+            )
+
     return Settings(
         app_name="TERRANOVA AI",
         app_env=app_env,
-        database_url=os.getenv(
-            "DATABASE_URL",
-            "postgresql://postgres:postgres@localhost:5432/terranova_ai",
-        ),
+        database_url=database_url,
         frontend_origins=_parse_origins(
             os.getenv("FRONTEND_ORIGINS", os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")),
         ),
