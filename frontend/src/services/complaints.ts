@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+import { API_BASE_URL } from "@/lib/config";
 
 export const complaintStatuses = ["Submitted", "UnderReview", "Resolved", "Dismissed"] as const;
 export type ComplaintStatus = (typeof complaintStatuses)[number];
