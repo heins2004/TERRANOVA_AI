@@ -20,6 +20,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     role: str
     created_at: str
+    avatar_key: str = "avatar-01"
 
 
 class AuthResponse(BaseModel):

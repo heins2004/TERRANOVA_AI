@@ -27,6 +27,13 @@ ALTER TABLE users
 ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
 """
 
+ADD_PROFILE_COLUMNS_SQL = """
+ALTER TABLE users ADD COLUMN IF NOT EXISTS organization VARCHAR(100);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS designation VARCHAR(100);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS expertise VARCHAR(300);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_key TEXT NOT NULL DEFAULT 'avatar-01';
+"""
+
 CREATE_SESSIONS_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS user_sessions (
     id SERIAL PRIMARY KEY,
@@ -253,6 +260,7 @@ def init_db(database_url: str | None = None, app_env: str | None = None) -> None
             cursor.execute(CREATE_USERS_TABLE_SQL)
             cursor.execute(ADD_ROLE_COLUMN_SQL)
             cursor.execute(ADD_IS_ACTIVE_COLUMN_SQL)
+            cursor.execute(ADD_PROFILE_COLUMNS_SQL)
             cursor.execute(CREATE_SESSIONS_TABLE_SQL)
             cursor.execute(CREATE_PROJECTS_TABLE_SQL)
             cursor.execute(ADD_PROJECT_CITY_COLUMN_SQL)

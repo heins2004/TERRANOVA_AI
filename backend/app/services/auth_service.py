@@ -33,7 +33,8 @@ def _serialize_user(user_row: dict) -> UserResponse:
         full_name=user_row["full_name"],
         email=user_row["email"],
         role=user_row["role"],
-        created_at=user_row["created_at"].isoformat(),
+        created_at=user_row["created_at"].isoformat() if hasattr(user_row["created_at"], "isoformat") else str(user_row["created_at"]),
+        avatar_key=user_row.get("avatar_key") or "avatar-01",
     )
 
 

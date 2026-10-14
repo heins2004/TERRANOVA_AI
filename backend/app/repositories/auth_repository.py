@@ -29,7 +29,7 @@ def create_user(
             """
             INSERT INTO users (full_name, email, role, password_hash)
             VALUES (%s, %s, %s, %s)
-            RETURNING id, full_name, email, role, is_active, created_at
+            RETURNING id, full_name, email, role, is_active, created_at, avatar_key
             """,
             (full_name, email, role, password_hash),
         )
@@ -46,7 +46,6 @@ def replace_user_session(
     expires_at: datetime,
 ) -> None:
     with connection.cursor() as cursor:
-        cursor.execute("DELETE FROM user_sessions WHERE user_id = %s", (user_id,))
         cursor.execute(
             """
             INSERT INTO user_sessions (user_id, session_token, expires_at)
@@ -65,7 +64,7 @@ def get_authenticated_user_by_session_token(
         cursor.execute("DELETE FROM user_sessions WHERE expires_at <= NOW()")
         cursor.execute(
             """
-            SELECT users.id, users.full_name, users.email, users.role, users.is_active, users.created_at
+            SELECT users.id, users.full_name, users.email, users.role, users.is_active, users.created_at, users.avatar_key
             FROM user_sessions
             JOIN users ON users.id = user_sessions.user_id
             WHERE user_sessions.session_token = %s
