@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/components/layout/auth-provider";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { HamburgerMenu } from "@/components/layout/HamburgerMenu";
 import { AuthUser } from "@/lib/auth";
 
 type TopBarProps = {
@@ -157,6 +158,8 @@ export function TopBar({
           </Link>
 
           {isLoggedIn && <NotificationBell />}
+
+          <HamburgerMenu />
 
           {isLoggedIn ? (
             <button

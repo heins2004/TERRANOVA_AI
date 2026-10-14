@@ -10,6 +10,7 @@ export type AuthUser = {
   email: string;
   role: string;
   created_at: string;
+  avatar_key?: string;
 };
 
 export type AuthSuccess = {

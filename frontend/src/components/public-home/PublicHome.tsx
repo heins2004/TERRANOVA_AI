@@ -22,6 +22,7 @@ import {
   unfollowProject,
 } from "@/services/follows";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { HamburgerMenu } from "@/components/layout/HamburgerMenu";
 import { ProjectCard } from "./ProjectCard";
 import { ProjectPanel } from "./ProjectPanel";
 import { ParticleCloak } from "./ParticleCloak";
@@ -507,6 +508,7 @@ export function PublicHome() {
           {isAuthenticated && user ? (
             <div className="flex items-center gap-[8px]">
               <NotificationBell />
+              <HamburgerMenu />
 
               <button
                 type="button"
@@ -530,6 +532,7 @@ export function PublicHome() {
               >
                 Register
               </Link>
+              <HamburgerMenu />
             </div>
           )}
         </div>

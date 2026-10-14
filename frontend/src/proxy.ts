@@ -6,6 +6,7 @@ const exactProtectedRoutes = [
   "/projects",
   "/projects/new",
   "/map",
+  "/profile",
 ];
 const prefixProtectedRoutes = [
   "/complaints",
@@ -39,6 +40,7 @@ export const config = {
     "/projects",
     "/projects/new",
     "/map",
+    "/profile",
     "/complaints",
     "/complaints/:path*",
     "/consultations",

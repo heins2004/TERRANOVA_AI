@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
+<defs>
+<linearGradient id="g18" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#082f49"/><stop offset="100%" stop-color="#0369a1"/></linearGradient>
+</defs>
+<circle cx="40" cy="40" r="38" fill="url(#g18)"/><polygon points="40,20 62,58 18,58" fill="#0284c7"/><polygon points="40,20 47,34 40,38 33,34" fill="#f0f9ff"/><polygon points="52,36 68,60 36,60" fill="#38bdf8" opacity="0.8"/><polygon points="52,36 57,46 52,49 47,46" fill="#ffffff"/>
+</svg>

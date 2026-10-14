@@ -22,6 +22,7 @@ type AuthContextValue = {
   user: AuthUser | null;
   login: (payload: AuthSuccess) => void;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -59,6 +60,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  async function refreshUser() {
+    try {
+      const authenticatedUser = await getCurrentUser();
+      setUser(authenticatedUser);
+    } catch {
+      // ignore
+    }
+  }
+
   const value: AuthContextValue = {
     isAuthenticated: Boolean(user),
     isReady,
@@ -74,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       window.location.href = "/";
     },
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
