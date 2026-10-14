@@ -51,8 +51,6 @@ Thumbs.db
 agent-reports/review-*.md
 agent-reports/**/*.log
 raw/**/*.log
-agent-reports/raw/
-raw/
 
 # Uploaded planning documents (retain the directory marker only)
 storage/documents/*
