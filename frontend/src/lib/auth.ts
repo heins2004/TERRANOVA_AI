@@ -11,6 +11,7 @@ export type AuthUser = {
   role: string;
   created_at: string;
   avatar_key?: string;
+  must_change_password?: boolean;
 };
 
 export type AuthSuccess = {

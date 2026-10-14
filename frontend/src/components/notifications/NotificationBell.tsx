@@ -41,7 +41,7 @@ export function NotificationBell({ className = "" }: { className?: string }) {
   const isActionInFlightRef = useRef(false);
 
   const fetchLatestNotifications = useCallback(() => {
-    if (!isAuthenticated || !user) return;
+    if (!isAuthenticated || !user || user.must_change_password) return;
     if (inFlightAbortRef.current) inFlightAbortRef.current.abort();
     const ac = new AbortController();
     inFlightAbortRef.current = ac;
@@ -55,7 +55,7 @@ export function NotificationBell({ className = "" }: { className?: string }) {
   }, [isAuthenticated, user]);
 
   useEffect(() => {
-    if (!isReady || !isAuthenticated || !user) {
+    if (!isReady || !isAuthenticated || !user || user.must_change_password) {
       if (inFlightAbortRef.current) inFlightAbortRef.current.abort();
       queueMicrotask(() => {
         setItems([]);
@@ -171,6 +171,10 @@ export function NotificationBell({ className = "" }: { className?: string }) {
       setIsMarkingAll(false);
       isActionInFlightRef.current = false;
     }
+  }
+
+  if (!isAuthenticated || !user || user.must_change_password) {
+    return null;
   }
 
   const badgeText = unreadCount > 99 ? "99+" : unreadCount > 0 ? String(unreadCount) : null;

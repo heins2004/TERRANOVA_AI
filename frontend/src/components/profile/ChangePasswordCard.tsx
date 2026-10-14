@@ -3,7 +3,11 @@
 import { useRef, useState } from "react";
 import { changePassword } from "@/services/profile";
 
-export function ChangePasswordCard() {
+interface ChangePasswordCardProps {
+  onSuccess?: () => void;
+}
+
+export function ChangePasswordCard({ onSuccess }: ChangePasswordCardProps = {}) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -64,6 +68,9 @@ export function ChangePasswordCard() {
       setConfirmPassword("");
       setFieldErrors({});
       setSuccessMessage("Password changed successfully! Other active sessions were ended.");
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Failed to change password.";

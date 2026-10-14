@@ -41,7 +41,11 @@ export function AuthForm({ mode }: AuthFormProps) {
 
       login(response);
       setSuccessMessage(response.message);
-      router.replace("/");
+      if (response.user.must_change_password) {
+        router.replace("/change-password");
+      } else {
+        router.replace("/");
+      }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Something went wrong.");
     } finally {

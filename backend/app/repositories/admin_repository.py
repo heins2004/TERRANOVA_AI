@@ -113,9 +113,9 @@ def create_official_user(
     with connection.cursor(row_factory=dict_row) as cur:
         cur.execute(
             """
-            INSERT INTO users (full_name, email, role, password_hash, is_active, is_demo, city, phone)
-            VALUES (%s, %s, %s, %s, true, false, %s, %s)
-            RETURNING id, full_name, email, role, city, is_active, is_demo, created_at
+            INSERT INTO users (full_name, email, role, password_hash, is_active, is_demo, city, phone, must_change_password)
+            VALUES (%s, %s, %s, %s, true, false, %s, %s, true)
+            RETURNING id, full_name, email, role, city, is_active, is_demo, created_at, must_change_password
             """,
             (full_name.strip(), email.strip().lower(), role, password_hash, city, phone),
         )

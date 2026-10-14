@@ -115,10 +115,10 @@ def change_password(
         )
 
     new_hash = hash_password(payload.new_password, iterations=600_000)
-    profile_repository.update_user_password(connection, current_user.id, new_hash)
-
-    if current_session_token:
-        profile_repository.delete_other_user_sessions(connection, current_user.id, current_session_token)
+    with connection.transaction():
+        profile_repository.update_user_password(connection, current_user.id, new_hash)
+        if current_session_token:
+            profile_repository.delete_other_user_sessions(connection, current_user.id, current_session_token)
 
     return {"message": "Password changed successfully."}
 

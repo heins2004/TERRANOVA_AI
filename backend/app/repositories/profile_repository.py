@@ -142,10 +142,9 @@ def get_user_password_hash(connection: Connection, user_id: int) -> str | None:
 def update_user_password(connection: Connection, user_id: int, new_hash: str) -> None:
     with connection.cursor() as cursor:
         cursor.execute(
-            "UPDATE users SET password_hash = %s WHERE id = %s",
+            "UPDATE users SET password_hash = %s, must_change_password = false WHERE id = %s",
             (new_hash, user_id),
         )
-    connection.commit()
 
 
 def delete_other_user_sessions(
@@ -158,7 +157,6 @@ def delete_other_user_sessions(
             "DELETE FROM user_sessions WHERE user_id = %s AND session_token != %s",
             (user_id, current_session_token),
         )
-    connection.commit()
 
 
 def get_following_projects(

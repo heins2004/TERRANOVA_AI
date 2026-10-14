@@ -5,6 +5,7 @@ import Link from "next/link";
 type MenuItemsProps = {
   role?: string;
   isAuthenticated: boolean;
+  mustChangePassword?: boolean;
   isLoggingOut: boolean;
   onLinkClick: () => void;
   onLogout: () => void;
@@ -13,10 +14,29 @@ type MenuItemsProps = {
 export function HamburgerMenuItems({
   role,
   isAuthenticated,
+  mustChangePassword,
   isLoggingOut,
   onLinkClick,
   onLogout,
 }: MenuItemsProps) {
+  if (mustChangePassword) {
+    return (
+      <button
+        type="button"
+        role="menuitem"
+        id="menu-item-logout"
+        disabled={isLoggingOut}
+        onClick={onLogout}
+        className="flex h-[38px] w-full items-center gap-[10px] rounded-lg px-[12px] text-left font-body-md text-[13px] text-danger transition-colors hover:bg-danger/10 disabled:opacity-50"
+      >
+        <span className="material-symbols-outlined text-[18px] pointer-events-none">
+          logout
+        </span>
+        <span className="pointer-events-none">{isLoggingOut ? "Logging out..." : "Log out"}</span>
+      </button>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <>

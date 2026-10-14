@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) UNIQUE NOT NULL,
     role VARCHAR(50) NOT NULL DEFAULT 'Citizen',
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    avatar_key TEXT NOT NULL DEFAULT 'avatar-01',
+    must_change_password BOOLEAN NOT NULL DEFAULT FALSE,
     password_hash TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -32,6 +34,10 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS organization VARCHAR(100);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS designation VARCHAR(100);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS expertise VARCHAR(300);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_key TEXT NOT NULL DEFAULT 'avatar-01';
+"""
+
+ADD_MUST_CHANGE_PASSWORD_COLUMN_SQL = """
+ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT FALSE;
 """
 
 CREATE_SESSIONS_TABLE_SQL = """
@@ -261,6 +267,7 @@ def init_db(database_url: str | None = None, app_env: str | None = None) -> None
             cursor.execute(ADD_ROLE_COLUMN_SQL)
             cursor.execute(ADD_IS_ACTIVE_COLUMN_SQL)
             cursor.execute(ADD_PROFILE_COLUMNS_SQL)
+            cursor.execute(ADD_MUST_CHANGE_PASSWORD_COLUMN_SQL)
             cursor.execute(CREATE_SESSIONS_TABLE_SQL)
             cursor.execute(CREATE_PROJECTS_TABLE_SQL)
             cursor.execute(ADD_PROJECT_CITY_COLUMN_SQL)

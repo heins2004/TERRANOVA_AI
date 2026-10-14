@@ -1,22 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from psycopg import Connection
 
-from app.core.security import require_role
+from app.core.security import require_authenticated_user, require_role
 from app.database.connection import get_db
 from app.schemas.auth import UserResponse
 from app.schemas.consultations import ConsultationCreate, ConsultationResponse, ConsultationUpdate, FeedbackCreate, FeedbackResponse
 from app.services import consultation_service
-from app.services.auth_service import get_current_authenticated_user
 
 EDITOR_ROLES = ("Urban Planner", "Government Official", "Administrator")
 router = APIRouter(prefix="/api/consultations", tags=["consultations"])
 
-
-def current_user(request: Request, connection: Connection = Depends(get_db)) -> UserResponse:
-    user = get_current_authenticated_user(request=request, connection=connection)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required.")
-    return user
+current_user = require_authenticated_user()
 
 
 @router.post("", response_model=ConsultationResponse, status_code=status.HTTP_201_CREATED)

@@ -144,8 +144,8 @@ export function HamburgerMenu() {
             }}
             className="w-[280px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-32px)] overflow-y-auto rounded-xl border border-white/15 bg-surface-container-lowest/95 p-[16px] shadow-[0_12px_36px_rgba(0,0,0,0.6)] backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150"
           >
-            {/* User Header when logged in */}
-            {isAuthenticated && user && (
+            {/* User Header when logged in (omitted if flagged to change password) */}
+            {isAuthenticated && user && !user.must_change_password && (
               <div className="mb-[14px] flex items-center gap-[12px] border-b border-white/10 pb-[14px]">
                 <Avatar
                   avatarKey={user.avatar_key}
@@ -168,6 +168,7 @@ export function HamburgerMenu() {
               <HamburgerMenuItems
                 role={user?.role}
                 isAuthenticated={isAuthenticated}
+                mustChangePassword={user?.must_change_password}
                 isLoggingOut={isLoggingOut}
                 onLinkClick={() => {
                   setTimeout(() => setIsOpen(false), 10);

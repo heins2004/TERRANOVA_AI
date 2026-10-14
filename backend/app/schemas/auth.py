@@ -21,6 +21,7 @@ class UserResponse(BaseModel):
     role: str
     created_at: str
     avatar_key: str = "avatar-01"
+    must_change_password: bool = False
 
 
 class AuthResponse(BaseModel):

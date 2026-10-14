@@ -7,7 +7,7 @@ import {
   useEffect,
   useState,
 } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import {
   AuthSuccess,
@@ -29,8 +29,16 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    if (!isReady || !user) return;
+    if (user.must_change_password && pathname !== "/change-password") {
+      router.replace("/change-password");
+    }
+  }, [isReady, user, pathname, router]);
 
   useEffect(() => {
     let isMounted = true;

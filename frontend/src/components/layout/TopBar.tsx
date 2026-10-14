@@ -83,81 +83,85 @@ export function TopBar({
 
         {/* Right Corner: Home, Gov Portal (for officials) and Logout / Login */}
         <div className="flex items-center gap-[8px] sm:gap-[12px]">
-          {currentUser?.role === "Government Official" && (
-            <Link
-              href="/gov"
-              id="topbar-gov-link"
-              aria-label="Government Portal"
-              aria-current={pathname.startsWith("/gov") ? "page" : undefined}
-              className={`h-[32px] inline-flex items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
-                pathname.startsWith("/gov")
-                  ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
-                  : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
-                account_balance
-              </span>
-              <span className="hidden sm:inline">Gov Portal</span>
-            </Link>
+          {!currentUser?.must_change_password && (
+            <>
+              {currentUser?.role === "Government Official" && (
+                <Link
+                  href="/gov"
+                  id="topbar-gov-link"
+                  aria-label="Government Portal"
+                  aria-current={pathname.startsWith("/gov") ? "page" : undefined}
+                  className={`h-[32px] inline-flex items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
+                    pathname.startsWith("/gov")
+                      ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
+                      : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
+                    account_balance
+                  </span>
+                  <span className="hidden sm:inline">Gov Portal</span>
+                </Link>
+              )}
+
+              {currentUser?.role === "Urban Planner" && (
+                <Link
+                  href="/planner"
+                  id="topbar-planner-link"
+                  aria-label="Planner Portal"
+                  aria-current={pathname.startsWith("/planner") ? "page" : undefined}
+                  className={`h-[32px] inline-flex items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
+                    pathname.startsWith("/planner")
+                      ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
+                      : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
+                    architecture
+                  </span>
+                  <span className="hidden sm:inline">Planner Portal</span>
+                </Link>
+              )}
+
+              {currentUser?.role === "Administrator" && (
+                <Link
+                  href="/admin"
+                  id="topbar-admin-link"
+                  aria-label="Admin Portal"
+                  aria-current={pathname.startsWith("/admin") ? "page" : undefined}
+                  className={`h-[32px] inline-flex items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
+                    pathname.startsWith("/admin")
+                      ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
+                      : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
+                    admin_panel_settings
+                  </span>
+                  <span className="hidden sm:inline">Admin Portal</span>
+                </Link>
+              )}
+
+              <Link
+                href="/"
+                id="topbar-home-link"
+                aria-label="Home"
+                aria-current={isHomeActive ? "page" : undefined}
+                className={`h-[32px] inline-flex items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
+                  isHomeActive
+                    ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
+                    : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
+                }`}
+              >
+                <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
+                  home
+                </span>
+                <span className="hidden sm:inline">Home</span>
+              </Link>
+            </>
           )}
 
-          {currentUser?.role === "Urban Planner" && (
-            <Link
-              href="/planner"
-              id="topbar-planner-link"
-              aria-label="Planner Portal"
-              aria-current={pathname.startsWith("/planner") ? "page" : undefined}
-              className={`h-[32px] inline-flex items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
-                pathname.startsWith("/planner")
-                  ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
-                  : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
-                architecture
-              </span>
-              <span className="hidden sm:inline">Planner Portal</span>
-            </Link>
-          )}
-
-          {currentUser?.role === "Administrator" && (
-            <Link
-              href="/admin"
-              id="topbar-admin-link"
-              aria-label="Admin Portal"
-              aria-current={pathname.startsWith("/admin") ? "page" : undefined}
-              className={`h-[32px] inline-flex items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
-                pathname.startsWith("/admin")
-                  ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
-                  : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
-                admin_panel_settings
-              </span>
-              <span className="hidden sm:inline">Admin Portal</span>
-            </Link>
-          )}
-
-          <Link
-            href="/"
-            id="topbar-home-link"
-            aria-label="Home"
-            aria-current={isHomeActive ? "page" : undefined}
-            className={`h-[32px] inline-flex items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
-              isHomeActive
-                ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
-                : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
-              home
-            </span>
-            <span className="hidden sm:inline">Home</span>
-          </Link>
-
-          {isLoggedIn && <NotificationBell />}
+          {isLoggedIn && !currentUser?.must_change_password && <NotificationBell />}
 
           <HamburgerMenu />
 

@@ -35,6 +35,7 @@ def _serialize_user(user_row: dict) -> UserResponse:
         role=user_row["role"],
         created_at=user_row["created_at"].isoformat() if hasattr(user_row["created_at"], "isoformat") else str(user_row["created_at"]),
         avatar_key=user_row.get("avatar_key") or "avatar-01",
+        must_change_password=bool(user_row.get("must_change_password", False)),
     )
 
 
@@ -159,6 +160,9 @@ def get_current_authenticated_user(
 
     user_row = get_authenticated_user_by_session_token(connection, session_token)
     if not user_row or not user_row["is_active"]:
+        return None
+
+    if user_row.get("must_change_password") and request.url.path.startswith("/api/public"):
         return None
 
     return _serialize_user(user_row)

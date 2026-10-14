@@ -91,6 +91,22 @@ def _get_db() -> Generator:
     yield from get_db()
 
 
+def _enforce_password_change_policy(request: Request, user: UserResponse) -> None:
+    if user.must_change_password:
+        path = request.url.path
+        method = request.method
+        is_allowed = (
+            (path == "/api/auth/me" and method == "GET")
+            or (path == "/api/auth/logout" and method == "POST")
+            or (path == "/api/me/password" and method == "POST")
+        )
+        if not is_allowed:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="PASSWORD_CHANGE_REQUIRED",
+            )
+
+
 def require_role(*allowed_roles: str):
     """Return a dependency that enforces an authenticated user's role."""
     def dependency(
@@ -103,6 +119,7 @@ def require_role(*allowed_roles: str):
         user = get_current_authenticated_user(request=request, connection=connection)
         if not user:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required.")
+        _enforce_password_change_policy(request, user)
         if user.role not in allowed_roles:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have permission for this action.")
         return user
@@ -121,6 +138,7 @@ def require_authenticated_user():
         user = get_current_authenticated_user(request=request, connection=connection)
         if not user:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required.")
+        _enforce_password_change_policy(request, user)
         return user
 
     return dependency
