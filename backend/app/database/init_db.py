@@ -77,6 +77,28 @@ ALTER TABLE projects
     ADD COLUMN IF NOT EXISTS candidate_site_id INTEGER REFERENCES candidate_sites(id) ON DELETE SET NULL;
 """
 
+ADD_PROJECT_SITE_AREA_SQL = """
+ALTER TABLE projects
+    ADD COLUMN IF NOT EXISTS site_area_lat DOUBLE PRECISION,
+    ADD COLUMN IF NOT EXISTS site_area_lng DOUBLE PRECISION,
+    ADD COLUMN IF NOT EXISTS site_area_radius_km NUMERIC(6,2);
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'check_site_area_all_or_none'
+    ) THEN
+        ALTER TABLE projects
+            ADD CONSTRAINT check_site_area_all_or_none
+            CHECK (
+                (site_area_lat IS NULL AND site_area_lng IS NULL AND site_area_radius_km IS NULL)
+                OR
+                (site_area_lat IS NOT NULL AND site_area_lng IS NOT NULL AND site_area_radius_km IS NOT NULL)
+            );
+    END IF;
+END $$;
+"""
+
 CREATE_COMPLAINTS_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS complaints (
     id SERIAL PRIMARY KEY,
@@ -280,6 +302,7 @@ def init_db(database_url: str | None = None, app_env: str | None = None) -> None
             cursor.execute(CREATE_CANDIDATE_SITES_TABLE_SQL)
             # Add candidate_site_id FK on projects AFTER candidate_sites exists
             cursor.execute(ADD_CANDIDATE_SITE_ID_TO_PROJECTS_SQL)
+            cursor.execute(ADD_PROJECT_SITE_AREA_SQL)
             cursor.execute(CREATE_CANDIDATE_SITE_PROXIMITY_TABLE_SQL)
             cursor.execute(CREATE_OSM_LAYER_CACHE_TABLE_SQL)
 

@@ -1,17 +1,36 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useRef, useState } from "react";
 import { proposeSite } from "@/services/planner";
+
+const SiteAreaMap = dynamic(
+  () => import("@/components/maps/SiteAreaMap"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[300px] w-full items-center justify-center rounded-lg border border-white/10 bg-black/40 font-data-mono text-xs text-on-surface-variant">
+        LOADING PROPOSAL MAP...
+      </div>
+    ),
+  }
+);
 
 interface SiteProposalFormProps {
   projectId: number;
   rejectionReason: string | null;
+  siteAreaLat?: number | null;
+  siteAreaLng?: number | null;
+  siteAreaRadiusKm?: number | null;
   onSuccess: () => void;
 }
 
 export function SiteProposalForm({
   projectId,
   rejectionReason,
+  siteAreaLat,
+  siteAreaLng,
+  siteAreaRadiusKm,
   onSuccess,
 }: SiteProposalFormProps) {
   const [siteName, setSiteName] = useState("");
@@ -20,8 +39,12 @@ export function SiteProposalForm({
   const [explanation, setExplanation] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState("");
+  const [outsideClickError, setOutsideClickError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const isSubmittingRef = useRef(false);
+
+  const hasSiteArea =
+    siteAreaLat != null && siteAreaLng != null && siteAreaRadiusKm != null;
 
   function validateProposal(): boolean {
     const errors: Record<string, string> = {};
@@ -34,14 +57,18 @@ export function SiteProposalForm({
 
     const lat = parseFloat(siteLat);
     if (isNaN(lat)) {
-      errors.lat = "Latitude is required.";
+      errors.lat = hasSiteArea
+        ? "Please click inside the site area circle to place your candidate site pin."
+        : "Latitude is required.";
     } else if (lat < 6.0 || lat > 38.0) {
       errors.lat = "Latitude must be inside India (between 6.0 and 38.0).";
     }
 
     const lng = parseFloat(siteLng);
     if (isNaN(lng)) {
-      errors.lng = "Longitude is required.";
+      errors.lng = hasSiteArea
+        ? "Please click inside the site area circle to place your candidate site pin."
+        : "Longitude is required.";
     } else if (lng < 68.0 || lng > 98.0) {
       errors.lng = "Longitude must be inside India (between 68.0 and 98.0).";
     }
@@ -82,6 +109,24 @@ export function SiteProposalForm({
     }
   }
 
+  function handleSetPin(lat: number, lng: number) {
+    setSiteLat(lat.toFixed(4));
+    setSiteLng(lng.toFixed(4));
+    setOutsideClickError("");
+    setFieldErrors((prev) => {
+      const copy = { ...prev };
+      delete copy.lat;
+      delete copy.lng;
+      return copy;
+    });
+  }
+
+  function handleOutsideClick(distKm: number) {
+    setOutsideClickError(
+      `Click is outside the allowed site area (${distKm.toFixed(2)} km from centre). Please place your pin inside the ${siteAreaRadiusKm} km circle.`
+    );
+  }
+
   return (
     <div>
       {rejectionReason && (
@@ -96,7 +141,7 @@ export function SiteProposalForm({
       )}
 
       {generalError && (
-        <div className="mb-[20px] rounded border border-danger/40 bg-danger/10 p-[14px]">
+        <div id="planner-propose-error" className="mb-[20px] rounded border border-danger/40 bg-danger/10 p-[14px]">
           <p className="font-data-mono text-xs text-danger">{generalError}</p>
         </div>
       )}
@@ -105,7 +150,9 @@ export function SiteProposalForm({
         Propose Site Location
       </h3>
       <p className="mt-[4px] text-xs text-on-surface-variant">
-        Enter candidate site details inside India coordinates and technical justification.
+        {hasSiteArea
+          ? `Click inside the ${siteAreaRadiusKm} km circular site area to place your candidate site pin.`
+          : "Enter candidate site details inside India coordinates and technical justification."}
       </p>
 
       <form onSubmit={handleProposeSubmit} className="mt-[20px] space-y-[16px]">
@@ -127,43 +174,78 @@ export function SiteProposalForm({
           )}
         </div>
 
-        <div className="grid gap-[16px] sm:grid-cols-2">
-          <div>
-            <label className="block font-data-mono text-[11px] uppercase tracking-wider text-on-surface-variant">
-              Latitude (6.0 - 38.0)
+        {hasSiteArea ? (
+          <div className="space-y-[10px]">
+            <label className="block font-data-mono text-[11px] uppercase tracking-wider text-primary">
+              Candidate Site Area Map (Click inside circle to place pin)
             </label>
-            <input
-              type="number"
-              id="planner-site-lat"
-              step="0.0001"
-              placeholder="e.g. 28.6139"
-              value={siteLat}
-              onChange={(e) => setSiteLat(e.target.value)}
-              className="mt-[6px] w-full rounded border border-white/15 bg-white/[0.03] px-[14px] py-[10px] font-data-mono text-sm text-foreground focus:border-primary-container/80 focus:outline-none"
-            />
-            {fieldErrors.lat && (
-              <p className="mt-[4px] font-data-mono text-[11px] text-danger">{fieldErrors.lat}</p>
-            )}
-          </div>
 
-          <div>
-            <label className="block font-data-mono text-[11px] uppercase tracking-wider text-on-surface-variant">
-              Longitude (68.0 - 98.0)
-            </label>
-            <input
-              type="number"
-              id="planner-site-lng"
-              step="0.0001"
-              placeholder="e.g. 77.2090"
-              value={siteLng}
-              onChange={(e) => setSiteLng(e.target.value)}
-              className="mt-[6px] w-full rounded border border-white/15 bg-white/[0.03] px-[14px] py-[10px] font-data-mono text-sm text-foreground focus:border-primary-container/80 focus:outline-none"
+            <SiteAreaMap
+              mode="planner"
+              circleCenterLat={siteAreaLat}
+              circleCenterLng={siteAreaLng}
+              circleRadiusKm={siteAreaRadiusKm}
+              pinLat={siteLat ? parseFloat(siteLat) : null}
+              pinLng={siteLng ? parseFloat(siteLng) : null}
+              onSetPin={handleSetPin}
+              onOutsideClick={handleOutsideClick}
             />
-            {fieldErrors.lng && (
-              <p className="mt-[4px] font-data-mono text-[11px] text-danger">{fieldErrors.lng}</p>
+
+            {outsideClickError && (
+              <div id="planner-outside-click-msg" className="rounded border border-danger/40 bg-danger/10 p-[10px] font-data-mono text-xs text-danger">
+                {outsideClickError}
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center justify-between rounded border border-white/10 bg-white/[0.02] p-[12px] font-data-mono text-xs">
+              <span className="text-on-surface-variant">PIN LOCATION:</span>
+              <span id="planner-pin-readout" className="text-primary font-semibold">
+                {siteLat && siteLng ? `${siteLat}, ${siteLng}` : "No pin placed (click inside circle)"}
+              </span>
+            </div>
+            {fieldErrors.lat && (
+              <p className="font-data-mono text-[11px] text-danger">{fieldErrors.lat}</p>
             )}
           </div>
-        </div>
+        ) : (
+          <div className="grid gap-[16px] sm:grid-cols-2">
+            <div>
+              <label className="block font-data-mono text-[11px] uppercase tracking-wider text-on-surface-variant">
+                Latitude (6.0 - 38.0)
+              </label>
+              <input
+                type="number"
+                id="planner-site-lat"
+                step="0.0001"
+                placeholder="e.g. 28.6139"
+                value={siteLat}
+                onChange={(e) => setSiteLat(e.target.value)}
+                className="mt-[6px] w-full rounded border border-white/15 bg-white/[0.03] px-[14px] py-[10px] font-data-mono text-sm text-foreground focus:border-primary-container/80 focus:outline-none"
+              />
+              {fieldErrors.lat && (
+                <p className="mt-[4px] font-data-mono text-[11px] text-danger">{fieldErrors.lat}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block font-data-mono text-[11px] uppercase tracking-wider text-on-surface-variant">
+                Longitude (68.0 - 98.0)
+              </label>
+              <input
+                type="number"
+                id="planner-site-lng"
+                step="0.0001"
+                placeholder="e.g. 77.2090"
+                value={siteLng}
+                onChange={(e) => setSiteLng(e.target.value)}
+                className="mt-[6px] w-full rounded border border-white/15 bg-white/[0.03] px-[14px] py-[10px] font-data-mono text-sm text-foreground focus:border-primary-container/80 focus:outline-none"
+              />
+              {fieldErrors.lng && (
+                <p className="mt-[4px] font-data-mono text-[11px] text-danger">{fieldErrors.lng}</p>
+              )}
+            </div>
+          </div>
+        )}
 
         <div>
           <div className="flex items-center justify-between">

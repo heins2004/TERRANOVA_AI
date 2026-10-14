@@ -100,7 +100,13 @@ def update_project(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only the owning official can edit this project.",
         )
-    return project_service.update_project(project_id=project_id, payload=payload, connection=connection)
+    return project_service.update_project(
+        project_id=project_id,
+        payload=payload,
+        connection=connection,
+        user=user,
+        existing=existing,
+    )
 
 
 @projects_router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)

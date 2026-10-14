@@ -114,6 +114,9 @@ export function PlannerStageActions({
           <SiteProposalForm
             projectId={project.id}
             rejectionReason={project.proposal_rejection_reason}
+            siteAreaLat={project.site_area_lat}
+            siteAreaLng={project.site_area_lng}
+            siteAreaRadiusKm={project.site_area_radius_km}
             onSuccess={onActionComplete}
           />
         </div>

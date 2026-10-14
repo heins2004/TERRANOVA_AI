@@ -237,13 +237,24 @@ def get_project_for_caller(
                 detail="You are not assigned or invited to this project.",
             )
     elif user.role == "Administrator":
-        pass
+        is_invited = False
     else:
         # Citizens cannot access internal projects endpoint
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Citizens cannot access internal project details.",
         )
+
+    # Return the three area fields in the private workflow detail responses for the owning official and assigned/invited planner only
+    can_see_area = (
+        (user.role == "Government Official" and project.get("created_by") == user.id)
+        or (user.role == "Urban Planner" and (project.get("planner_id") == user.id or is_invited))
+    )
+    if not can_see_area:
+        project = dict(project)
+        project["site_area_lat"] = None
+        project["site_area_lng"] = None
+        project["site_area_radius_km"] = None
 
     return project
 
@@ -256,7 +267,7 @@ def list_projects_for_caller(
     category: str | None = None,
     city: str | None = None,
 ) -> list[dict[str, Any]]:
-    return workflow_repository.get_projects_for_user(
+    raw_list = workflow_repository.get_projects_for_user(
         connection,
         user_id=user.id,
         role=user.role,
@@ -264,6 +275,19 @@ def list_projects_for_caller(
         category=category,
         city=city,
     )
+    results = []
+    for p in raw_list:
+        p_dict = dict(p)
+        can_see_area = (
+            (user.role == "Government Official" and p_dict.get("created_by") == user.id)
+            or (user.role == "Urban Planner" and p_dict.get("planner_id") == user.id)
+        )
+        if not can_see_area:
+            p_dict["site_area_lat"] = None
+            p_dict["site_area_lng"] = None
+            p_dict["site_area_radius_km"] = None
+        results.append(p_dict)
+    return results
 
 
 def invite_planner(
@@ -293,6 +317,11 @@ def invite_planner(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Cannot invite planner when project is in '{project['stage']}' stage (must be Draft).",
+        )
+    if not project.get("site_area_lat") or not project.get("site_area_lng") or not project.get("site_area_radius_km"):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Set the site area before inviting a planner.",
         )
 
     target_user = workflow_repository.get_user_by_id(connection, payload.planner_id)
@@ -577,6 +606,48 @@ def propose_site(
         raise HTTPException(status_code=404, detail="Project not found.")
     if project.get("planner_id") != user.id:
         raise HTTPException(status_code=403, detail="You are not the assigned planner for this project.")
+
+    if (
+        project.get("site_area_lat") is not None
+        and project.get("site_area_lng") is not None
+        and project.get("site_area_radius_km") is not None
+    ):
+        center_lat = float(project["site_area_lat"])
+        center_lng = float(project["site_area_lng"])
+        radius_km = float(project["site_area_radius_km"])
+        radius_meters = radius_km * 1000.0
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT ST_DWithin(
+                    ST_MakePoint(%s, %s)::geography,
+                    ST_MakePoint(%s, %s)::geography,
+                    %s
+                ) AS is_within,
+                ST_Distance(
+                    ST_MakePoint(%s, %s)::geography,
+                    ST_MakePoint(%s, %s)::geography
+                ) AS distance_meters
+                """,
+                (
+                    center_lng, center_lat,
+                    payload.location_lng, payload.location_lat,
+                    radius_meters,
+                    center_lng, center_lat,
+                    payload.location_lng, payload.location_lat,
+                ),
+            )
+            dist_res = cursor.fetchone()
+            is_within = dist_res["is_within"]
+            distance_meters = float(dist_res["distance_meters"])
+
+        if not is_within:
+            dist_km = distance_meters / 1000.0
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Proposed site location is outside the allowed site area. Distance is {dist_km:.2f} km, which exceeds the allowed radius of {radius_km:.2f} km.",
+            )
 
     return transition_project_stage(
         connection,

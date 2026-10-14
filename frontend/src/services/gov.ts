@@ -27,6 +27,9 @@ export interface GovProject {
   proposed_site_explanation?: string | null;
   proposed_site_lat?: number | null;
   proposed_site_lng?: number | null;
+  site_area_lat?: number | null;
+  site_area_lng?: number | null;
+  site_area_radius_km?: number | null;
 }
 
 export interface GovProjectEvent {
@@ -55,6 +58,9 @@ export interface GovProjectCreatePayload {
   budget?: number;
   start_date?: string;
   end_date?: string;
+  site_area_lat?: number | null;
+  site_area_lng?: number | null;
+  site_area_radius_km?: number | null;
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {

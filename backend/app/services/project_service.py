@@ -3,6 +3,7 @@ from psycopg import Connection
 
 from app.repositories import project_repository
 from app.core.cities import CITY_SLUGS
+from app.schemas.auth import UserResponse
 from app.schemas.projects import (
     ProjectCreate,
     ProjectUpdate,
@@ -44,12 +45,51 @@ def list_projects(*, connection: Connection, status_filter: str | None, category
     return project_repository.list_projects(connection, status=status_filter, category=category, city=city)
 
 
-def update_project(*, project_id: int, payload: ProjectUpdate, connection: Connection) -> dict:
+def update_project(
+    *,
+    project_id: int,
+    payload: ProjectUpdate,
+    connection: Connection,
+    user: UserResponse | None = None,
+    existing: dict | None = None,
+) -> dict:
+    if existing is None:
+        existing = project_repository.get_project_by_id(connection, project_id)
+        if not existing:
+            _not_found("Project")
+
     values = payload.model_dump(exclude_unset=True)
     _validate_city(values)
     _validate_coordinate_pair(values)
+
+    area_keys = {"site_area_lat", "site_area_lng", "site_area_radius_km"}
+    if area_keys.intersection(values):
+        # 1. Only owning official can set them
+        if not user or user.role != "Government Official" or existing.get("created_by") != user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only the owning official can set or modify the site area.",
+            )
+
+        # 2. Only in Draft and Planner invited. In every other stage return 409
+        if existing.get("stage") not in ("Draft", "Planner invited"):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Site area can only be modified in Draft or Planner invited stages (current stage is '{existing.get('stage')}').",
+            )
+
+        # 3. Do not allow clearing the area once a planner is invited
+        is_clearing = values.get("site_area_lat") is None or values.get("site_area_radius_km") is None
+        if existing.get("stage") == "Planner invited" and is_clearing:
+            if existing.get("site_area_lat") is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Cannot clear the site area once a planner has been invited.",
+                )
+
     project = project_repository.update_project(connection, project_id, values)
-    if not project: _not_found("Project")
+    if not project:
+        _not_found("Project")
     return project
 
 

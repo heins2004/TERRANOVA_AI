@@ -7,9 +7,10 @@ interface GovPlannerSearchProps {
   projectId: number;
   isReassign?: boolean;
   onSuccess: () => void;
+  hasArea?: boolean;
 }
 
-export function GovPlannerSearch({ projectId, isReassign = false, onSuccess }: GovPlannerSearchProps) {
+export function GovPlannerSearch({ projectId, isReassign = false, onSuccess, hasArea = true }: GovPlannerSearchProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PlannerSearchItem[]>([]);
   const [searching, setSearching] = useState(false);
@@ -120,6 +121,7 @@ export function GovPlannerSearch({ projectId, isReassign = false, onSuccess }: G
               return (
                 <div
                   key={p.id}
+                  id={`gov-planner-result-${p.id}`}
                   onClick={() => setSelectedPlanner(p)}
                   className={`flex cursor-pointer items-center justify-between rounded border p-[10px] transition-all ${
                     isSelected
@@ -155,12 +157,18 @@ export function GovPlannerSearch({ projectId, isReassign = false, onSuccess }: G
             />
           </div>
 
+          {!hasArea && (
+            <p className="rounded border border-warning/30 bg-warning/10 p-[10px] text-xs text-warning">
+              Set the site area before inviting a planner.
+            </p>
+          )}
+
           <button
             type="button"
             id="gov-invite-planner-submit-btn"
-            disabled={submitting}
+            disabled={submitting || !hasArea}
             onClick={() => void handleSendInvite()}
-            className="w-full rounded border border-primary-container bg-primary-container/25 py-[10px] font-data-mono text-[12px] font-semibold text-primary uppercase transition-all hover:bg-primary-container/35 disabled:opacity-50"
+            className="w-full rounded border border-primary-container bg-primary-container/25 py-[10px] font-data-mono text-[12px] font-semibold text-primary uppercase transition-all hover:bg-primary-container/35 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting
               ? "Dispatching Invitation..."

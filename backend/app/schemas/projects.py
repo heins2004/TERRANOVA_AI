@@ -14,6 +14,9 @@ class ProjectCreate(BaseModel):
     budget: Decimal | None = None
     start_date: date | None = None
     end_date: date | None = None
+    site_area_lat: float | None = None
+    site_area_lng: float | None = None
+    site_area_radius_km: Decimal | float | None = None
 
     @field_validator("location_lat")
     @classmethod
@@ -29,10 +32,37 @@ class ProjectCreate(BaseModel):
             raise ValueError("Longitude must be inside India (between 68.0 and 98.0).")
         return v
 
+    @field_validator("site_area_lat")
+    @classmethod
+    def validate_area_lat(cls, v: float | None) -> float | None:
+        if v is not None and not (6.0 <= v <= 38.0):
+            raise ValueError("Site area latitude must be inside India (between 6.0 and 38.0).")
+        return v
+
+    @field_validator("site_area_lng")
+    @classmethod
+    def validate_area_lng(cls, v: float | None) -> float | None:
+        if v is not None and not (68.0 <= v <= 98.0):
+            raise ValueError("Site area longitude must be inside India (between 68.0 and 98.0).")
+        return v
+
+    @field_validator("site_area_radius_km")
+    @classmethod
+    def validate_area_radius(cls, v: Decimal | float | None) -> Decimal | float | None:
+        if v is not None:
+            val = float(v)
+            if not (0.5 <= val <= 50.0):
+                raise ValueError("Site area radius must be between 0.5 and 50 km inclusive.")
+        return v
+
     @model_validator(mode="after")
     def validate_dates(self) -> "ProjectCreate":
         if self.start_date and self.end_date and self.end_date < self.start_date:
             raise ValueError("End date cannot be before start date.")
+        area_fields = [self.site_area_lat, self.site_area_lng, self.site_area_radius_km]
+        provided = sum(1 for f in area_fields if f is not None)
+        if 0 < provided < 3:
+            raise ValueError("Site area latitude, longitude, and radius (in km) must all be provided together.")
         return self
 
 
@@ -47,6 +77,9 @@ class ProjectUpdate(BaseModel):
     budget: Decimal | None = None
     start_date: date | None = None
     end_date: date | None = None
+    site_area_lat: float | None = None
+    site_area_lng: float | None = None
+    site_area_radius_km: Decimal | float | None = None
 
     @field_validator("location_lat")
     @classmethod
@@ -62,10 +95,39 @@ class ProjectUpdate(BaseModel):
             raise ValueError("Longitude must be inside India (between 68.0 and 98.0).")
         return v
 
+    @field_validator("site_area_lat")
+    @classmethod
+    def validate_area_lat(cls, v: float | None) -> float | None:
+        if v is not None and not (6.0 <= v <= 38.0):
+            raise ValueError("Site area latitude must be inside India (between 6.0 and 38.0).")
+        return v
+
+    @field_validator("site_area_lng")
+    @classmethod
+    def validate_area_lng(cls, v: float | None) -> float | None:
+        if v is not None and not (68.0 <= v <= 98.0):
+            raise ValueError("Site area longitude must be inside India (between 68.0 and 98.0).")
+        return v
+
+    @field_validator("site_area_radius_km")
+    @classmethod
+    def validate_area_radius(cls, v: Decimal | float | None) -> Decimal | float | None:
+        if v is not None:
+            val = float(v)
+            if not (0.5 <= val <= 50.0):
+                raise ValueError("Site area radius must be between 0.5 and 50 km inclusive.")
+        return v
+
     @model_validator(mode="after")
     def validate_dates(self) -> "ProjectUpdate":
         if self.start_date and self.end_date and self.end_date < self.start_date:
             raise ValueError("End date cannot be before start date.")
+        area_keys = {"site_area_lat", "site_area_lng", "site_area_radius_km"}
+        if area_keys.intersection(self.model_fields_set):
+            area_fields = [self.site_area_lat, self.site_area_lng, self.site_area_radius_km]
+            non_null = sum(1 for f in area_fields if f is not None)
+            if 0 < non_null < 3:
+                raise ValueError("Site area latitude, longitude, and radius (in km) must all be provided together.")
         return self
 
 
@@ -93,3 +155,10 @@ class ProjectResponse(BaseModel):
     halt_reason: str | None = None
     planner_deploy_permitted: bool = False
     proposal_rejection_reason: str | None = None
+    proposed_site_name: str | None = None
+    proposed_site_explanation: str | None = None
+    proposed_site_lat: float | None = None
+    proposed_site_lng: float | None = None
+    site_area_lat: float | None = None
+    site_area_lng: float | None = None
+    site_area_radius_km: Decimal | float | None = None

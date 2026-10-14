@@ -5,6 +5,7 @@ FIELDS = (
     "title", "description", "status", "category", "city",
     "location_lat", "location_lng", "budget", "start_date", "end_date",
     "candidate_site_id", "stage", "planner_id", "planner_deadline",
+    "site_area_lat", "site_area_lng", "site_area_radius_km",
 )
 
 

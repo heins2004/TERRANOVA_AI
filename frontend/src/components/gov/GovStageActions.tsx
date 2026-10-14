@@ -80,7 +80,16 @@ export function GovStageActions({ project, onRefresh, onOpenEdit }: GovStageActi
               Edit Details
             </button>
           </div>
-          <GovPlannerSearch projectId={project.id} onSuccess={onRefresh} />
+          {!(project.site_area_lat != null && project.site_area_lng != null && project.site_area_radius_km != null) && (
+            <div className="rounded border border-warning/30 bg-warning/10 p-[12px] text-xs text-warning">
+              Set the site area before inviting a planner. Use &quot;Edit Details&quot; above to define the circular site area.
+            </div>
+          )}
+          <GovPlannerSearch
+            projectId={project.id}
+            onSuccess={onRefresh}
+            hasArea={Boolean(project.site_area_lat != null && project.site_area_lng != null && project.site_area_radius_km != null)}
+          />
         </div>
       )}
 
@@ -94,15 +103,25 @@ export function GovStageActions({ project, onRefresh, onOpenEdit }: GovStageActi
                 Waiting for planner response. {project.planner_deadline ? `Deadline: ${new Date(project.planner_deadline).toLocaleDateString("en-IN")}` : ""}
               </p>
             </div>
-            <button
-              type="button"
-              id="gov-cancel-invite-btn"
-              disabled={loadingAction === "cancel"}
-              onClick={() => void executeAction("cancel", () => cancelInvite(project.id))}
-              className="rounded border border-danger/40 bg-danger/10 px-[14px] py-[8px] font-data-mono text-[11px] text-danger uppercase hover:bg-danger/20 disabled:opacity-50"
-            >
-              {loadingAction === "cancel" ? "Cancelling..." : "Cancel Invitation"}
-            </button>
+            <div className="flex gap-[10px]">
+              <button
+                type="button"
+                id="gov-invited-edit-btn"
+                onClick={onOpenEdit}
+                className="rounded border border-white/20 bg-white/5 px-[14px] py-[8px] font-data-mono text-[11px] text-white uppercase hover:border-white/40"
+              >
+                Edit Site Area
+              </button>
+              <button
+                type="button"
+                id="gov-cancel-invite-btn"
+                disabled={loadingAction === "cancel"}
+                onClick={() => void executeAction("cancel", () => cancelInvite(project.id))}
+                className="rounded border border-danger/40 bg-danger/10 px-[14px] py-[8px] font-data-mono text-[11px] text-danger uppercase hover:bg-danger/20 disabled:opacity-50"
+              >
+                {loadingAction === "cancel" ? "Cancelling..." : "Cancel Invitation"}
+              </button>
+            </div>
           </div>
 
           {deadlinePassed ? (

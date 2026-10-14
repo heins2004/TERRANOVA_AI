@@ -6,28 +6,16 @@ import { useRef, useState } from "react";
 import { useAuth } from "@/components/layout/auth-provider";
 import { TopBar } from "@/components/layout/TopBar";
 import { createGovProject, GovProjectCreatePayload } from "@/services/gov";
+import { GovSiteAreaSection } from "@/components/gov/GovSiteAreaSection";
 
 const CITIES = [
-  { slug: "delhi", name: "Delhi" },
-  { slug: "mumbai", name: "Mumbai" },
-  { slug: "bengaluru", name: "Bengaluru" },
-  { slug: "chennai", name: "Chennai" },
-  { slug: "hyderabad", name: "Hyderabad" },
-  { slug: "pune", name: "Pune" },
-  { slug: "kochi", name: "Kochi" },
-  { slug: "thiruvananthapuram", name: "Thiruvananthapuram" },
+  { slug: "delhi", name: "Delhi" }, { slug: "mumbai", name: "Mumbai" },
+  { slug: "bengaluru", name: "Bengaluru" }, { slug: "chennai", name: "Chennai" },
+  { slug: "hyderabad", name: "Hyderabad" }, { slug: "pune", name: "Pune" },
+  { slug: "kochi", name: "Kochi" }, { slug: "thiruvananthapuram", name: "Thiruvananthapuram" },
 ];
 
-const CATEGORIES = [
-  "Energy",
-  "Transport",
-  "Housing",
-  "Water",
-  "Green Space",
-  "Waste Management",
-  "Healthcare",
-  "Education",
-];
+const CATEGORIES = ["Energy", "Transport", "Housing", "Water", "Green Space", "Waste Management", "Healthcare", "Education"];
 
 export default function NewGovProjectPage() {
   const router = useRouter();
@@ -35,15 +23,13 @@ export default function NewGovProjectPage() {
   const isSubmittingRef = useRef(false);
 
   const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    category: "Energy",
-    city: "delhi",
-    location_lat: "28.6139",
-    location_lng: "77.2090",
-    budget: "10000000",
-    start_date: "2026-01-01",
-    end_date: "2026-12-31",
+    title: "", description: "", category: "Energy", city: "delhi",
+    location_lat: "28.6139", location_lng: "77.2090", budget: "10000000",
+    start_date: "2026-01-01", end_date: "2026-12-31",
+  });
+
+  const [siteArea, setSiteArea] = useState<{ centerLat: number | null; centerLng: number | null; radiusKm: number | null }>({
+    centerLat: null, centerLng: null, radiusKm: null,
   });
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -59,31 +45,33 @@ export default function NewGovProjectPage() {
       errors.title = "Title cannot exceed 200 characters.";
     }
 
-    if (!formData.city) {
-      errors.city = "City is required.";
-    }
+    if (!formData.city) errors.city = "City is required.";
 
     const lat = Number(formData.location_lat);
     if (formData.location_lat !== "" && (isNaN(lat) || lat < 6.0 || lat > 38.0)) {
-      errors.location_lat = "Latitude must be within India boundaries (between 6.0 and 38.0).";
+      errors.location_lat = "Latitude must be within India (6.0 to 38.0).";
     }
 
     const lng = Number(formData.location_lng);
     if (formData.location_lng !== "" && (isNaN(lng) || lng < 68.0 || lng > 98.0)) {
-      errors.location_lng = "Longitude must be within India boundaries (between 68.0 and 98.0).";
+      errors.location_lng = "Longitude must be within India (68.0 to 98.0).";
     }
 
     if (formData.budget !== "") {
       const budgetNum = Number(formData.budget);
-      if (isNaN(budgetNum) || budgetNum < 0) {
-        errors.budget = "Budget must be a positive number.";
-      }
+      if (isNaN(budgetNum) || budgetNum < 0) errors.budget = "Budget must be positive.";
     }
 
     if (formData.start_date && formData.end_date) {
       if (new Date(formData.end_date) < new Date(formData.start_date)) {
         errors.end_date = "End date cannot be earlier than start date.";
       }
+    }
+
+    const areaFields = [siteArea.centerLat, siteArea.centerLng, siteArea.radiusKm];
+    const nonNull = areaFields.filter((f) => f != null).length;
+    if (nonNull > 0 && nonNull < 3) {
+      errors.site_area = "Site area latitude, longitude, and radius must all be set together.";
     }
 
     setFieldErrors(errors);
@@ -110,6 +98,9 @@ export default function NewGovProjectPage() {
         budget: formData.budget ? Number(formData.budget) : undefined,
         start_date: formData.start_date || undefined,
         end_date: formData.end_date || undefined,
+        site_area_lat: siteArea.centerLat,
+        site_area_lng: siteArea.centerLng,
+        site_area_radius_km: siteArea.radiusKm,
       };
 
       const created = await createGovProject(payload);
@@ -159,7 +150,7 @@ export default function NewGovProjectPage() {
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="e.g. North Delhi Solar Microgrid 2026 (digits allowed)"
+                placeholder="e.g. North Delhi Solar Microgrid 2026"
                 className="mt-[6px] w-full rounded border border-white/15 bg-surface-bright/20 px-[14px] py-[10px] text-sm text-white focus:border-primary focus:outline-none"
               />
               {fieldErrors.title && <p className="mt-[4px] text-[12px] text-danger">{fieldErrors.title}</p>}
@@ -169,7 +160,7 @@ export default function NewGovProjectPage() {
               <label className="block text-sm font-medium text-white">Description</label>
               <textarea
                 id="gov-input-desc"
-                rows={3}
+                rows={2}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Strategic intent and urban development objectives..."
@@ -209,6 +200,17 @@ export default function NewGovProjectPage() {
                 </select>
               </div>
             </div>
+
+            <GovSiteAreaSection
+              centerLat={siteArea.centerLat}
+              centerLng={siteArea.centerLng}
+              radiusKm={siteArea.radiusKm}
+              onChange={(lat, lng, rad) =>
+                setSiteArea({ centerLat: lat, centerLng: lng, radiusKm: rad })
+              }
+              canClear={true}
+              error={fieldErrors.site_area}
+            />
 
             <div className="grid gap-[16px] sm:grid-cols-2">
               <div>
@@ -252,7 +254,7 @@ export default function NewGovProjectPage() {
 
             <div className="grid gap-[16px] sm:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-white">Start Date (Past Allowed)</label>
+                <label className="block text-sm font-medium text-white">Start Date</label>
                 <input
                   id="gov-input-start-date"
                   type="date"
@@ -263,7 +265,7 @@ export default function NewGovProjectPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white">End Date (Not Before Start)</label>
+                <label className="block text-sm font-medium text-white">End Date</label>
                 <input
                   id="gov-input-end-date"
                   type="date"

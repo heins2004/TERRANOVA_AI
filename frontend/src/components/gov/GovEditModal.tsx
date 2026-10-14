@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { GovProject, updateGovProject } from "@/services/gov";
+import { GovProject, GovProjectCreatePayload, updateGovProject } from "@/services/gov";
+import { GovSiteAreaSection } from "@/components/gov/GovSiteAreaSection";
 
 interface GovEditModalProps {
   project: GovProject;
@@ -13,9 +14,23 @@ export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps)
   const [title, setTitle] = useState(project.title);
   const [description, setDescription] = useState(project.description ?? "");
   const [budget, setBudget] = useState(project.budget != null ? String(project.budget) : "");
+  const [siteAreaLat, setSiteAreaLat] = useState<number | null>(project.site_area_lat ?? null);
+  const [siteAreaLng, setSiteAreaLng] = useState<number | null>(project.site_area_lng ?? null);
+  const [siteAreaRadiusKm, setSiteAreaRadiusKm] = useState<number | null>(
+    project.site_area_radius_km != null ? Number(project.site_area_radius_km) : null
+  );
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const isSubmittingRef = useRef(false);
+
+  const canEditSiteArea = project.stage === "Draft" || project.stage === "Planner invited";
+  const canClearSiteArea = project.stage === "Draft";
+
+  function handleSiteAreaChange(lat: number | null, lng: number | null, rad: number | null) {
+    setSiteAreaLat(lat);
+    setSiteAreaLng(lng);
+    setSiteAreaRadiusKm(rad);
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -25,16 +40,33 @@ export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps)
       return;
     }
 
+    if (canEditSiteArea) {
+      const areaFields = [siteAreaLat, siteAreaLng, siteAreaRadiusKm];
+      const nonNull = areaFields.filter((f) => f != null).length;
+      if (nonNull > 0 && nonNull < 3) {
+        setError("Site area latitude, longitude, and radius must all be set together.");
+        return;
+      }
+    }
+
     isSubmittingRef.current = true;
     setSubmitting(true);
     setError("");
 
     try {
-      await updateGovProject(project.id, {
+      const payload: Partial<GovProjectCreatePayload> = {
         title: title.trim(),
         description: description.trim() || undefined,
         budget: budget ? Number(budget) : undefined,
-      });
+      };
+
+      if (canEditSiteArea) {
+        payload.site_area_lat = siteAreaLat;
+        payload.site_area_lng = siteAreaLng;
+        payload.site_area_radius_km = siteAreaRadiusKm;
+      }
+
+      await updateGovProject(project.id, payload);
       onSuccess();
       onClose();
     } catch (err) {
@@ -47,10 +79,14 @@ export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-[16px] backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-[16px] border border-white/15 bg-[#0a0e17] p-[24px] shadow-2xl space-y-[16px]">
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[16px] border border-white/15 bg-[#0a0e17] p-[24px] shadow-2xl space-y-[16px]">
         <div className="flex items-center justify-between border-b border-white/10 pb-[12px]">
           <h3 className="font-sans text-[18px] font-semibold text-white">
-            {project.stage === "Approved" ? "Final Edit (Approved Stage)" : "Edit Project (Draft)"}
+            {project.stage === "Approved"
+              ? "Final Edit (Approved Stage)"
+              : project.stage === "Planner invited"
+              ? "Edit Project & Site Area (Planner Invited)"
+              : "Edit Project (Draft)"}
           </h3>
           <button
             type="button"
@@ -62,7 +98,7 @@ export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps)
         </div>
 
         {error && (
-          <div className="rounded border border-danger/40 bg-danger/10 p-[12px] text-danger text-sm">
+          <div id="gov-edit-error" className="rounded border border-danger/40 bg-danger/10 p-[12px] text-danger text-sm">
             {error}
           </div>
         )}
@@ -100,6 +136,16 @@ export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps)
               className="mt-[6px] w-full rounded border border-white/15 bg-surface-bright/20 px-[12px] py-[8px] font-data-mono text-sm text-white focus:border-primary focus:outline-none"
             />
           </div>
+
+          {canEditSiteArea && (
+            <GovSiteAreaSection
+              centerLat={siteAreaLat}
+              centerLng={siteAreaLng}
+              radiusKm={siteAreaRadiusKm}
+              onChange={handleSiteAreaChange}
+              canClear={canClearSiteArea}
+            />
+          )}
 
           <div className="flex justify-end gap-[12px] pt-[8px]">
             <button
