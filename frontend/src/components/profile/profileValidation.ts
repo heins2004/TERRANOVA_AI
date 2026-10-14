@@ -19,6 +19,8 @@ export function validateProfileForm(
   const trimmedName = values.name.trim();
   if (!trimmedName) {
     errors.name = "Name is required.";
+  } else if (trimmedName.length < 2) {
+    errors.name = "Name must be at least 2 characters.";
   } else if (/\d/.test(trimmedName)) {
     errors.name = "Name cannot contain digits.";
   } else if (trimmedName.length > 150) {

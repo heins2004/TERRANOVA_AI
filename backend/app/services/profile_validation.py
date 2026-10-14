@@ -96,6 +96,11 @@ def validate_profile_patch(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Name cannot be empty.",
             )
+        if len(clean_name) < 2:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Name must be at least 2 characters.",
+            )
         if any(ch.isdigit() for ch in clean_name):
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

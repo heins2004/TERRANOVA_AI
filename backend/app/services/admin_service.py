@@ -54,15 +54,29 @@ def create_government_official(
     payload: CreateOfficialRequest,
     admin_user: UserResponse,
 ) -> dict[str, Any]:
-    # 1. Name validation: no digits
+    # 1. Name validation: no digits, min 2 characters
     clean_name = payload.name.strip()
-    if not clean_name or any(ch.isdigit() for ch in clean_name):
+    if len(clean_name) < 2 or any(ch.isdigit() for ch in clean_name):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Official name cannot contain digits and cannot be blank.",
+            detail="Official name cannot contain digits and must be at least 2 characters.",
         )
 
-    # 2. Email uniqueness check
+    # 2. Role validation (allowlist: only "Official" and "Planner"; default "Official")
+    req_role = payload.role
+    if req_role is None or req_role == "":
+        req_role = "Official"
+    if req_role not in ("Official", "Planner"):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid role '{payload.role}'. Role must be 'Official' or 'Planner'.",
+        )
+
+    db_role = "Urban Planner" if req_role == "Planner" else "Government Official"
+    action_name = "create_planner" if req_role == "Planner" else "create_official"
+    role_display = "Urban Planner" if req_role == "Planner" else "Government Official"
+
+    # 3. Email uniqueness check
     existing = admin_repository.get_user_by_email(connection, payload.email)
     if existing:
         raise HTTPException(
@@ -70,10 +84,10 @@ def create_government_official(
             detail="A user with this email already exists.",
         )
 
-    # 3. Phone validation if given
+    # 4. Phone validation if given
     clean_phone = validate_indian_phone(payload.phone)
 
-    # 4. Password validation: min 8 characters
+    # 5. Password validation: min 8 characters
     if len(payload.password) < 8:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -90,13 +104,14 @@ def create_government_official(
             password_hash=pwd_hash,
             phone=clean_phone,
             city=payload.city.strip() if payload.city else None,
+            role=db_role,
         )
         admin_repository.insert_admin_action(
             connection,
             admin_id=admin_user.id,
-            action="create_official",
+            action=action_name,
             target_user_id=user["id"],
-            note=f"Created Government Official {user['email']}",
+            note=f"Created {role_display} {user['email']}",
         )
 
     return user

@@ -12,6 +12,7 @@ type CreateOfficialModalProps = {
 const INDIAN_PHONE_REGEX = /^[6-9]\d{9}$/;
 
 export function CreateOfficialModal({ isOpen, onClose, onCreated }: CreateOfficialModalProps) {
+  const [role, setRole] = useState<"Official" | "Planner">("Official");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -30,7 +31,9 @@ export function CreateOfficialModal({ isOpen, onClose, onCreated }: CreateOffici
 
     const cleanName = name.trim();
     if (!cleanName) {
-      newErrors.name = "Official name cannot be blank.";
+      newErrors.name = "Name cannot be blank.";
+    } else if (cleanName.length < 2) {
+      newErrors.name = "Name must be at least 2 characters.";
     } else if (/\d/.test(cleanName)) {
       newErrors.name = "Name cannot contain digits.";
     }
@@ -77,11 +80,13 @@ export function CreateOfficialModal({ isOpen, onClose, onCreated }: CreateOffici
         password,
         phone: phone.trim() ? phone.trim() : undefined,
         city: city ? city.trim().toLowerCase() : undefined,
+        role,
       };
 
       const created = await createOfficial(payload);
 
       // Clear password and fields immediately - never display password again
+      setRole("Official");
       setName("");
       setEmail("");
       setPhone("");
@@ -92,7 +97,7 @@ export function CreateOfficialModal({ isOpen, onClose, onCreated }: CreateOffici
       onCreated(created);
       onClose();
     } catch (err) {
-      setServerError(err instanceof Error ? err.message : "Failed to create government official.");
+      setServerError(err instanceof Error ? err.message : "Failed to create account.");
     } finally {
       isSubmittingRef.current = false;
       setIsSubmitting(false);
@@ -108,7 +113,7 @@ export function CreateOfficialModal({ isOpen, onClose, onCreated }: CreateOffici
               Administrative Action
             </span>
             <h2 className="font-display-md text-[20px] font-bold text-foreground mt-[2px]">
-              Create Government Official
+              Create account
             </h2>
           </div>
           <button
@@ -202,6 +207,22 @@ export function CreateOfficialModal({ isOpen, onClose, onCreated }: CreateOffici
             )}
           </div>
 
+          {/* Role Selection */}
+          <div>
+            <label htmlFor="account-role-select" className="block text-[12px] font-data-mono text-on-surface-variant mb-[6px]">
+              Account Role <span className="text-danger">*</span>
+            </label>
+            <select
+              id="account-role-select"
+              value={role}
+              onChange={(e) => setRole(e.target.value as "Official" | "Planner")}
+              className="w-full h-[40px] px-[12px] rounded-[8px] bg-surface-muted/60 border border-white/15 text-foreground font-sans text-[13px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+            >
+              <option value="Official">Government Official</option>
+              <option value="Planner">Urban Planner</option>
+            </select>
+          </div>
+
           {/* City Selection */}
           <div>
             <label htmlFor="official-city-input" className="block text-[12px] font-data-mono text-on-surface-variant mb-[6px]">
@@ -264,7 +285,7 @@ export function CreateOfficialModal({ isOpen, onClose, onCreated }: CreateOffici
               disabled={isSubmitting}
               className="h-[36px] px-[20px] rounded-[8px] border border-primary/60 bg-primary/20 text-primary hover:bg-primary/30 font-data-mono text-[12px] font-semibold tracking-wider uppercase shadow-[0_0_15px_rgba(34,211,238,0.25)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? "Creating..." : "Create Official"}
+              {isSubmitting ? "Creating..." : "Create account"}
             </button>
           </div>
         </form>

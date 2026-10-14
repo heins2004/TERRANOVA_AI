@@ -33,6 +33,7 @@ export type CreateOfficialPayload = {
   phone?: string;
   password: string;
   city?: string;
+  role?: "Official" | "Planner";
 };
 
 export type UserListParams = {

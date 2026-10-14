@@ -27,11 +27,12 @@ class AdminUsersResponse(BaseModel):
 
 
 class CreateOfficialRequest(BaseModel):
-    name: str = Field(..., min_length=1, max_length=150)
+    name: str = Field(..., min_length=2, max_length=150)
     email: EmailStr
     phone: str | None = None
     password: str = Field(..., min_length=8)
     city: str | None = None
+    role: str | None = None
 
 
 class AdminStatsResponse(BaseModel):

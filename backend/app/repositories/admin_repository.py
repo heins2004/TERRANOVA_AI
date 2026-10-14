@@ -108,15 +108,16 @@ def create_official_user(
     password_hash: str,
     phone: str | None,
     city: str | None,
+    role: str = "Government Official",
 ) -> dict[str, Any]:
     with connection.cursor(row_factory=dict_row) as cur:
         cur.execute(
             """
             INSERT INTO users (full_name, email, role, password_hash, is_active, is_demo, city, phone)
-            VALUES (%s, %s, 'Government Official', %s, true, false, %s, %s)
+            VALUES (%s, %s, %s, %s, true, false, %s, %s)
             RETURNING id, full_name, email, role, city, is_active, is_demo, created_at
             """,
-            (full_name.strip(), email.strip().lower(), password_hash, city, phone),
+            (full_name.strip(), email.strip().lower(), role, password_hash, city, phone),
         )
         row = cur.fetchone()
         if not row:
