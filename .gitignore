@@ -47,9 +47,10 @@ backend/.env
 Thumbs.db
 
 # =========================
-# Misc
-# =========================
 *.log
+agent-reports/review-*.md
+agent-reports/**/*.log
+raw/**/*.log
 
 # Uploaded planning documents (retain the directory marker only)
 storage/documents/*
