@@ -27,10 +27,10 @@ export function HamburgerMenuItems({
           onClick={onLinkClick}
           className="flex h-[38px] items-center gap-[10px] rounded-lg px-[12px] font-body-md text-[13px] text-on-surface transition-colors hover:bg-white/10 hover:text-primary"
         >
-          <span className="material-symbols-outlined text-[18px] text-on-surface-variant">
+          <span className="material-symbols-outlined text-[18px] text-on-surface-variant pointer-events-none">
             explore
           </span>
-          <span>Browse projects</span>
+          <span className="pointer-events-none">Browse projects</span>
         </Link>
         <Link
           href="/login"
@@ -39,10 +39,10 @@ export function HamburgerMenuItems({
           onClick={onLinkClick}
           className="flex h-[38px] items-center gap-[10px] rounded-lg px-[12px] font-body-md text-[13px] text-on-surface transition-colors hover:bg-white/10 hover:text-primary"
         >
-          <span className="material-symbols-outlined text-[18px] text-on-surface-variant">
+          <span className="material-symbols-outlined text-[18px] text-on-surface-variant pointer-events-none">
             login
           </span>
-          <span>Log in</span>
+          <span className="pointer-events-none">Log in</span>
         </Link>
         <Link
           href="/register"
@@ -51,10 +51,10 @@ export function HamburgerMenuItems({
           onClick={onLinkClick}
           className="flex h-[38px] items-center gap-[10px] rounded-lg px-[12px] font-body-md text-[13px] text-on-surface transition-colors hover:bg-white/10 hover:text-primary"
         >
-          <span className="material-symbols-outlined text-[18px] text-on-surface-variant">
+          <span className="material-symbols-outlined text-[18px] text-on-surface-variant pointer-events-none">
             person_add
           </span>
-          <span>Register</span>
+          <span className="pointer-events-none">Register</span>
         </Link>
       </>
     );
@@ -71,10 +71,10 @@ export function HamburgerMenuItems({
           onClick={onLinkClick}
           className="flex h-[38px] items-center gap-[10px] rounded-lg px-[12px] font-body-md text-[13px] text-on-surface transition-colors hover:bg-white/10 hover:text-primary"
         >
-          <span className="material-symbols-outlined text-[18px] text-on-surface-variant">
+          <span className="material-symbols-outlined text-[18px] text-on-surface-variant pointer-events-none">
             home
           </span>
-          <span>Home</span>
+          <span className="pointer-events-none">Home</span>
         </Link>
       )}
 
@@ -86,10 +86,10 @@ export function HamburgerMenuItems({
           onClick={onLinkClick}
           className="flex h-[38px] items-center gap-[10px] rounded-lg px-[12px] font-body-md text-[13px] text-on-surface transition-colors hover:bg-white/10 hover:text-primary"
         >
-          <span className="material-symbols-outlined text-[18px] text-on-surface-variant">
+          <span className="material-symbols-outlined text-[18px] text-on-surface-variant pointer-events-none">
             architecture
           </span>
-          <span>Planner portal</span>
+          <span className="pointer-events-none">Planner portal</span>
         </Link>
       )}
 
@@ -102,10 +102,10 @@ export function HamburgerMenuItems({
             onClick={onLinkClick}
             className="flex h-[38px] items-center gap-[10px] rounded-lg px-[12px] font-body-md text-[13px] text-on-surface transition-colors hover:bg-white/10 hover:text-primary"
           >
-            <span className="material-symbols-outlined text-[18px] text-on-surface-variant">
+            <span className="material-symbols-outlined text-[18px] text-on-surface-variant pointer-events-none">
               account_balance
             </span>
-            <span>Government portal</span>
+            <span className="pointer-events-none">Government portal</span>
           </Link>
           <Link
             href="/gov/new"
@@ -114,10 +114,10 @@ export function HamburgerMenuItems({
             onClick={onLinkClick}
             className="flex h-[38px] items-center gap-[10px] rounded-lg px-[12px] font-body-md text-[13px] text-on-surface transition-colors hover:bg-white/10 hover:text-primary"
           >
-            <span className="material-symbols-outlined text-[18px] text-on-surface-variant">
+            <span className="material-symbols-outlined text-[18px] text-on-surface-variant pointer-events-none">
               add_circle
             </span>
-            <span>New project</span>
+            <span className="pointer-events-none">New project</span>
           </Link>
         </>
       )}
@@ -130,10 +130,10 @@ export function HamburgerMenuItems({
           onClick={onLinkClick}
           className="flex h-[38px] items-center gap-[10px] rounded-lg px-[12px] font-body-md text-[13px] text-on-surface transition-colors hover:bg-white/10 hover:text-primary"
         >
-          <span className="material-symbols-outlined text-[18px] text-on-surface-variant">
+          <span className="material-symbols-outlined text-[18px] text-on-surface-variant pointer-events-none">
             admin_panel_settings
           </span>
-          <span>Admin dashboard</span>
+          <span className="pointer-events-none">Admin dashboard</span>
         </Link>
       )}
 
@@ -145,10 +145,10 @@ export function HamburgerMenuItems({
         onClick={onLinkClick}
         className="flex h-[38px] items-center gap-[10px] rounded-lg px-[12px] font-body-md text-[13px] text-on-surface transition-colors hover:bg-white/10 hover:text-primary"
       >
-        <span className="material-symbols-outlined text-[18px] text-on-surface-variant">
+        <span className="material-symbols-outlined text-[18px] text-on-surface-variant pointer-events-none">
           account_circle
         </span>
-        <span>My profile</span>
+        <span className="pointer-events-none">My profile</span>
       </Link>
 
       <button
@@ -159,10 +159,10 @@ export function HamburgerMenuItems({
         onClick={onLogout}
         className="flex h-[38px] w-full items-center gap-[10px] rounded-lg px-[12px] text-left font-body-md text-[13px] text-danger transition-colors hover:bg-danger/10 disabled:opacity-50"
       >
-        <span className="material-symbols-outlined text-[18px]">
+        <span className="material-symbols-outlined text-[18px] pointer-events-none">
           logout
         </span>
-        <span>{isLoggingOut ? "Logging out..." : "Log out"}</span>
+        <span className="pointer-events-none">{isLoggingOut ? "Logging out..." : "Log out"}</span>
       </button>
     </>
   );

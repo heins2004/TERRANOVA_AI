@@ -47,11 +47,27 @@ def replace_user_session(
 ) -> None:
     with connection.cursor() as cursor:
         cursor.execute(
+            "DELETE FROM user_sessions WHERE user_id = %s AND expires_at <= NOW()",
+            (user_id,),
+        )
+        cursor.execute(
             """
             INSERT INTO user_sessions (user_id, session_token, expires_at)
             VALUES (%s, %s, %s)
             """,
             (user_id, session_token, expires_at),
+        )
+        cursor.execute(
+            """
+            DELETE FROM user_sessions
+            WHERE id IN (
+                SELECT id FROM user_sessions
+                WHERE user_id = %s
+                ORDER BY created_at DESC, id DESC
+                OFFSET 10
+            )
+            """,
+            (user_id,),
         )
     connection.commit()
 
