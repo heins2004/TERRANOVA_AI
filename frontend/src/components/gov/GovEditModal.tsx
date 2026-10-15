@@ -139,6 +139,7 @@ export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps)
 
           {canEditSiteArea && (
             <GovSiteAreaSection
+              city={project.city}
               centerLat={siteAreaLat}
               centerLng={siteAreaLng}
               radiusKm={siteAreaRadiusKm}

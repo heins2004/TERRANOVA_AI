@@ -3,6 +3,8 @@
 import dynamic from "next/dynamic";
 import { useRef, useState } from "react";
 import { proposeSite } from "@/services/planner";
+import { LegacyCoordinateInputs } from "./LegacyCoordinateInputs";
+import { ProposalExplanationField } from "./ProposalExplanationField";
 
 const SiteAreaMap = dynamic(
   () => import("@/components/maps/SiteAreaMap"),
@@ -14,6 +16,11 @@ const SiteAreaMap = dynamic(
       </div>
     ),
   }
+);
+
+const FullScreenMapModal = dynamic(
+  () => import("@/components/maps/FullScreenMapModal"),
+  { ssr: false }
 );
 
 interface SiteProposalFormProps {
@@ -41,6 +48,7 @@ export function SiteProposalForm({
   const [generalError, setGeneralError] = useState("");
   const [outsideClickError, setOutsideClickError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const isSubmittingRef = useRef(false);
 
   const hasSiteArea =
@@ -146,14 +154,30 @@ export function SiteProposalForm({
         </div>
       )}
 
-      <h3 className="font-display-md text-[18px] font-semibold uppercase tracking-wider text-foreground">
-        Propose Site Location
-      </h3>
-      <p className="mt-[4px] text-xs text-on-surface-variant">
-        {hasSiteArea
-          ? `Click inside the ${siteAreaRadiusKm} km circular site area to place your candidate site pin.`
-          : "Enter candidate site details inside India coordinates and technical justification."}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h3 className="font-display-md text-[18px] font-semibold uppercase tracking-wider text-foreground">
+            Propose Site Location
+          </h3>
+          <p className="mt-[4px] text-xs text-on-surface-variant">
+            {hasSiteArea
+              ? `Click inside the ${siteAreaRadiusKm} km circular site area to place your candidate site pin.`
+              : "Enter candidate site details inside India coordinates and technical justification."}
+          </p>
+        </div>
+
+        {hasSiteArea && (
+          <button
+            type="button"
+            id="planner-open-full-map-btn"
+            data-testid="open-full-map-btn"
+            onClick={() => setIsModalOpen(true)}
+            className="rounded border border-primary/40 bg-primary/10 px-[12px] py-[6px] font-data-mono text-[11px] uppercase tracking-wider text-primary hover:bg-primary/20"
+          >
+            Open Full Map
+          </button>
+        )}
+      </div>
 
       <form onSubmit={handleProposeSubmit} className="mt-[20px] space-y-[16px]">
         <div>
@@ -176,9 +200,20 @@ export function SiteProposalForm({
 
         {hasSiteArea ? (
           <div className="space-y-[10px]">
-            <label className="block font-data-mono text-[11px] uppercase tracking-wider text-primary">
-              Candidate Site Area Map (Click inside circle to place pin)
-            </label>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <label className="block font-data-mono text-[11px] uppercase tracking-wider text-primary">
+                Candidate Site Area Map (Click inside circle to place pin)
+              </label>
+              <button
+                type="button"
+                id="planner-open-full-map-btn"
+                data-testid="planner-open-full-map-btn"
+                onClick={() => setIsModalOpen(true)}
+                className="rounded border border-primary/40 bg-primary/10 px-[12px] py-[6px] font-data-mono text-[11px] uppercase tracking-wider text-primary hover:bg-primary/20"
+              >
+                Open Full Map
+              </button>
+            </div>
 
             <SiteAreaMap
               mode="planner"
@@ -189,6 +224,7 @@ export function SiteProposalForm({
               pinLng={siteLng ? parseFloat(siteLng) : null}
               onSetPin={handleSetPin}
               onOutsideClick={handleOutsideClick}
+              onOpenFullMap={() => setIsModalOpen(true)}
             />
 
             {outsideClickError && (
@@ -208,67 +244,21 @@ export function SiteProposalForm({
             )}
           </div>
         ) : (
-          <div className="grid gap-[16px] sm:grid-cols-2">
-            <div>
-              <label className="block font-data-mono text-[11px] uppercase tracking-wider text-on-surface-variant">
-                Latitude (6.0 - 38.0)
-              </label>
-              <input
-                type="number"
-                id="planner-site-lat"
-                step="0.0001"
-                placeholder="e.g. 28.6139"
-                value={siteLat}
-                onChange={(e) => setSiteLat(e.target.value)}
-                className="mt-[6px] w-full rounded border border-white/15 bg-white/[0.03] px-[14px] py-[10px] font-data-mono text-sm text-foreground focus:border-primary-container/80 focus:outline-none"
-              />
-              {fieldErrors.lat && (
-                <p className="mt-[4px] font-data-mono text-[11px] text-danger">{fieldErrors.lat}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block font-data-mono text-[11px] uppercase tracking-wider text-on-surface-variant">
-                Longitude (68.0 - 98.0)
-              </label>
-              <input
-                type="number"
-                id="planner-site-lng"
-                step="0.0001"
-                placeholder="e.g. 77.2090"
-                value={siteLng}
-                onChange={(e) => setSiteLng(e.target.value)}
-                className="mt-[6px] w-full rounded border border-white/15 bg-white/[0.03] px-[14px] py-[10px] font-data-mono text-sm text-foreground focus:border-primary-container/80 focus:outline-none"
-              />
-              {fieldErrors.lng && (
-                <p className="mt-[4px] font-data-mono text-[11px] text-danger">{fieldErrors.lng}</p>
-              )}
-            </div>
-          </div>
+          <LegacyCoordinateInputs
+            siteLat={siteLat}
+            siteLng={siteLng}
+            onLatChange={setSiteLat}
+            onLngChange={setSiteLng}
+            latError={fieldErrors.lat}
+            lngError={fieldErrors.lng}
+          />
         )}
 
-        <div>
-          <div className="flex items-center justify-between">
-            <label className="block font-data-mono text-[11px] uppercase tracking-wider text-on-surface-variant">
-              Site Explanation (20 - 1000 characters)
-            </label>
-            <span className="font-data-mono text-[10px] text-on-surface-variant">
-              {explanation.trim().length} / 1000
-            </span>
-          </div>
-          <textarea
-            rows={4}
-            id="planner-site-explanation"
-            placeholder="Explain spatial suitability, accessibility, and environmental feasibility..."
-            value={explanation}
-            onChange={(e) => setExplanation(e.target.value)}
-            maxLength={1000}
-            className="mt-[6px] w-full rounded border border-white/15 bg-white/[0.03] px-[14px] py-[10px] text-sm text-foreground focus:border-primary-container/80 focus:outline-none"
-          />
-          {fieldErrors.explanation && (
-            <p className="mt-[4px] font-data-mono text-[11px] text-danger">{fieldErrors.explanation}</p>
-          )}
-        </div>
+        <ProposalExplanationField
+          explanation={explanation}
+          onChange={setExplanation}
+          error={fieldErrors.explanation}
+        />
 
         <div className="pt-[8px]">
           <button
@@ -281,6 +271,21 @@ export function SiteProposalForm({
           </button>
         </div>
       </form>
+
+      {hasSiteArea && (
+        <FullScreenMapModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          mode="planner"
+          circleCenterLat={siteAreaLat}
+          circleCenterLng={siteAreaLng}
+          circleRadiusKm={siteAreaRadiusKm}
+          initialPinLat={siteLat ? parseFloat(siteLat) : null}
+          initialPinLng={siteLng ? parseFloat(siteLng) : null}
+          onConfirm={handleSetPin}
+          triggerButtonId="planner-open-full-map-btn"
+        />
+      )}
     </div>
   );
 }

@@ -15,7 +15,13 @@ const SiteAreaMap = dynamic(
   }
 );
 
+const FullScreenMapModal = dynamic(
+  () => import("@/components/maps/FullScreenMapModal"),
+  { ssr: false }
+);
+
 interface GovSiteAreaSectionProps {
+  city?: string;
   centerLat: number | null;
   centerLng: number | null;
   radiusKm: number | null;
@@ -25,6 +31,7 @@ interface GovSiteAreaSectionProps {
 }
 
 export function GovSiteAreaSection({
+  city,
   centerLat,
   centerLng,
   radiusKm,
@@ -36,6 +43,7 @@ export function GovSiteAreaSection({
     radiusKm != null ? String(radiusKm) : "5.0"
   );
   const [radiusError, setRadiusError] = useState<string>("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   function handleSetCenter(lat: number, lng: number) {
     const parsedRadius = parseFloat(radiusInput);
@@ -67,6 +75,14 @@ export function GovSiteAreaSection({
     setRadiusError("");
   }
 
+  function handleModalConfirm(lat: number | null, lng: number | null, rad: number | null) {
+    onChange(lat, lng, rad);
+    if (rad != null) {
+      setRadiusInput(String(rad));
+      setRadiusError("");
+    }
+  }
+
   const hasArea = centerLat != null && centerLng != null && radiusKm != null;
 
   return (
@@ -81,30 +97,44 @@ export function GovSiteAreaSection({
           </p>
         </div>
 
-        {hasArea && canClear && (
+        <div className="flex items-center gap-2">
           <button
             type="button"
-            id="gov-clear-site-area-btn"
-            onClick={handleClear}
-            className="rounded border border-danger/40 bg-danger/10 px-[12px] py-[6px] font-data-mono text-[11px] uppercase tracking-wider text-danger hover:bg-danger/20"
+            id="gov-open-full-map-btn"
+            data-testid="open-full-map-btn"
+            onClick={() => setIsModalOpen(true)}
+            className="rounded border border-primary/40 bg-primary/10 px-[12px] py-[6px] font-data-mono text-[11px] uppercase tracking-wider text-primary hover:bg-primary/20"
           >
-            Clear Area
+            Open Full Map
           </button>
-        )}
 
-        {hasArea && !canClear && (
-          <span className="font-data-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-            LOCKED (Planner invited)
-          </span>
-        )}
+          {hasArea && canClear && (
+            <button
+              type="button"
+              id="gov-clear-site-area-btn"
+              onClick={handleClear}
+              className="rounded border border-danger/40 bg-danger/10 px-[12px] py-[6px] font-data-mono text-[11px] uppercase tracking-wider text-danger hover:bg-danger/20"
+            >
+              Clear Area
+            </button>
+          )}
+
+          {hasArea && !canClear && (
+            <span className="font-data-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              LOCKED (Planner invited)
+            </span>
+          )}
+        </div>
       </div>
 
       <SiteAreaMap
         mode="gov"
+        city={city}
         centerLat={centerLat}
         centerLng={centerLng}
         radiusKm={radiusKm ?? (parseFloat(radiusInput) || 5.0)}
         onSetCenter={handleSetCenter}
+        onOpenFullMap={() => setIsModalOpen(true)}
       />
 
       <div className="grid gap-[14px] sm:grid-cols-2">
@@ -143,6 +173,18 @@ export function GovSiteAreaSection({
       {error && (
         <p className="font-data-mono text-xs text-danger">{error}</p>
       )}
+
+      <FullScreenMapModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        mode="gov"
+        city={city}
+        initialCenterLat={centerLat}
+        initialCenterLng={centerLng}
+        initialRadiusKm={radiusKm ?? (parseFloat(radiusInput) || 5.0)}
+        onConfirm={handleModalConfirm}
+        triggerButtonId="gov-open-full-map-btn"
+      />
     </div>
   );
 }

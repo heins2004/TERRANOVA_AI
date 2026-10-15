@@ -4,34 +4,16 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import L from "leaflet";
 import { Circle, MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import { getCityCoordinates } from "@/lib/cities";
+import {
+  computeDistanceMeters,
+  centerMarkerIcon,
+  pinMarkerIcon,
+  ESRI_DARK_TILES,
+} from "./mapUtils";
+import { MapBoundsController } from "./MapBoundsController";
 
-export function computeDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371000;
-  const phi1 = (lat1 * Math.PI) / 180;
-  const phi2 = (lat2 * Math.PI) / 180;
-  const deltaPhi = ((lat2 - lat1) * Math.PI) / 180;
-  const deltaLambda = ((lon2 - lon1) * Math.PI) / 180;
-
-  const a =
-    Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
-    Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-const centerMarkerIcon = L.divIcon({
-  className: "site-area-center-marker",
-  html: `<div style="width:18px;height:18px;background:#22d3ee;border:2px solid #ffffff;border-radius:50%;box-shadow:0 0 10px #22d3ee;transform:translate(-50%,-50%);"></div>`,
-  iconSize: [18, 18],
-  iconAnchor: [9, 9],
-});
-
-const pinMarkerIcon = L.divIcon({
-  className: "site-area-pin-marker",
-  html: `<div style="width:24px;height:24px;background:#34d399;border:2px solid #ffffff;border-radius:50%;box-shadow:0 0 14px #34d399;display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%);"><div style="width:8px;height:8px;background:#ffffff;border-radius:50%;"></div></div>`,
-  iconSize: [24, 24],
-  iconAnchor: [12, 12],
-});
+export { computeDistanceMeters };
 
 function MapClickHandler({ onClick }: { onClick: (latlng: L.LatLng) => void }) {
   const map = useMap();
@@ -40,51 +22,38 @@ function MapClickHandler({ onClick }: { onClick: (latlng: L.LatLng) => void }) {
     function handleLeafletClick(e: L.LeafletMouseEvent) {
       onClick(e.latlng);
     }
+    function handleDomClick(e: MouseEvent) {
+      const target = e.target as HTMLElement;
+      if (target.closest(".leaflet-control") || target.closest("button") || target.closest("a")) return;
+      const pt = map.mouseEventToContainerPoint(e);
+      const latlng = map.containerPointToLatLng(pt);
+      onClick(latlng);
+    }
     map.on("click", handleLeafletClick);
+    const container = map.getContainer();
+    container.addEventListener("click", handleDomClick);
     return () => {
       map.off("click", handleLeafletClick);
+      container.removeEventListener("click", handleDomClick);
     };
   }, [map, onClick]);
   return null;
 }
 
-function MapBoundsController({
-  center,
-  radiusMeters,
-}: {
-  center: [number, number];
-  radiusMeters?: number;
-}) {
-  const map = useMap();
-  const [centerLat, centerLng] = center;
-  useEffect(() => {
-    if (!map) return;
-    if (radiusMeters && radiusMeters > 0) {
-      const latDelta = radiusMeters / 111320;
-      const lngDelta = radiusMeters / (111320 * Math.cos((centerLat * Math.PI) / 180));
-      const bounds = L.latLngBounds(
-        [centerLat - latDelta, centerLng - lngDelta],
-        [centerLat + latDelta, centerLng + lngDelta]
-      );
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
-    } else {
-      map.setView([centerLat, centerLng], map.getZoom() || 12);
-    }
-  }, [map, centerLat, centerLng, radiusMeters]);
-  return null;
-}
-
 export interface SiteAreaMapGovProps {
   mode: "gov";
+  city?: string;
   centerLat: number | null;
   centerLng: number | null;
   radiusKm: number | null;
   onSetCenter?: (lat: number, lng: number) => void;
   readOnly?: boolean;
+  onOpenFullMap?: () => void;
 }
 
 export interface SiteAreaMapPlannerProps {
   mode: "planner";
+  city?: string;
   circleCenterLat: number;
   circleCenterLng: number;
   circleRadiusKm: number;
@@ -92,18 +61,18 @@ export interface SiteAreaMapPlannerProps {
   pinLng: number | null;
   onSetPin: (lat: number, lng: number) => void;
   onOutsideClick: (distanceKm: number) => void;
+  onOpenFullMap?: () => void;
 }
 
 export type SiteAreaMapProps = SiteAreaMapGovProps | SiteAreaMapPlannerProps;
 
-const DEFAULT_INITIAL_CENTER: [number, number] = [28.6139, 77.209];
-
 function MapInstanceHolder({ onMap }: { onMap: (map: L.Map) => void }) {
   const map = useMap();
   useEffect(() => {
-    const mapWithTap = map as unknown as { tap?: { disable: () => void } };
-    if (mapWithTap.tap) {
-      mapWithTap.tap.disable();
+    map.scrollWheelZoom.disable();
+    const container = map.getContainer();
+    if (container) {
+      (container as unknown as { _leaflet_map: L.Map })._leaflet_map = map;
     }
     onMap(map);
   }, [map, onMap]);
@@ -114,23 +83,22 @@ export default function SiteAreaMap(props: SiteAreaMapProps) {
   const mapInstanceRef = useRef<L.Map | null>(null);
   const lastClickTimeRef = useRef<number>(0);
 
-  const mapCenter: [number, number] = useMemo(() => {
+  const initialCenter: [number, number] = useMemo(() => {
     if (props.mode === "gov") {
       if (props.centerLat != null && props.centerLng != null) {
         return [props.centerLat, props.centerLng];
       }
-      return DEFAULT_INITIAL_CENTER;
-    } else {
-      return [props.circleCenterLat, props.circleCenterLng];
+      const coords = getCityCoordinates(props.city);
+      return [coords.lat, coords.lng];
     }
+    return [props.circleCenterLat, props.circleCenterLng];
   }, [props]);
 
   const radiusMeters: number | undefined = useMemo(() => {
     if (props.mode === "gov") {
       return props.radiusKm ? props.radiusKm * 1000 : undefined;
-    } else {
-      return props.circleRadiusKm * 1000;
     }
+    return props.circleRadiusKm * 1000;
   }, [props]);
 
   const propsRef = useRef(props);
@@ -140,7 +108,7 @@ export default function SiteAreaMap(props: SiteAreaMapProps) {
 
   const handleMapClick = useCallback((latlng: L.LatLng) => {
     const now = Date.now();
-    if (now - lastClickTimeRef.current < 100) return;
+    if (now - lastClickTimeRef.current < 150) return;
     lastClickTimeRef.current = now;
 
     const currentProps = propsRef.current;
@@ -164,50 +132,46 @@ export default function SiteAreaMap(props: SiteAreaMapProps) {
     }
   }, []);
 
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const buttonOverlayRef = useRef<HTMLButtonElement | null>(null);
+  const handleContainerClick = () => {
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.scrollWheelZoom.enable();
+    }
+  };
 
-  useEffect(() => {
-    const btn = buttonOverlayRef.current;
-    if (!btn) return;
-    btn.onclick = (e: MouseEvent) => {
-      if (!mapInstanceRef.current) return;
-      const rect = btn.getBoundingClientRect();
-      const x =
-        e.clientX >= rect.left && e.clientX <= rect.right
-          ? e.clientX - rect.left
-          : rect.width / 2;
-      const y =
-        e.clientY >= rect.top && e.clientY <= rect.bottom
-          ? e.clientY - rect.top
-          : rect.height / 2;
-      const pt = L.point(x, y);
-      const latlng = mapInstanceRef.current.containerPointToLatLng(pt);
-      handleMapClick(latlng);
-    };
-  }, [handleMapClick]);
+  const handleMouseLeave = () => {
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.scrollWheelZoom.disable();
+    }
+  };
 
   return (
     <div
       id="site-area-map-container"
-      ref={containerRef}
+      onClick={handleContainerClick}
+      onMouseLeave={handleMouseLeave}
       className="relative h-[300px] w-full overflow-hidden rounded-lg border border-white/15 bg-black sm:h-[360px]"
     >
       <MapContainer
-        center={mapCenter}
+        center={initialCenter}
         className="h-full w-full"
-        scrollWheelZoom={true}
+        scrollWheelZoom={false}
         zoom={props.mode === "planner" ? 13 : 11}
+        dragging={true}
+        touchZoom={true}
+        doubleClickZoom={true}
+        zoomControl={true}
       >
         <MapInstanceHolder onMap={(m) => { mapInstanceRef.current = m; }} />
-        <TileLayer
-          attribution="Tiles &copy; Esri"
-          url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
-        />
-        <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}" />
+        <TileLayer attribution={ESRI_DARK_TILES.attribution} url={ESRI_DARK_TILES.base} />
+        <TileLayer url={ESRI_DARK_TILES.reference} />
 
         <MapClickHandler onClick={handleMapClick} />
-        <MapBoundsController center={mapCenter} radiusMeters={radiusMeters} />
+        <MapBoundsController
+          city={props.city}
+          centerLat={props.mode === "gov" ? props.centerLat : props.circleCenterLat}
+          centerLng={props.mode === "gov" ? props.centerLng : props.circleCenterLng}
+          radiusMeters={radiusMeters}
+        />
 
         {props.mode === "gov" && (
           <>
@@ -215,12 +179,14 @@ export default function SiteAreaMap(props: SiteAreaMapProps) {
               <Marker
                 icon={centerMarkerIcon}
                 position={[props.centerLat, props.centerLng]}
+                interactive={false}
               />
             )}
             {props.centerLat != null && props.centerLng != null && props.radiusKm != null && props.radiusKm > 0 && (
               <Circle
                 center={[props.centerLat, props.centerLng]}
                 pathOptions={{
+                  interactive: false,
                   color: "#22d3ee",
                   fillColor: "#22d3ee",
                   fillOpacity: 0.18,
@@ -237,6 +203,7 @@ export default function SiteAreaMap(props: SiteAreaMapProps) {
             <Circle
               center={[props.circleCenterLat, props.circleCenterLng]}
               pathOptions={{
+                interactive: false,
                 color: "#22d3ee",
                 fillColor: "#22d3ee",
                 fillOpacity: 0.18,
@@ -247,23 +214,36 @@ export default function SiteAreaMap(props: SiteAreaMapProps) {
             <Marker
               icon={centerMarkerIcon}
               position={[props.circleCenterLat, props.circleCenterLng]}
+              interactive={false}
             />
             {props.pinLat != null && props.pinLng != null && (
               <Marker
                 icon={pinMarkerIcon}
                 position={[props.pinLat, props.pinLng]}
+                interactive={false}
               />
             )}
           </>
         )}
       </MapContainer>
-      <button
-        ref={buttonOverlayRef}
-        type="button"
-        id="site-area-click-overlay"
-        aria-label="Map click target"
-        className="absolute inset-0 z-[500] h-full w-full cursor-crosshair border-0 bg-transparent p-0 m-0"
-      />
+
+      {props.onOpenFullMap && (
+        <button
+          type="button"
+          id="open-full-map-btn"
+          data-testid="open-full-map-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            props.onOpenFullMap?.();
+          }}
+          className="absolute right-3 top-3 z-[400] flex items-center gap-1.5 rounded-md border border-cyan-400/40 bg-black/85 px-3 py-1.5 font-data-mono text-xs font-medium uppercase tracking-wider text-cyan-300 shadow-lg backdrop-blur hover:border-cyan-400 hover:bg-black hover:text-white"
+        >
+          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+          </svg>
+          Open full map
+        </button>
+      )}
     </div>
   );
 }

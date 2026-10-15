@@ -7,13 +7,8 @@ import { useAuth } from "@/components/layout/auth-provider";
 import { TopBar } from "@/components/layout/TopBar";
 import { createGovProject, GovProjectCreatePayload } from "@/services/gov";
 import { GovSiteAreaSection } from "@/components/gov/GovSiteAreaSection";
-
-const CITIES = [
-  { slug: "delhi", name: "Delhi" }, { slug: "mumbai", name: "Mumbai" },
-  { slug: "bengaluru", name: "Bengaluru" }, { slug: "chennai", name: "Chennai" },
-  { slug: "hyderabad", name: "Hyderabad" }, { slug: "pune", name: "Pune" },
-  { slug: "kochi", name: "Kochi" }, { slug: "thiruvananthapuram", name: "Thiruvananthapuram" },
-];
+import { SUPPORTED_CITIES } from "@/lib/cities";
+import { GovNewDatesBudget } from "@/components/gov/GovNewDatesBudget";
 
 const CATEGORIES = ["Energy", "Transport", "Housing", "Water", "Green Space", "Waste Management", "Healthcare", "Education"];
 
@@ -98,15 +93,16 @@ export default function NewGovProjectPage() {
         budget: formData.budget ? Number(formData.budget) : undefined,
         start_date: formData.start_date || undefined,
         end_date: formData.end_date || undefined,
-        site_area_lat: siteArea.centerLat,
-        site_area_lng: siteArea.centerLng,
-        site_area_radius_km: siteArea.radiusKm,
+        site_area_lat: siteArea.centerLat ?? undefined,
+        site_area_lng: siteArea.centerLng ?? undefined,
+        site_area_radius_km: siteArea.radiusKm ?? undefined,
       };
 
-      const created = await createGovProject(payload);
-      router.push(`/gov/${created.id}`);
-    } catch (err) {
-      setServerError(err instanceof Error ? err.message : "Server rejected project creation.");
+      const res = await createGovProject(payload);
+      router.push(`/gov/${res.id}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to create project.";
+      setServerError(msg);
     } finally {
       isSubmittingRef.current = false;
       setSubmitting(false);
@@ -114,43 +110,42 @@ export default function NewGovProjectPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-surface-container-lowest text-on-surface">
-      <TopBar user={user} />
-      <main className="flex-1 px-[24px] py-[32px]">
-        <div className="mx-auto max-w-3xl">
-          <div className="border-b border-white/10 pb-[20px] flex items-center justify-between">
-            <div>
-              <p className="font-data-mono text-[11px] font-semibold tracking-widest text-primary uppercase">
-                GOVERNMENT WORKFLOW
-              </p>
-              <h1 className="mt-[4px] font-sans text-[26px] font-bold text-white">Create New Project</h1>
-            </div>
-            <Link
-              href="/gov"
-              className="rounded border border-white/15 px-[14px] py-[8px] font-data-mono text-[11px] text-on-surface-variant hover:text-white hover:border-white/40 transition-all uppercase"
-            >
-              Back to Projects
-            </Link>
+    <div className="min-h-screen bg-background">
+      <TopBar />
+      <main className="mx-auto max-w-4xl px-[16px] py-[32px] sm:px-[24px]">
+        <div className="mb-[24px] flex items-center justify-between">
+          <div>
+            <h1 className="font-display-md text-[24px] font-bold text-foreground">
+              Create New Project
+            </h1>
+            <p className="mt-[4px] font-data-mono text-xs text-on-surface-variant">
+              Initialize a project draft as Government Official ({user?.email ?? "Government"})
+            </p>
           </div>
+          <Link
+            href="/gov"
+            className="rounded border border-white/20 bg-surface px-[14px] py-[8px] font-data-mono text-xs text-on-surface-variant uppercase transition hover:bg-surface-bright hover:text-white"
+          >
+            Cancel
+          </Link>
+        </div>
 
-          {serverError && (
-            <div id="gov-create-server-error" className="mt-[20px] rounded border border-danger/50 bg-danger/10 p-[16px] text-danger text-sm">
-              <span className="font-semibold font-data-mono">SERVER ERROR: </span>
-              {serverError}
-            </div>
-          )}
+        {serverError && (
+          <div id="gov-create-error" className="mb-[24px] rounded border border-danger/40 bg-danger/10 p-[16px]">
+            <p className="font-data-mono text-xs text-danger">{serverError}</p>
+          </div>
+        )}
 
-          <form onSubmit={handleSubmit} className="mt-[24px] space-y-[20px]">
+        <div className="rounded-[14px] border border-white/10 bg-surface/30 p-[24px]">
+          <form onSubmit={handleSubmit} className="space-y-[20px]">
             <div>
-              <label className="block text-sm font-medium text-white">
-                Project Title <span className="text-danger">*</span>
-              </label>
+              <label className="block text-sm font-medium text-white">Project Title *</label>
               <input
                 id="gov-input-title"
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="e.g. North Delhi Solar Microgrid 2026"
+                placeholder="e.g. Bangalore North Solar Grid"
                 className="mt-[6px] w-full rounded border border-white/15 bg-surface-bright/20 px-[14px] py-[10px] text-sm text-white focus:border-primary focus:outline-none"
               />
               {fieldErrors.title && <p className="mt-[4px] text-[12px] text-danger">{fieldErrors.title}</p>}
@@ -159,27 +154,25 @@ export default function NewGovProjectPage() {
             <div>
               <label className="block text-sm font-medium text-white">Description</label>
               <textarea
-                id="gov-input-desc"
-                rows={2}
+                id="gov-input-description"
+                rows={3}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Strategic intent and urban development objectives..."
+                placeholder="Detailed objectives and scope..."
                 className="mt-[6px] w-full rounded border border-white/15 bg-surface-bright/20 px-[14px] py-[10px] text-sm text-white focus:border-primary focus:outline-none"
               />
             </div>
 
             <div className="grid gap-[16px] sm:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-white">
-                  Target City <span className="text-danger">*</span>
-                </label>
+                <label className="block text-sm font-medium text-white">City *</label>
                 <select
-                  id="gov-select-city"
+                  id="gov-new-city"
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   className="mt-[6px] w-full rounded border border-white/15 bg-[#0a0e17] px-[14px] py-[10px] text-sm text-white focus:border-primary focus:outline-none"
                 >
-                  {CITIES.map((c) => (
+                  {SUPPORTED_CITIES.map((c) => (
                     <option key={c.slug} value={c.slug}>{c.name}</option>
                   ))}
                 </select>
@@ -202,6 +195,7 @@ export default function NewGovProjectPage() {
             </div>
 
             <GovSiteAreaSection
+              city={formData.city}
               centerLat={siteArea.centerLat}
               centerLng={siteArea.centerLng}
               radiusKm={siteArea.radiusKm}
@@ -240,42 +234,16 @@ export default function NewGovProjectPage() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-white">Budget (₹ INR)</label>
-              <input
-                id="gov-input-budget"
-                type="number"
-                value={formData.budget}
-                onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                className="mt-[6px] w-full rounded border border-white/15 bg-surface-bright/20 px-[14px] py-[10px] font-data-mono text-sm text-white focus:border-primary focus:outline-none"
-              />
-              {fieldErrors.budget && <p className="mt-[4px] text-[12px] text-danger">{fieldErrors.budget}</p>}
-            </div>
-
-            <div className="grid gap-[16px] sm:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium text-white">Start Date</label>
-                <input
-                  id="gov-input-start-date"
-                  type="date"
-                  value={formData.start_date}
-                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                  className="mt-[6px] w-full rounded border border-white/15 bg-surface-bright/20 px-[14px] py-[10px] font-data-mono text-sm text-white focus:border-primary focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-white">End Date</label>
-                <input
-                  id="gov-input-end-date"
-                  type="date"
-                  value={formData.end_date}
-                  onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                  className="mt-[6px] w-full rounded border border-white/15 bg-surface-bright/20 px-[14px] py-[10px] font-data-mono text-sm text-white focus:border-primary focus:outline-none"
-                />
-                {fieldErrors.end_date && <p className="mt-[4px] text-[12px] text-danger">{fieldErrors.end_date}</p>}
-              </div>
-            </div>
+            <GovNewDatesBudget
+              budget={formData.budget}
+              startDate={formData.start_date}
+              endDate={formData.end_date}
+              onBudgetChange={(val) => setFormData({ ...formData, budget: val })}
+              onStartDateChange={(val) => setFormData({ ...formData, start_date: val })}
+              onEndDateChange={(val) => setFormData({ ...formData, end_date: val })}
+              budgetError={fieldErrors.budget}
+              endDateError={fieldErrors.end_date}
+            />
 
             <div className="pt-[16px]">
               <button
