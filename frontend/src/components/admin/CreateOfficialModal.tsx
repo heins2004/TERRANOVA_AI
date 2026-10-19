@@ -164,7 +164,7 @@ export function CreateOfficialModal({ isOpen, onClose, onCreated }: CreateOffici
           {/* Email Field */}
           <div>
             <label htmlFor="official-email-input" className="block text-[12px] font-data-mono text-on-surface-variant mb-[6px]">
-              Official Email <span className="text-danger">*</span>
+              Email <span className="text-danger">*</span>
             </label>
             <input
               id="official-email-input"
@@ -174,7 +174,7 @@ export function CreateOfficialModal({ isOpen, onClose, onCreated }: CreateOffici
                 setEmail(e.target.value);
                 if (errors.email) setErrors((prev) => ({ ...prev, email: "" }));
               }}
-              placeholder="e.g. ramesh.kumar@gov.in"
+              placeholder="e.g. name@example.in"
               className="w-full h-[40px] px-[12px] rounded-[8px] bg-surface-muted/60 border border-white/15 text-foreground font-sans text-[13px] placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
             />
             {errors.email && (

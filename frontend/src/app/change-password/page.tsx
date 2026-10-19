@@ -52,7 +52,7 @@ export default function ChangePasswordPage() {
         {/* Header and Explanation */}
         <div className="rounded-2xl border border-white/10 bg-surface-container-lowest/80 p-[20px] sm:p-[28px] backdrop-blur-md shadow-[0_4px_24px_rgba(0,0,0,0.3)] flex flex-col gap-[12px]">
           <div className="flex items-center gap-[12px]">
-            <div className="flex h-[40px] w-[40px] items-center justify-center rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <div className="flex h-[40px] w-[40px] items-center justify-center rounded-xl bg-primary-container/10 text-primary-container border border-primary-container/20">
               <span className="material-symbols-outlined text-[24px]">lock_reset</span>
             </div>
             <div>
