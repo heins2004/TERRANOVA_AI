@@ -9,6 +9,7 @@ import {
   updateProjectConsultation,
 } from "@/services/projectConsultations";
 import FullScreenMapModal from "@/components/maps/FullScreenMapModal";
+import { GovConsultationVenueLocationSection } from "./GovConsultationVenueLocationSection";
 export { GovConsultationCancelModal } from "./GovConsultationCancelModal";
 
 interface FormModalProps {
@@ -26,7 +27,7 @@ export function GovConsultationFormModal({
   onSuccess,
   city,
 }: FormModalProps) {
-  const isEdit = consultation !== null;
+  const isEdit = consultation != null;
   const [title, setTitle] = useState(consultation?.title || "");
   const [description, setDescription] = useState(consultation?.description || "");
   const [startsAt, setStartsAt] = useState(() => {
@@ -41,6 +42,7 @@ export function GovConsultationFormModal({
   const [venueLat, setVenueLat] = useState<number | null>(consultation?.venue_lat ?? null);
   const [venueLng, setVenueLng] = useState<number | null>(consultation?.venue_lng ?? null);
   const [isMapOpen, setIsMapOpen] = useState(false);
+  const [initialPickerPin, setInitialPickerPin] = useState<[number, number] | null>(null);
   const [maxAttendees, setMaxAttendees] = useState(
     consultation?.max_attendees != null ? String(consultation.max_attendees) : ""
   );
@@ -214,37 +216,23 @@ export function GovConsultationFormModal({
                 <input id="consultation-form-addr" type="text" value={venueAddress} onChange={(e) => setVenueAddress(e.target.value)} placeholder="Room 402, City Hall, ..." className="mt-[4px] w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-cyan-400 focus:outline-none" />
                 {fieldErrors.venue_address && <p className="text-xs text-red-400 mt-[2px]">{fieldErrors.venue_address}</p>}
 
-                {/* Venue location on map row */}
-                <div className="mt-[10px] rounded border border-white/10 bg-white/5 p-[10px] space-y-[6px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-data-mono text-xs text-on-surface-variant uppercase">Venue Location on Map (optional)</span>
-                    {venueLat != null && venueLng != null && (
-                      <button
-                        type="button"
-                        id="consultation-clear-pin-btn"
-                        onClick={() => { setVenueLat(null); setVenueLng(null); }}
-                        className="font-data-mono text-xs text-red-400 hover:underline"
-                      >
-                        Clear pin
-                      </button>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-[10px] flex-wrap">
-                    <button
-                      type="button"
-                      id="consultation-pick-map-btn"
-                      onClick={() => setIsMapOpen(true)}
-                      className="rounded border border-cyan-400/50 bg-cyan-950/40 px-[10px] py-[4px] font-data-mono text-xs text-cyan-300 hover:bg-cyan-900/60"
-                    >
-                      {venueLat != null && venueLng != null ? "Move pin on map" : "Pick on map"}
-                    </button>
-                    <span id="consultation-pin-readout" className="font-data-mono text-xs text-white">
-                      {venueLat != null && venueLng != null
-                        ? `Lat: ${venueLat.toFixed(4)}, Lng: ${venueLng.toFixed(4)}`
-                        : "No pin selected"}
-                    </span>
-                  </div>
-                </div>
+                {/* Venue location on map row with paste and pick */}
+                <GovConsultationVenueLocationSection
+                  venueLat={venueLat}
+                  venueLng={venueLng}
+                  onClearPin={() => {
+                    setVenueLat(null);
+                    setVenueLng(null);
+                  }}
+                  onPickOnMap={() => {
+                    setInitialPickerPin(venueLat != null && venueLng != null ? [venueLat, venueLng] : null);
+                    setIsMapOpen(true);
+                  }}
+                  onOpenPickerWithPin={(pin) => {
+                    setInitialPickerPin(pin);
+                    setIsMapOpen(true);
+                  }}
+                />
               </div>
             )}
             <div>
@@ -271,12 +259,17 @@ export function GovConsultationFormModal({
           isOpen={isMapOpen}
           mode="venue_pin"
           city={city}
-          initialPinLat={venueLat}
-          initialPinLng={venueLng}
-          onClose={() => setIsMapOpen(false)}
+          initialPinLat={initialPickerPin ? initialPickerPin[0] : venueLat}
+          initialPinLng={initialPickerPin ? initialPickerPin[1] : venueLng}
+          onClose={() => {
+            setIsMapOpen(false);
+            setInitialPickerPin(null);
+          }}
           onConfirm={(lat, lng) => {
             setVenueLat(lat);
             setVenueLng(lng);
+            setIsMapOpen(false);
+            setInitialPickerPin(null);
           }}
           triggerButtonId="consultation-pick-map-btn"
         />
