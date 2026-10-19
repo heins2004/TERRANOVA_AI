@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, Request, Response, status
@@ -21,10 +22,29 @@ from app.repositories.auth_repository import (
     delete_session_by_token,
     get_authenticated_user_by_session_token,
     get_user_by_email,
+    record_login_event,
     replace_user_session,
     update_user_password_hash,
 )
 from app.schemas.auth import AuthResponse, LoginRequest, RegisterRequest, UserResponse
+
+logger = logging.getLogger(__name__)
+
+
+def parse_browser_name(user_agent: str | None) -> str:
+    if not user_agent:
+        return "Other"
+    ua = user_agent.lower()
+    if "edg/" in ua or "edge/" in ua:
+        return "Edge"
+    if "firefox/" in ua or "fxios/" in ua:
+        return "Firefox"
+    if "chrome/" in ua or "crios/" in ua:
+        return "Chrome"
+    if "safari/" in ua:
+        return "Safari"
+    return "Other"
+
 
 
 def _serialize_user(user_row: dict) -> UserResponse:
@@ -141,6 +161,18 @@ def login_user(
 
     session_token = _create_session(connection, user_row["id"])
     _set_session_cookie(response, session_token)
+
+    try:
+        user_agent = request.headers.get("user-agent") if request else None
+        browser_name = parse_browser_name(user_agent)
+        with connection.transaction():
+            record_login_event(
+                connection,
+                user_id=user_row["id"],
+                browser=browser_name,
+            )
+    except Exception as exc:
+        logger.warning("Failed to record login event for user %s: %s", user_row["id"], exc)
 
     return AuthResponse(
         message="Login successful.",

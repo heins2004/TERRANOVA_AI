@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { AdminUser, UserRole, userRoles } from "@/services/admin";
+import { AdminUser, userRoles } from "@/services/admin";
 
 type AdminUserTableProps = {
   users: AdminUser[];
@@ -128,19 +128,20 @@ export function AdminUserTable({
               <th className="py-[12px] px-[12px]">City</th>
               <th className="py-[12px] px-[12px]">Status</th>
               <th className="py-[12px] px-[12px]">Created</th>
+              <th className="py-[12px] px-[12px]">Last Login</th>
               <th className="py-[12px] px-[12px] text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5 text-[13px]">
             {loading && users.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-[32px] text-center text-on-surface-variant font-data-mono text-[12px]">
+                <td colSpan={8} className="py-[32px] text-center text-on-surface-variant font-data-mono text-[12px]">
                   LOADING USER REGISTRY…
                 </td>
               </tr>
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-[32px] text-center text-on-surface-variant font-data-mono text-[12px]">
+                <td colSpan={8} className="py-[32px] text-center text-on-surface-variant font-data-mono text-[12px]">
                   No matching user accounts found.
                 </td>
               </tr>
@@ -148,12 +149,13 @@ export function AdminUserTable({
               users.map((item) => {
                 const isSelf = currentUserId === item.id;
                 const displayName = item.name || item.full_name;
+                const isFlaggedInactive = Boolean(item.is_inactive || item.inactive_flag);
 
                 return (
                   <tr key={item.id} className="hover:bg-white/[0.02] transition-colors">
                     {/* Column 0: Full Name & ID */}
                     <td className="py-[12px] px-[12px]">
-                      <div className="flex items-center gap-[8px]">
+                      <div className="flex items-center gap-[8px] flex-wrap">
                         <span className="font-semibold text-foreground">{displayName}</span>
                         {isSelf && (
                           <span className="px-[6px] py-[1px] rounded text-[10px] font-data-mono border border-primary/40 bg-primary/10 text-primary">
@@ -163,6 +165,14 @@ export function AdminUserTable({
                         {item.is_demo && (
                           <span className="px-[6px] py-[1px] rounded text-[10px] font-data-mono border border-white/20 bg-white/5 text-on-surface-variant">
                             DEMO
+                          </span>
+                        )}
+                        {isFlaggedInactive && (
+                          <span
+                            data-testid="inactive-20-badge"
+                            className="px-[6px] py-[1px] rounded text-[10px] font-data-mono border border-cyan-400/30 bg-cyan-950/40 text-cyan-300 font-medium"
+                          >
+                            Inactive 20+ days
                           </span>
                         )}
                       </div>
@@ -212,7 +222,12 @@ export function AdminUserTable({
                       {item.created_at ? item.created_at.slice(0, 10) : "—"}
                     </td>
 
-                    {/* Column 6: Actions */}
+                    {/* Column 6: Last Login */}
+                    <td className="py-[12px] px-[12px] font-data-mono text-[11px] text-on-surface-variant">
+                      {item.last_login_at ? item.last_login_at.slice(0, 10) : "Never"}
+                    </td>
+
+                    {/* Column 7: Actions */}
                     <td className="py-[12px] px-[12px] text-right">
                       {isSelf ? (
                         <span className="text-[11px] font-data-mono text-on-surface-variant/50 italic">Protected</span>

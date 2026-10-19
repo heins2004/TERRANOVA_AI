@@ -190,3 +190,26 @@ def reactivate_user(
 
 def get_stats(connection: Connection) -> dict[str, Any]:
     return admin_repository.get_admin_stats(connection)
+
+
+def get_analytics(connection: Connection, days: int) -> dict[str, Any]:
+    if days not in (7, 30, 90):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Query parameter 'days' must be one of: 7, 30, 90.",
+        )
+    return admin_repository.get_analytics(connection, days)
+
+
+def get_login_log(
+    connection: Connection,
+    *,
+    limit: int = 25,
+    offset: int = 0,
+) -> tuple[list[dict[str, Any]], int]:
+    if limit > 100:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Limit cannot exceed 100.",
+        )
+    return admin_repository.get_login_log(connection, limit=limit, offset=offset)

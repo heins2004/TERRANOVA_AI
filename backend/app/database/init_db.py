@@ -211,6 +211,19 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_osm_layer_cache_cell_type
     ON osm_layer_cache (grid_cell_key, layer_type);
 """
 
+CREATE_LOGIN_EVENTS_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS login_events (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    logged_in_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    browser VARCHAR(40)
+);
+CREATE INDEX IF NOT EXISTS idx_login_events_logged_in_at
+    ON login_events (logged_in_at);
+CREATE INDEX IF NOT EXISTS idx_login_events_user_logged_in_at
+    ON login_events (user_id, logged_in_at);
+"""
+
 DEFAULT_TEST_USERS = [
     {"full_name": "Citizen User", "email": "citizen@test.com", "role": "Citizen"},
     {"full_name": "Urban Planner User", "email": "planner@test.com", "role": "Urban Planner"},
@@ -305,6 +318,7 @@ def init_db(database_url: str | None = None, app_env: str | None = None) -> None
             cursor.execute(ADD_PROJECT_SITE_AREA_SQL)
             cursor.execute(CREATE_CANDIDATE_SITE_PROXIMITY_TABLE_SQL)
             cursor.execute(CREATE_OSM_LAYER_CACHE_TABLE_SQL)
+            cursor.execute(CREATE_LOGIN_EVENTS_TABLE_SQL)
 
             if current_env == "development":
                 # Ensure default test users exist on fresh setup

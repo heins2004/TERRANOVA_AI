@@ -145,7 +145,7 @@ export function AdminStatsCards({ stats, loading }: AdminStatsCardsProps) {
         </div>
         <div className="mt-[16px] pt-[12px] border-t border-white/5 text-[11px] font-data-mono text-on-surface-variant flex items-center justify-between">
           <span>Logins (7d):</span>
-          <span className="text-on-surface-variant/70 italic">Not tracked</span>
+          <span className="text-primary font-semibold">{stats.logins_last_7_days ?? 0}</span>
         </div>
       </div>
     </div>

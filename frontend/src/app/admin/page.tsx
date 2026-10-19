@@ -12,9 +12,10 @@ import {
   deactivateUser,
   reactivateUser,
   updateUserStatus,
-  UserRole,
 } from "@/services/admin";
 import { AdminStatsCards } from "@/components/admin/AdminStatsCards";
+import { AdminAnalyticsSection } from "@/components/admin/AdminAnalyticsSection";
+import { AdminLoginLogSection } from "@/components/admin/AdminLoginLogSection";
 import { AdminUserTable } from "@/components/admin/AdminUserTable";
 import { CreateOfficialModal } from "@/components/admin/CreateOfficialModal";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
@@ -230,6 +231,8 @@ export default function AdminPage() {
             <AdminStatsCards stats={stats} loading={statsLoading} />
           </div>
 
+          <AdminAnalyticsSection />
+
           <AdminUserTable
             users={users}
             total={total}
@@ -248,6 +251,8 @@ export default function AdminPage() {
             onOpenConfirm={(target, action) => setConfirmDialog({ isOpen: true, targetUser: target, action })}
             onStatusChange={handleStatusChange}
           />
+
+          <AdminLoginLogSection />
         </div>
       </main>
 

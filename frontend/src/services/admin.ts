@@ -14,9 +14,42 @@ export type AdminUser = {
   is_demo: boolean;
   created_at: string;
   last_login_at: string | null;
+  inactive_days?: number;
+  is_inactive?: boolean;
+  inactive_flag?: boolean;
 };
 
 export type AdminUserList = AdminUser[] & { total: number };
+
+export type AnalyticsDaily = {
+  date: string;
+  new_users: number;
+  comments: number;
+  logins: number;
+};
+
+export type AdminAnalytics = {
+  days: number;
+  daily_series: AnalyticsDaily[];
+  projects_by_stage: Record<string, number>;
+  users_by_role: Record<string, number>;
+};
+
+export type LoginLogItem = {
+  id: number;
+  user_id: number;
+  full_name: string;
+  role: string;
+  logged_in_at: string;
+  browser: string | null;
+};
+
+export type LoginLogResponse = {
+  items: LoginLogItem[];
+  total: number;
+  limit: number;
+  offset: number;
+};
 
 export type AdminStats = {
   users_by_role: Record<string, number>;
@@ -134,4 +167,16 @@ export function updateUserStatus(id: number, is_active: boolean) {
     method: "PATCH",
     body: JSON.stringify({ is_active }),
   });
+}
+
+export function getAdminAnalytics(days: 7 | 30 | 90 = 7): Promise<AdminAnalytics> {
+  return request<AdminAnalytics>(`/api/admin/analytics?days=${days}`);
+}
+
+export function getLoginLog(params?: { limit?: number; offset?: number }): Promise<LoginLogResponse> {
+  const sp = new URLSearchParams();
+  if (params?.limit !== undefined) sp.set("limit", String(params.limit));
+  if (params?.offset !== undefined) sp.set("offset", String(params.offset));
+  const query = sp.toString();
+  return request<LoginLogResponse>(query ? `/api/admin/login-log?${query}` : "/api/admin/login-log");
 }

@@ -111,3 +111,22 @@ def update_user_password_hash(
             (password_hash, user_id),
         )
     connection.commit()
+
+
+def record_login_event(
+    connection: Connection,
+    *,
+    user_id: int,
+    browser: str | None,
+) -> dict | None:
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            INSERT INTO login_events (user_id, browser)
+            VALUES (%s, %s)
+            RETURNING id, user_id, logged_in_at, browser
+            """,
+            (user_id, browser),
+        )
+        return cursor.fetchone()
+

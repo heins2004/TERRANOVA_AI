@@ -5,6 +5,8 @@ from psycopg import Connection
 from app.core.security import require_role
 from app.database.connection import get_db
 from app.schemas.admin import (
+    AdminAnalyticsResponse,
+    AdminLoginLogResponse,
     AdminStatsResponse,
     AdminUserItem,
     AdminUsersResponse,
@@ -95,6 +97,31 @@ def get_stats(
     _: UserResponse = Depends(require_role("Administrator")),
 ) -> dict[str, Any]:
     return admin_service.get_stats(connection)
+
+
+@router.get("/analytics", response_model=AdminAnalyticsResponse)
+def get_analytics(
+    days: int = Query(7, description="Number of days: 7, 30, or 90"),
+    connection: Connection = Depends(get_db),
+    _: UserResponse = Depends(require_role("Administrator")),
+) -> dict[str, Any]:
+    return admin_service.get_analytics(connection, days=days)
+
+
+@router.get("/login-log", response_model=AdminLoginLogResponse)
+def get_login_log(
+    limit: int = Query(25, ge=1, le=100, description="Page limit (max 100)"),
+    offset: int = Query(0, ge=0, description="Page offset"),
+    connection: Connection = Depends(get_db),
+    _: UserResponse = Depends(require_role("Administrator")),
+) -> dict[str, Any]:
+    rows, total = admin_service.get_login_log(connection, limit=limit, offset=offset)
+    return {
+        "items": rows,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
 
 
 # Backward compatibility for existing suite tests

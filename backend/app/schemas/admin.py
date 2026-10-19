@@ -15,6 +15,9 @@ class AdminUserItem(BaseModel):
     is_demo: bool
     created_at: datetime
     last_login_at: datetime | None = None
+    inactive_days: int | None = None
+    is_inactive: bool = False
+    inactive_flag: bool = False
 
 
 class AdminUsersResponse(BaseModel):
@@ -41,7 +44,37 @@ class AdminStatsResponse(BaseModel):
     deployed_projects_by_stage: dict[str, int]
     comments_last_7_days: int
     logins_last_7_days: int | None = None
-    logins_tracking_status: str = "Logins are not tracked"
+    logins_tracking_status: str = "Active"
+
+
+class AnalyticsDailyItem(BaseModel):
+    date: str
+    new_users: int
+    comments: int
+    logins: int
+
+
+class AdminAnalyticsResponse(BaseModel):
+    days: int
+    daily_series: list[AnalyticsDailyItem]
+    projects_by_stage: dict[str, int]
+    users_by_role: dict[str, int]
+
+
+class AdminLoginLogItem(BaseModel):
+    id: int
+    user_id: int
+    full_name: str
+    role: str
+    logged_in_at: datetime
+    browser: str | None = None
+
+
+class AdminLoginLogResponse(BaseModel):
+    items: list[AdminLoginLogItem]
+    total: int
+    limit: int
+    offset: int
 
 
 class AdminUserResponse(BaseModel):
@@ -57,6 +90,9 @@ class AdminUserResponse(BaseModel):
     city: str | None = None
     is_demo: bool = False
     last_login_at: datetime | None = None
+    inactive_days: int | None = None
+    is_inactive: bool = False
+    inactive_flag: bool = False
 
 
 class UserStatusUpdate(BaseModel):
