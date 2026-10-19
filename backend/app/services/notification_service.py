@@ -107,6 +107,9 @@ NOTIFICATION_TEMPLATES = {
     "project_completed": lambda p, r: f"Project \"{p['title']}\" has been completed.",
     "project_halted": lambda p, r: f"Project \"{p['title']}\" has been halted: {r or 'No reason provided.'}",
     "project_recalled": lambda p, r: f"Project \"{p['title']}\" has been recalled: {r or 'No reason provided.'}",
+    "consultation_created": lambda p, c: f"A consultation \"{c['title']}\" was scheduled for project \"{p['title']}\".",
+    "consultation_updated": lambda p, c: f"Consultation \"{c['title']}\" for project \"{p['title']}\" has been updated.",
+    "consultation_cancelled": lambda p, c: f"Consultation \"{c['title']}\" for project \"{p['title']}\" was cancelled: {c.get('cancel_reason') or 'No reason provided.'}",
 }
 
 
@@ -174,6 +177,43 @@ def dispatch_stage_notifications(
             "user_id": uid,
             "project_id": project["id"],
             "event_id": event_id,
+            "kind": notification_kind,
+            "message": msg,
+        }
+        for uid in deduped
+    ]
+    notification_repository.create_notifications_batch(
+        connection, notifications, auto_commit=False
+    )
+
+
+def dispatch_consultation_notifications(
+    connection: Connection,
+    *,
+    project: dict,
+    consultation: dict,
+    notification_kind: str,
+    recipient_user_ids: list[int],
+    actor_id: int,
+) -> None:
+    deduped = [
+        uid
+        for uid in dict.fromkeys(recipient_user_ids)
+        if uid is not None and uid != actor_id
+    ]
+    if not deduped:
+        return
+
+    template_fn = NOTIFICATION_TEMPLATES.get(notification_kind)
+    if not template_fn:
+        return
+
+    msg = template_fn(project, consultation)
+    notifications = [
+        {
+            "user_id": uid,
+            "project_id": project["id"],
+            "event_id": None,
             "kind": notification_kind,
             "message": msg,
         }

@@ -9,6 +9,7 @@ import { getGovProject, getProjectEvents, GovProject, GovProjectEvent } from "@/
 import { GovStageActions } from "@/components/gov/GovStageActions";
 import { GovEventsTimeline } from "@/components/gov/GovEventsTimeline";
 import { GovEditModal } from "@/components/gov/GovEditModal";
+import { GovConsultationsManager } from "@/components/gov/GovConsultationsManager";
 
 export default function GovProjectDetailPage() {
   const params = useParams<{ id: string }>();
@@ -159,6 +160,11 @@ export default function GovProjectDetailPage() {
               onOpenEdit={() => setShowEditModal(true)}
             />
           </section>
+
+          {/* Consultations Manager (Deployed Stages) */}
+          {["OpenForResponse", "InProgress", "Completed", "Halted"].includes(project.stage) && (
+            <GovConsultationsManager project={project} />
+          )}
 
           {/* Events & Rejection Timeline */}
           <GovEventsTimeline project={project} events={events} />

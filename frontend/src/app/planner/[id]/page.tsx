@@ -8,6 +8,7 @@ import { TopBar } from "@/components/layout/TopBar";
 import { getPlannerProject, PlannerProject } from "@/services/planner";
 import { PlannerStageActions } from "@/components/planner/PlannerStageActions";
 import { PlannerEventsTimeline } from "@/components/planner/PlannerEventsTimeline";
+import { PlannerConsultationsList } from "@/components/planner/PlannerConsultationsList";
 
 export default function PlannerProjectDetailPage() {
   const router = useRouter();
@@ -150,6 +151,9 @@ export default function PlannerProjectDetailPage() {
                 projectId={project.id}
                 refreshTrigger={refreshKey}
               />
+
+              {/* Consultations List (Read-only) */}
+              <PlannerConsultationsList projectId={project.id} />
             </div>
           )}
         </div>

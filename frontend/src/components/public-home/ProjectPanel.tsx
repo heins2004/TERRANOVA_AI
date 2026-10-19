@@ -7,6 +7,7 @@ import { StageTracker } from "./StageTracker";
 import { PanelHeader } from "./PanelHeader";
 import { ProjectDetails } from "./ProjectDetails";
 import { CommentSection } from "./CommentSection";
+import { ProjectConsultationsSection } from "./ProjectConsultationsSection";
 import { parseCommentError } from "./commentUtils";
 
 export { parseCommentError };
@@ -269,6 +270,8 @@ export function ProjectPanel({
           isFollowInFlight={isFollowInFlight}
           onToggleFollow={onToggleFollow}
         />
+
+        <ProjectConsultationsSection projectId={detail.id} />
 
         <CommentSection
           projectId={detail.id}
