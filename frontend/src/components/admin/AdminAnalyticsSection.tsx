@@ -24,10 +24,7 @@ export function AdminAnalyticsSection() {
       .finally(() => {
         if (active) setLoading(false);
       });
-
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [days]);
 
   function handleSelectDays(opt: 7 | 30 | 90) {
@@ -38,7 +35,6 @@ export function AdminAnalyticsSection() {
 
   return (
     <section id="admin-analytics-section" className="glass-card rounded-[20px] p-[24px] border border-white/10 mt-[24px]">
-      {/* Header and 7 / 30 / 90 Range Selector */}
       <div className="flex flex-wrap items-center justify-between gap-[16px] pb-[16px] border-b border-white/10">
         <div>
           <span className="font-data-mono text-[11px] font-semibold tracking-wider text-primary uppercase">
@@ -67,20 +63,13 @@ export function AdminAnalyticsSection() {
       </div>
 
       {loading && !data ? (
-        <div className="py-[48px] text-center text-on-surface-variant font-data-mono text-[12px]">
-          LOADING TELEMETRY DATA…
-        </div>
+        <div className="py-[48px] text-center text-on-surface-variant font-data-mono text-[12px]">LOADING TELEMETRY DATA…</div>
       ) : error ? (
-        <div className="py-[32px] text-center text-danger font-data-mono text-[12px]">
-          {error}
-        </div>
+        <div className="py-[32px] text-center text-danger font-data-mono text-[12px]">{error}</div>
       ) : !data ? (
-        <div className="py-[32px] text-center text-on-surface-variant font-data-mono text-[12px]">
-          No data yet
-        </div>
+        <div className="py-[32px] text-center text-on-surface-variant font-data-mono text-[12px]">No data yet</div>
       ) : (
         <div className="mt-[20px] space-y-[24px]">
-          {/* 1. Daily Trends Line Chart */}
           <div className="p-[16px] rounded-[14px] bg-surface-container-lowest/50 border border-white/5">
             <div className="flex flex-wrap items-center justify-between gap-[8px] mb-[12px]">
               <span className="text-[13px] font-semibold text-foreground font-sans">
@@ -101,21 +90,13 @@ export function AdminAnalyticsSection() {
             <DailyTrendsChart series={data.daily_series} />
           </div>
 
-          {/* 2. Secondary Row: Projects per stage & Users by role */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px]">
-            {/* Projects per Stage Bar Chart */}
             <div className="p-[16px] rounded-[14px] bg-surface-container-lowest/50 border border-white/5 flex flex-col justify-between">
-              <span className="text-[13px] font-semibold text-foreground font-sans mb-[12px]">
-                Projects per Stage (Deployed)
-              </span>
+              <span className="text-[13px] font-semibold text-foreground font-sans mb-[12px]">Projects per Stage (Deployed)</span>
               <ProjectsStageChart data={data.projects_by_stage} />
             </div>
-
-            {/* Users by Role Donut / Bar Chart */}
             <div className="p-[16px] rounded-[14px] bg-surface-container-lowest/50 border border-white/5 flex flex-col justify-between">
-              <span className="text-[13px] font-semibold text-foreground font-sans mb-[12px]">
-                Users by Role
-              </span>
+              <span className="text-[13px] font-semibold text-foreground font-sans mb-[12px]">Users by Role</span>
               <UsersRoleChart data={data.users_by_role} />
             </div>
           </div>
@@ -130,13 +111,8 @@ function DailyTrendsChart({ series }: { series: { date: string; new_users: numbe
     return <div className="h-[180px] flex items-center justify-center text-[12px] font-data-mono text-on-surface-variant">No data yet</div>;
   }
 
-  const maxVal = Math.max(
-    1,
-    ...series.map((d) => Math.max(d.new_users, d.comments, d.logins))
-  );
-
+  const maxVal = Math.max(1, ...series.map((d) => Math.max(d.new_users, d.comments, d.logins)));
   const allZero = series.every((d) => d.new_users === 0 && d.comments === 0 && d.logins === 0);
-
   const width = 600;
   const height = 180;
   const padLeft = 32;
@@ -145,7 +121,6 @@ function DailyTrendsChart({ series }: { series: { date: string; new_users: numbe
   const padBottom = 26;
   const chartW = width - padLeft - padRight;
   const chartH = height - padTop - padBottom;
-
   const pointsCount = series.length;
   const stepX = pointsCount > 1 ? chartW / (pointsCount - 1) : chartW;
 
@@ -166,47 +141,26 @@ function DailyTrendsChart({ series }: { series: { date: string; new_users: numbe
 
   return (
     <div className="relative w-full">
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        className="w-full h-auto overflow-visible select-none"
-        aria-label="Daily platform activity chart"
-      >
-        {/* Y-axis grid lines & labels */}
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible select-none" aria-label="Daily platform activity chart">
         {yTicks.map((yVal, i) => {
           const yPos = toY(yVal);
           return (
             <g key={i}>
               <line x1={padLeft} y1={yPos} x2={width - padRight} y2={yPos} stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" />
-              <text x={padLeft - 6} y={yPos + 4} textAnchor="end" fill="rgba(255,255,255,0.5)" fontSize="9" fontFamily="monospace">
-                {yVal}
-              </text>
+              <text x={padLeft - 6} y={yPos + 4} textAnchor="end" fill="rgba(255,255,255,0.5)" fontSize="9" fontFamily="monospace">{yVal}</text>
             </g>
           );
         })}
-
-        {/* X-axis labels */}
         {xLabels.map((xl, i) => (
-          <text
-            key={i}
-            x={padLeft + xl.idx * stepX}
-            y={height - 6}
-            textAnchor={i === 0 ? "start" : i === xLabels.length - 1 ? "end" : "middle"}
-            fill="rgba(255,255,255,0.5)"
-            fontSize="9"
-            fontFamily="monospace"
-          >
+          <text key={i} x={padLeft + xl.idx * stepX} y={height - 6} textAnchor={i === 0 ? "start" : i === xLabels.length - 1 ? "end" : "middle"} fill="rgba(255,255,255,0.5)" fontSize="9" fontFamily="monospace">
             {xl.text}
           </text>
         ))}
-
-        {/* Series Paths */}
         {!allZero && (
           <>
             <polyline fill="none" stroke="#22d3ee" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" points={loginPoints} />
             <polyline fill="none" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" points={commentPoints} />
             <polyline fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" points={userPoints} />
-
-            {/* Circles for points */}
             {series.map((d, i) => (
               <g key={i}>
                 <circle cx={padLeft + i * stepX} cy={toY(d.logins)} r="3" fill="#22d3ee" />
@@ -254,10 +208,7 @@ function ProjectsStageChart({ data }: { data: Record<string, number> }) {
               <span className="text-foreground font-semibold">{count}</span>
             </div>
             <div className="h-[8px] w-full bg-white/5 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-cyan-500 to-sky-400 rounded-full transition-all duration-300"
-                style={{ width: `${pct}%` }}
-              />
+              <div className="h-full bg-gradient-to-r from-cyan-500 to-sky-400 rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
             </div>
           </div>
         );
@@ -291,10 +242,7 @@ function UsersRoleChart({ data }: { data: Record<string, number> }) {
               <span className="text-foreground font-semibold">{count} ({pct}%)</span>
             </div>
             <div className="h-[8px] w-full bg-white/5 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-300"
-                style={{ width: `${pct}%`, backgroundColor: r.color }}
-              />
+              <div className="h-full rounded-full transition-all duration-300" style={{ width: `${pct}%`, backgroundColor: r.color }} />
             </div>
           </div>
         );
