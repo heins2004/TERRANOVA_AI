@@ -16,6 +16,8 @@ class ConsultationCreateRequest(BaseModel):
     max_attendees: int | None = Field(None, ge=1, le=100000)
     visibility: Literal["Public", "Private"]
     invite_emails: list[str] | None = None
+    venue_lat: float | None = None
+    venue_lng: float | None = None
 
     @field_validator("title")
     @classmethod
@@ -71,11 +73,22 @@ class ConsultationCreateRequest(BaseModel):
                 raise ValueError("Meeting URL is required for Online consultations.")
             if self.venue_address is not None:
                 raise ValueError("Venue address must not be set for Online consultations.")
+            if self.venue_lat is not None or self.venue_lng is not None:
+                raise ValueError("venue_lat and venue_lng are only allowed for Venue consultations.")
         elif self.type == "Venue":
             if not self.venue_address:
                 raise ValueError("Venue address is required for Venue consultations.")
             if self.meeting_url is not None:
                 raise ValueError("Meeting URL must not be set for Venue consultations.")
+
+        if (self.venue_lat is None and self.venue_lng is not None) or (self.venue_lat is not None and self.venue_lng is None):
+            raise ValueError("Both venue_lat and venue_lng must be provided, or neither.")
+
+        if self.venue_lat is not None and self.venue_lng is not None:
+            if not (6.0 <= self.venue_lat <= 38.0):
+                raise ValueError("venue_lat must be within India (6.0 to 38.0).")
+            if not (68.0 <= self.venue_lng <= 98.0):
+                raise ValueError("venue_lng must be within India (68.0 to 98.0).")
 
         if self.visibility == "Public" and self.invite_emails:
             raise ValueError("A Public consultation must not have private invite emails.")
@@ -94,6 +107,8 @@ class ConsultationUpdateRequest(BaseModel):
     venue_address: str | None = Field(None, min_length=5, max_length=300)
     max_attendees: int | None = Field(None, ge=1, le=100000)
     invite_emails: list[str] | None = None
+    venue_lat: float | None = None
+    venue_lng: float | None = None
 
     @field_validator("title")
     @classmethod
@@ -146,6 +161,19 @@ class ConsultationUpdateRequest(BaseModel):
             raise ValueError("Cannot invite more than 50 emails at once.")
         return v
 
+    @model_validator(mode="after")
+    def validate_venue_lat_lng(self) -> "ConsultationUpdateRequest":
+        if (self.venue_lat is None and self.venue_lng is not None) or (self.venue_lat is not None and self.venue_lng is None):
+            raise ValueError("Both venue_lat and venue_lng must be provided, or neither.")
+        if self.type == "Online" and (self.venue_lat is not None or self.venue_lng is not None):
+            raise ValueError("venue_lat and venue_lng are only allowed for Venue consultations.")
+        if self.venue_lat is not None and self.venue_lng is not None:
+            if not (6.0 <= self.venue_lat <= 38.0):
+                raise ValueError("venue_lat must be within India (6.0 to 38.0).")
+            if not (68.0 <= self.venue_lng <= 98.0):
+                raise ValueError("venue_lng must be within India (68.0 to 98.0).")
+        return self
+
 
 class ConsultationCancelRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -185,6 +213,8 @@ class ConsultationResponseItem(BaseModel):
     invite_emails: list[str] | None = None
     invited_emails: list[str] | None = None
     not_found_emails: list[str] | None = None
+    venue_lat: float | None = None
+    venue_lng: float | None = None
 
 
 class PublicConsultationItem(BaseModel):
@@ -201,3 +231,5 @@ class PublicConsultationItem(BaseModel):
     max_attendees: int | None = None
     status: str
     cancel_reason: str | None = None
+    venue_lat: float | None = None
+    venue_lng: float | None = None

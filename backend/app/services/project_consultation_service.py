@@ -80,6 +80,8 @@ def create_consultation(
             max_attendees=payload.max_attendees,
             visibility=payload.visibility,
             created_by=user.id,
+            venue_lat=payload.venue_lat if payload.type == "Venue" else None,
+            venue_lng=payload.venue_lng if payload.type == "Venue" else None,
         )
 
         invited_emails: list[str] = []
@@ -213,17 +215,30 @@ def update_consultation(
     if effective_type == "Online":
         updates["meeting_url"] = effective_url
         updates["venue_address"] = None
+        updates["venue_lat"] = None
+        updates["venue_lng"] = None
     else:
         updates["venue_address"] = effective_venue
         updates["meeting_url"] = None
+        if "venue_lat" in payload.model_fields_set or "venue_lng" in payload.model_fields_set:
+            updates["venue_lat"] = payload.venue_lat
+            updates["venue_lng"] = payload.venue_lng
     if payload.max_attendees is not None:
         updates["max_attendees"] = payload.max_attendees
+
+    pin_changed = False
+    if "venue_lat" in updates or "venue_lng" in updates:
+        target_lat = updates.get("venue_lat")
+        target_lng = updates.get("venue_lng")
+        if target_lat != existing.get("venue_lat") or target_lng != existing.get("venue_lng"):
+            pin_changed = True
 
     time_changed = payload.starts_at is not None and payload.starts_at != existing["starts_at"]
     place_changed = (
         (payload.type is not None and payload.type != existing["type"])
         or (effective_type == "Online" and payload.meeting_url is not None and payload.meeting_url != existing.get("meeting_url"))
         or (effective_type == "Venue" and payload.venue_address is not None and payload.venue_address != existing.get("venue_address"))
+        or pin_changed
     )
 
     with connection.transaction():
@@ -411,7 +426,6 @@ def get_public_consultations(
     for item in items:
         result.append({
             "id": item["id"],
-            "project_id": item["project_id"],
             "title": item["title"],
             "description": item["description"],
             "starts_at": item["starts_at"],
@@ -419,6 +433,8 @@ def get_public_consultations(
             "type": item["type"],
             "meeting_url": item["meeting_url"],
             "venue_address": item["venue_address"],
+            "venue_lat": item.get("venue_lat"),
+            "venue_lng": item.get("venue_lng"),
             "max_attendees": item["max_attendees"],
             "status": item["status"],
             "cancel_reason": item["cancel_reason"],

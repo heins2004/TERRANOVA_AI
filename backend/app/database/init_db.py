@@ -243,6 +243,8 @@ CREATE TABLE IF NOT EXISTS project_consultations (
     created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    venue_lat DOUBLE PRECISION,
+    venue_lng DOUBLE PRECISION,
     CONSTRAINT chk_consultation_type_fields CHECK (
         (type = 'Online' AND meeting_url IS NOT NULL AND venue_address IS NULL) OR
         (type = 'Venue' AND venue_address IS NOT NULL AND meeting_url IS NULL)
@@ -250,6 +252,20 @@ CREATE TABLE IF NOT EXISTS project_consultations (
     CONSTRAINT chk_consultation_cancel_fields CHECK (
         (status = 'Cancelled' AND cancel_reason IS NOT NULL) OR
         (status = 'Scheduled' AND cancel_reason IS NULL)
+    ),
+    CONSTRAINT chk_venue_lat_lng_both_or_none CHECK (
+        (venue_lat IS NULL AND venue_lng IS NULL) OR
+        (venue_lat IS NOT NULL AND venue_lng IS NOT NULL)
+    ),
+    CONSTRAINT chk_venue_location_only_for_venue_type CHECK (
+        (venue_lat IS NULL AND venue_lng IS NULL) OR
+        (type = 'Venue')
+    ),
+    CONSTRAINT chk_venue_lat_range CHECK (
+        venue_lat IS NULL OR (venue_lat >= 6 AND venue_lat <= 38)
+    ),
+    CONSTRAINT chk_venue_lng_range CHECK (
+        venue_lng IS NULL OR (venue_lng >= 68 AND venue_lng <= 98)
     )
 );
 CREATE INDEX IF NOT EXISTS idx_project_consultations_project_starts

@@ -20,6 +20,8 @@ export interface ProjectConsultation {
   updated_at?: string;
   invited_emails?: string[];
   invite_count?: number;
+  venue_lat?: number | null;
+  venue_lng?: number | null;
 }
 
 export interface PublicProjectConsultation {
@@ -34,6 +36,8 @@ export interface PublicProjectConsultation {
   max_attendees: number | null;
   status: "Scheduled" | "Cancelled";
   cancel_reason: string | null;
+  venue_lat?: number | null;
+  venue_lng?: number | null;
 }
 
 export interface ProjectConsultationCreatePayload {
@@ -47,6 +51,8 @@ export interface ProjectConsultationCreatePayload {
   max_attendees?: number | null;
   visibility: "Public" | "Private";
   invite_emails?: string[];
+  venue_lat?: number | null;
+  venue_lng?: number | null;
 }
 
 export interface ProjectConsultationUpdatePayload {
@@ -59,6 +65,8 @@ export interface ProjectConsultationUpdatePayload {
   venue_address?: string | null;
   max_attendees?: number | null;
   invite_emails?: string[];
+  venue_lat?: number | null;
+  venue_lng?: number | null;
 }
 
 export interface ProjectConsultationCancelPayload {

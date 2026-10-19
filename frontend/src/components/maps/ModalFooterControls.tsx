@@ -19,7 +19,18 @@ interface ModalFooterPlannerProps {
   outsideMsg: string;
 }
 
-export type ModalFooterControlsProps = (ModalFooterGovProps | ModalFooterPlannerProps) & {
+interface ModalFooterVenuePinProps {
+  mode: "venue_pin";
+  draftPinLat: number | null;
+  draftPinLng: number | null;
+  onClearPin: () => void;
+}
+
+export type ModalFooterControlsProps = (
+  | ModalFooterGovProps
+  | ModalFooterPlannerProps
+  | ModalFooterVenuePinProps
+) & {
   onCancel: () => void;
   onConfirm: () => void;
 };
@@ -69,6 +80,26 @@ export function ModalFooterControls(props: ModalFooterControlsProps) {
               className="w-16 rounded border border-white/20 bg-white/5 px-1.5 py-0.5 text-center text-foreground"
             />
             <span>km</span>
+          </div>
+        </div>
+      ) : props.mode === "venue_pin" ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 font-data-mono text-xs">
+          <div className="flex items-center gap-3">
+            <span id="map-modal-pin-readout" className="text-foreground">
+              Venue Pin: {props.draftPinLat != null && props.draftPinLng != null
+                ? `${props.draftPinLat.toFixed(4)}, ${props.draftPinLng.toFixed(4)}`
+                : "None (click map to place pin)"}
+            </span>
+            {props.draftPinLat != null && (
+              <button
+                type="button"
+                id="map-modal-clear-pin-btn"
+                onClick={props.onClearPin}
+                className="text-danger hover:underline"
+              >
+                Clear pin
+              </button>
+            )}
           </div>
         </div>
       ) : (

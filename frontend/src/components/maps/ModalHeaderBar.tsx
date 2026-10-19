@@ -1,7 +1,7 @@
 "use client";
 
 interface ModalHeaderBarProps {
-  mode: "gov" | "planner";
+  mode: "gov" | "planner" | "venue_pin";
   tileMode: "dark" | "satellite";
   onToggleTileMode: () => void;
   searchQuery: string;
@@ -25,7 +25,11 @@ export function ModalHeaderBar({
     <div className="flex flex-wrap items-center justify-between border-b border-white/10 bg-black/50 px-4 py-3 gap-2">
       <div className="flex items-center gap-3">
         <h3 className="font-display-md text-sm font-semibold uppercase tracking-wider text-primary">
-          {mode === "gov" ? "Site Area Center & Radius Picker" : "Site Location Pin Picker"}
+          {mode === "gov"
+            ? "Site Area Center & Radius Picker"
+            : mode === "venue_pin"
+            ? "Venue Location Pin Picker"
+            : "Site Location Pin Picker"}
         </h3>
         <button
           type="button"

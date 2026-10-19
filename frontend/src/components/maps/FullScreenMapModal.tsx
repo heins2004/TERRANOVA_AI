@@ -28,7 +28,19 @@ export interface FullScreenPlannerProps {
   onConfirm: (lat: number, lng: number) => void;
 }
 
-export type FullScreenMapModalProps = (FullScreenGovProps | FullScreenPlannerProps) & {
+export interface FullScreenVenuePinProps {
+  mode: "venue_pin";
+  city?: string;
+  initialPinLat: number | null;
+  initialPinLng: number | null;
+  onConfirm: (lat: number | null, lng: number | null) => void;
+}
+
+export type FullScreenMapModalProps = (
+  | FullScreenGovProps
+  | FullScreenPlannerProps
+  | FullScreenVenuePinProps
+) & {
   isOpen: boolean;
   onClose: () => void;
   triggerButtonId?: string;
@@ -40,45 +52,27 @@ function FullScreenMapModalDialog(props: FullScreenMapModalProps) {
   const [searchError, setSearchError] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
-  const [draftCenterLat, setDraftCenterLat] = useState<number | null>(
-    props.mode === "gov" ? props.initialCenterLat : null
-  );
-  const [draftCenterLng, setDraftCenterLng] = useState<number | null>(
-    props.mode === "gov" ? props.initialCenterLng : null
-  );
-  const [draftRadiusKm, setDraftRadiusKm] = useState<number>(
-    props.mode === "gov" ? (props.initialRadiusKm ?? 5.0) : 5.0
-  );
-  const [radiusInput, setRadiusInput] = useState<string>(
-    props.mode === "gov" ? String(props.initialRadiusKm ?? 5.0) : "5.0"
-  );
+  const [draftCenterLat, setDraftCenterLat] = useState<number | null>(props.mode === "gov" ? props.initialCenterLat : null);
+  const [draftCenterLng, setDraftCenterLng] = useState<number | null>(props.mode === "gov" ? props.initialCenterLng : null);
+  const [draftRadiusKm, setDraftRadiusKm] = useState<number>(props.mode === "gov" ? (props.initialRadiusKm ?? 5.0) : 5.0);
+  const [radiusInput, setRadiusInput] = useState<string>(props.mode === "gov" ? String(props.initialRadiusKm ?? 5.0) : "5.0");
   const [radiusError, setRadiusError] = useState<string>("");
-
-  const [draftPinLat, setDraftPinLat] = useState<number | null>(
-    props.mode === "planner" ? props.initialPinLat : null
-  );
-  const [draftPinLng, setDraftPinLng] = useState<number | null>(
-    props.mode === "planner" ? props.initialPinLng : null
-  );
+  const [draftPinLat, setDraftPinLat] = useState<number | null>(props.mode === "gov" ? null : props.initialPinLat);
+  const [draftPinLng, setDraftPinLng] = useState<number | null>(props.mode === "gov" ? null : props.initialPinLng);
   const [outsideMsg, setOutsideMsg] = useState<string>("");
 
   const mapInstanceRef = useRef<L.Map | null>(null);
 
   const handleClose = useCallback(() => {
     props.onClose();
-    if (props.triggerButtonId) {
-      document.getElementById(props.triggerButtonId)?.focus();
-    }
+    if (props.triggerButtonId) document.getElementById(props.triggerButtonId)?.focus();
   }, [props]);
 
   useEffect(() => {
     const orig = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        handleClose();
-      }
+      if (e.key === "Escape") handleClose();
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => {
@@ -90,10 +84,10 @@ function FullScreenMapModalDialog(props: FullScreenMapModalProps) {
   const handleConfirm = () => {
     if (props.mode === "gov") {
       props.onConfirm(draftCenterLat, draftCenterLng, draftCenterLat != null ? draftRadiusKm : null);
-    } else {
-      if (draftPinLat != null && draftPinLng != null) {
-        props.onConfirm(draftPinLat, draftPinLng);
-      }
+    } else if (props.mode === "venue_pin") {
+      props.onConfirm(draftPinLat, draftPinLng);
+    } else if (draftPinLat != null && draftPinLng != null) {
+      props.onConfirm(draftPinLat, draftPinLng);
     }
     handleClose();
   };
@@ -115,6 +109,14 @@ function FullScreenMapModalDialog(props: FullScreenMapModalProps) {
     if (props.mode === "gov") {
       setDraftCenterLat(latlng.lat);
       setDraftCenterLng(latlng.lng);
+    } else if (props.mode === "venue_pin") {
+      if (latlng.lat >= 6.0 && latlng.lat <= 38.0 && latlng.lng >= 68.0 && latlng.lng <= 98.0) {
+        setDraftPinLat(latlng.lat);
+        setDraftPinLng(latlng.lng);
+        setOutsideMsg("");
+      } else {
+        setOutsideMsg("Please place your pin inside India.");
+      }
     } else {
       const dist = computeDistanceMeters(
         props.circleCenterLat,
@@ -168,6 +170,13 @@ function FullScreenMapModalDialog(props: FullScreenMapModalProps) {
       const c = getCityCoordinates(props.city);
       return [c.lat, c.lng];
     }
+    if (props.mode === "venue_pin") {
+      if (props.initialPinLat != null && props.initialPinLng != null) {
+        return [props.initialPinLat, props.initialPinLng];
+      }
+      const c = getCityCoordinates(props.city);
+      return [c.lat, c.lng];
+    }
     return [props.circleCenterLat, props.circleCenterLng];
   }, [props]);
 
@@ -205,6 +214,16 @@ function FullScreenMapModalDialog(props: FullScreenMapModalProps) {
             onMapClick={handleMapClick}
             onMapReady={(m) => { mapInstanceRef.current = m; }}
           />
+        ) : props.mode === "venue_pin" ? (
+          <FullScreenMapCanvas
+            mode="venue_pin"
+            initialView={initialView}
+            tileMode={tileMode}
+            draftPinLat={draftPinLat}
+            draftPinLng={draftPinLng}
+            onMapClick={handleMapClick}
+            onMapReady={(m) => { mapInstanceRef.current = m; }}
+          />
         ) : (
           <FullScreenMapCanvas
             mode="planner"
@@ -231,6 +250,15 @@ function FullScreenMapModalDialog(props: FullScreenMapModalProps) {
             onClearCenter={() => { setDraftCenterLat(null); setDraftCenterLng(null); }}
             onSliderChange={(num) => { setDraftRadiusKm(num); setRadiusInput(String(num)); setRadiusError(""); }}
             onRadiusInputChange={handleRadiusChange}
+            onCancel={handleClose}
+            onConfirm={handleConfirm}
+          />
+        ) : props.mode === "venue_pin" ? (
+          <ModalFooterControls
+            mode="venue_pin"
+            draftPinLat={draftPinLat}
+            draftPinLng={draftPinLng}
+            onClearPin={() => { setDraftPinLat(null); setDraftPinLng(null); }}
             onCancel={handleClose}
             onConfirm={handleConfirm}
           />

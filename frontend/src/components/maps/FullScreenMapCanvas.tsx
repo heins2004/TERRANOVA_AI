@@ -72,9 +72,20 @@ interface FullScreenMapCanvasPlannerProps {
   onMapReady: (map: L.Map) => void;
 }
 
+interface FullScreenMapCanvasVenuePinProps {
+  mode: "venue_pin";
+  initialView: [number, number];
+  tileMode: "dark" | "satellite";
+  draftPinLat: number | null;
+  draftPinLng: number | null;
+  onMapClick: (latlng: L.LatLng) => void;
+  onMapReady: (map: L.Map) => void;
+}
+
 export type FullScreenMapCanvasProps =
   | FullScreenMapCanvasGovProps
-  | FullScreenMapCanvasPlannerProps;
+  | FullScreenMapCanvasPlannerProps
+  | FullScreenMapCanvasVenuePinProps;
 
 export function FullScreenMapCanvas(props: FullScreenMapCanvasProps) {
   const tileConfig = props.tileMode === "dark" ? ESRI_DARK_TILES : ESRI_SATELLITE_TILES;
@@ -141,6 +152,14 @@ export function FullScreenMapCanvas(props: FullScreenMapCanvasProps) {
               />
             )}
           </>
+        )}
+
+        {props.mode === "venue_pin" && props.draftPinLat != null && props.draftPinLng != null && (
+          <Marker
+            position={[props.draftPinLat, props.draftPinLng]}
+            icon={pinMarkerIcon}
+            interactive={false}
+          />
         )}
       </MapContainer>
     </div>

@@ -224,11 +224,24 @@ export function ProjectConsultationsSection({ projectId }: Props) {
                     )}
 
                     {c.type === "Venue" && c.venue_address && (
-                      <div className="flex items-start gap-[6px]">
-                        <span className="font-data-mono text-[11px] text-on-surface-variant">
-                          Address:
-                        </span>
-                        <span className="text-white break-words">{c.venue_address}</span>
+                      <div className="flex flex-wrap items-center gap-[8px]">
+                        <div className="flex items-start gap-[6px]">
+                          <span className="font-data-mono text-[11px] text-on-surface-variant">
+                            Address:
+                          </span>
+                          <span className="text-white break-words">{c.venue_address}</span>
+                        </div>
+                        {c.venue_lat != null && c.venue_lng != null && (
+                          <a
+                            id={`consultation-map-link-${c.id}`}
+                            href={`https://www.openstreetmap.org/?mlat=${c.venue_lat}&mlon=${c.venue_lng}#map=17/${c.venue_lat}/${c.venue_lng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center font-data-mono text-[11px] text-cyan-400 underline hover:text-cyan-300 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                          >
+                            View on map
+                          </a>
+                        )}
                       </div>
                     )}
                   </div>

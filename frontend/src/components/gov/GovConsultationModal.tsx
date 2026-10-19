@@ -7,14 +7,16 @@ import {
   ProjectConsultationUpdatePayload,
   createProjectConsultation,
   updateProjectConsultation,
-  cancelProjectConsultation,
 } from "@/services/projectConsultations";
+import FullScreenMapModal from "@/components/maps/FullScreenMapModal";
+export { GovConsultationCancelModal } from "./GovConsultationCancelModal";
 
 interface FormModalProps {
   projectId: number;
   consultation: ProjectConsultation | null;
   onClose: () => void;
   onSuccess: (msg: string) => void;
+  city?: string;
 }
 
 export function GovConsultationFormModal({
@@ -22,8 +24,9 @@ export function GovConsultationFormModal({
   consultation,
   onClose,
   onSuccess,
+  city,
 }: FormModalProps) {
-  const isEdit = Boolean(consultation);
+  const isEdit = consultation !== null;
   const [title, setTitle] = useState(consultation?.title || "");
   const [description, setDescription] = useState(consultation?.description || "");
   const [startsAt, setStartsAt] = useState(() => {
@@ -35,6 +38,9 @@ export function GovConsultationFormModal({
   const [type, setType] = useState<"Online" | "Venue">(consultation?.type || "Online");
   const [meetingUrl, setMeetingUrl] = useState(consultation?.meeting_url || "");
   const [venueAddress, setVenueAddress] = useState(consultation?.venue_address || "");
+  const [venueLat, setVenueLat] = useState<number | null>(consultation?.venue_lat ?? null);
+  const [venueLng, setVenueLng] = useState<number | null>(consultation?.venue_lng ?? null);
+  const [isMapOpen, setIsMapOpen] = useState(false);
   const [maxAttendees, setMaxAttendees] = useState(
     consultation?.max_attendees != null ? String(consultation.max_attendees) : ""
   );
@@ -105,6 +111,8 @@ export function GovConsultationFormModal({
           type,
           meeting_url: type === "Online" ? meetingUrl.trim() : null,
           venue_address: type === "Venue" ? venueAddress.trim() : null,
+          venue_lat: type === "Venue" ? venueLat : null,
+          venue_lng: type === "Venue" ? venueLng : null,
           max_attendees: attNum,
           ...(visibility === "Private" ? { invite_emails: emailList } : {}),
         };
@@ -119,6 +127,8 @@ export function GovConsultationFormModal({
           type,
           meeting_url: type === "Online" ? meetingUrl.trim() : null,
           venue_address: type === "Venue" ? venueAddress.trim() : null,
+          venue_lat: type === "Venue" ? venueLat : null,
+          venue_lng: type === "Venue" ? venueLng : null,
           max_attendees: attNum,
           visibility,
           ...(visibility === "Private" ? { invite_emails: emailList } : {}),
@@ -134,133 +144,143 @@ export function GovConsultationFormModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-[16px] backdrop-blur-sm">
-      <div className="max-h-[90vh] w-full max-w-[560px] overflow-y-auto rounded-[16px] border border-white/20 bg-surface-container-lowest p-[24px] shadow-2xl">
-        <h3 className="font-sans text-lg font-bold text-white">{isEdit ? `Edit Consultation #${consultation?.id}` : "New Consultation"}</h3>
-        <form onSubmit={handleSubmit} className="mt-[16px] space-y-[12px]">
-          {fieldErrors.form && <div className="text-xs text-red-400">{fieldErrors.form}</div>}
-          <div>
-            <label className="block font-data-mono text-xs uppercase text-on-surface-variant">Title (3-150)</label>
-            <input id="consultation-form-title" type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="mt-[4px] w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-cyan-400 focus:outline-none" />
-            {fieldErrors.title && <p className="text-xs text-red-400 mt-[2px]">{fieldErrors.title}</p>}
-          </div>
-          <div>
-            <label className="block font-data-mono text-xs uppercase text-on-surface-variant">Description (10-2000)</label>
-            <textarea id="consultation-form-desc" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} className="mt-[4px] w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-cyan-400 focus:outline-none" />
-            {fieldErrors.description && <p className="text-xs text-red-400 mt-[2px]">{fieldErrors.description}</p>}
-          </div>
-          <div className="grid grid-cols-2 gap-[12px]">
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-[16px] backdrop-blur-sm">
+        <div className="max-h-[90vh] w-full max-w-[560px] overflow-y-auto rounded-[16px] border border-white/20 bg-surface-container-lowest p-[24px] shadow-2xl">
+          <h3 className="font-sans text-lg font-bold text-white">{isEdit ? `Edit Consultation #${consultation?.id}` : "New Consultation"}</h3>
+          <form onSubmit={handleSubmit} className="mt-[16px] space-y-[12px]">
+            {fieldErrors.form && <div className="text-xs text-red-400">{fieldErrors.form}</div>}
             <div>
-              <label className="block font-data-mono text-xs uppercase text-on-surface-variant">Start Time</label>
-              <input id="consultation-form-time" type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} className="mt-[4px] w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-cyan-400 focus:outline-none" />
-              {fieldErrors.starts_at && <p className="text-xs text-red-400 mt-[2px]">{fieldErrors.starts_at}</p>}
+              <label className="block font-data-mono text-xs uppercase text-on-surface-variant">Title (3-150)</label>
+              <input id="consultation-form-title" type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="mt-[4px] w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-cyan-400 focus:outline-none" />
+              {fieldErrors.title && <p className="text-xs text-red-400 mt-[2px]">{fieldErrors.title}</p>}
             </div>
             <div>
-              <label className="block font-data-mono text-xs uppercase text-on-surface-variant">Duration (15-480 min)</label>
-              <input id="consultation-form-duration" type="number" min={15} max={480} value={duration} onChange={(e) => setDuration(e.target.value)} className="mt-[4px] w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-cyan-400 focus:outline-none" />
-              {fieldErrors.duration && <p className="text-xs text-red-400 mt-[2px]">{fieldErrors.duration}</p>}
+              <label className="block font-data-mono text-xs uppercase text-on-surface-variant">Description (10-2000)</label>
+              <textarea id="consultation-form-desc" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} className="mt-[4px] w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-cyan-400 focus:outline-none" />
+              {fieldErrors.description && <p className="text-xs text-red-400 mt-[2px]">{fieldErrors.description}</p>}
             </div>
-          </div>
-          <div className="grid grid-cols-2 gap-[12px]">
-            <div>
-              <label className="block font-data-mono text-xs uppercase text-on-surface-variant">Type</label>
-              <select id="consultation-form-type" value={type} onChange={(e) => setType(e.target.value as "Online" | "Venue")} className="mt-[4px] w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-cyan-400 focus:outline-none">
-                <option value="Online">Online</option>
-                <option value="Venue">Venue</option>
-              </select>
-            </div>
-            {!isEdit && (
+            <div className="grid grid-cols-2 gap-[12px]">
               <div>
-                <label className="block font-data-mono text-xs uppercase text-on-surface-variant">Visibility</label>
-                <select id="consultation-form-vis" value={visibility} onChange={(e) => setVisibility(e.target.value as "Public" | "Private")} className="mt-[4px] w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-cyan-400 focus:outline-none">
-                  <option value="Public">Public</option>
-                  <option value="Private">Private</option>
+                <label className="block font-data-mono text-xs uppercase text-on-surface-variant">Start Time</label>
+                <input id="consultation-form-time" type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} className="mt-[4px] w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-cyan-400 focus:outline-none" />
+                {fieldErrors.starts_at && <p className="text-xs text-red-400 mt-[2px]">{fieldErrors.starts_at}</p>}
+              </div>
+              <div>
+                <label className="block font-data-mono text-xs uppercase text-on-surface-variant">Duration (15-480 min)</label>
+                <input id="consultation-form-duration" type="number" min={15} max={480} value={duration} onChange={(e) => setDuration(e.target.value)} className="mt-[4px] w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-cyan-400 focus:outline-none" />
+                {fieldErrors.duration && <p className="text-xs text-red-400 mt-[2px]">{fieldErrors.duration}</p>}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-[12px]">
+              <div>
+                <label className="block font-data-mono text-xs uppercase text-on-surface-variant">Type</label>
+                <select
+                  id="consultation-form-type"
+                  value={type}
+                  onChange={(e) => {
+                    const nextType = e.target.value as "Online" | "Venue";
+                    setType(nextType);
+                    if (nextType === "Online") {
+                      setVenueLat(null);
+                      setVenueLng(null);
+                    }
+                  }}
+                  className="mt-[4px] w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-cyan-400 focus:outline-none"
+                >
+                  <option value="Online">Online</option>
+                  <option value="Venue">Venue</option>
                 </select>
               </div>
+              {!isEdit && (
+                <div>
+                  <label className="block font-data-mono text-xs uppercase text-on-surface-variant">Visibility</label>
+                  <select id="consultation-form-vis" value={visibility} onChange={(e) => setVisibility(e.target.value as "Public" | "Private")} className="mt-[4px] w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-cyan-400 focus:outline-none">
+                    <option value="Public">Public</option>
+                    <option value="Private">Private</option>
+                  </select>
+                </div>
+              )}
+            </div>
+            {type === "Online" ? (
+              <div>
+                <label className="block font-data-mono text-xs uppercase text-on-surface-variant">Meeting URL (https://)</label>
+                <input id="consultation-form-url" type="url" value={meetingUrl} onChange={(e) => setMeetingUrl(e.target.value)} placeholder="https://meet.jit.si/..." className="mt-[4px] w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-cyan-400 focus:outline-none" />
+                {fieldErrors.meeting_url && <p className="text-xs text-red-400 mt-[2px]">{fieldErrors.meeting_url}</p>}
+              </div>
+            ) : (
+              <div>
+                <label className="block font-data-mono text-xs uppercase text-on-surface-variant">Venue Address (5-300)</label>
+                <input id="consultation-form-addr" type="text" value={venueAddress} onChange={(e) => setVenueAddress(e.target.value)} placeholder="Room 402, City Hall, ..." className="mt-[4px] w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-cyan-400 focus:outline-none" />
+                {fieldErrors.venue_address && <p className="text-xs text-red-400 mt-[2px]">{fieldErrors.venue_address}</p>}
+
+                {/* Venue location on map row */}
+                <div className="mt-[10px] rounded border border-white/10 bg-white/5 p-[10px] space-y-[6px]">
+                  <div className="flex items-center justify-between">
+                    <span className="font-data-mono text-xs text-on-surface-variant uppercase">Venue Location on Map (optional)</span>
+                    {venueLat != null && venueLng != null && (
+                      <button
+                        type="button"
+                        id="consultation-clear-pin-btn"
+                        onClick={() => { setVenueLat(null); setVenueLng(null); }}
+                        className="font-data-mono text-xs text-red-400 hover:underline"
+                      >
+                        Clear pin
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-[10px] flex-wrap">
+                    <button
+                      type="button"
+                      id="consultation-pick-map-btn"
+                      onClick={() => setIsMapOpen(true)}
+                      className="rounded border border-cyan-400/50 bg-cyan-950/40 px-[10px] py-[4px] font-data-mono text-xs text-cyan-300 hover:bg-cyan-900/60"
+                    >
+                      {venueLat != null && venueLng != null ? "Move pin on map" : "Pick on map"}
+                    </button>
+                    <span id="consultation-pin-readout" className="font-data-mono text-xs text-white">
+                      {venueLat != null && venueLng != null
+                        ? `Lat: ${venueLat.toFixed(4)}, Lng: ${venueLng.toFixed(4)}`
+                        : "No pin selected"}
+                    </span>
+                  </div>
+                </div>
+              </div>
             )}
-          </div>
-          {type === "Online" ? (
             <div>
-              <label className="block font-data-mono text-xs uppercase text-on-surface-variant">Meeting URL (https://)</label>
-              <input id="consultation-form-url" type="url" value={meetingUrl} onChange={(e) => setMeetingUrl(e.target.value)} placeholder="https://meet.jit.si/..." className="mt-[4px] w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-cyan-400 focus:outline-none" />
-              {fieldErrors.meeting_url && <p className="text-xs text-red-400 mt-[2px]">{fieldErrors.meeting_url}</p>}
+              <label className="block font-data-mono text-xs uppercase text-on-surface-variant">Max Attendees (optional, 1-100000)</label>
+              <input id="consultation-form-attendees" type="number" value={maxAttendees} onChange={(e) => setMaxAttendees(e.target.value)} placeholder="e.g. 50" className="mt-[4px] w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-cyan-400 focus:outline-none" />
+              {fieldErrors.max_attendees && <p className="text-xs text-red-400 mt-[2px]">{fieldErrors.max_attendees}</p>}
             </div>
-          ) : (
-            <div>
-              <label className="block font-data-mono text-xs uppercase text-on-surface-variant">Venue Address (5-300)</label>
-              <input id="consultation-form-addr" type="text" value={venueAddress} onChange={(e) => setVenueAddress(e.target.value)} placeholder="Room 402, City Hall, ..." className="mt-[4px] w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-cyan-400 focus:outline-none" />
-              {fieldErrors.venue_address && <p className="text-xs text-red-400 mt-[2px]">{fieldErrors.venue_address}</p>}
+            {visibility === "Private" && (
+              <div>
+                <label className="block font-data-mono text-xs uppercase text-on-surface-variant">Invite Citizen Emails (max 50, comma or newline separated)</label>
+                <textarea id="consultation-form-invites" rows={3} value={inviteEmailsText} onChange={(e) => setInviteEmailsText(e.target.value)} placeholder="citizen1@example.com, citizen2@example.com" className="mt-[4px] w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-cyan-400 focus:outline-none" />
+              </div>
+            )}
+            <div className="flex justify-end gap-[10px] pt-[8px]">
+              <button type="button" onClick={onClose} disabled={isSubmitting} className="rounded border border-white/20 px-[14px] py-[6px] text-xs text-white hover:bg-white/10">Cancel</button>
+              <button id="consultation-form-submit-btn" type="submit" disabled={isSubmitting} className="rounded bg-cyan-600 px-[16px] py-[6px] text-xs font-semibold text-white hover:bg-cyan-500 disabled:opacity-50">{isSubmitting ? "Saving..." : (isEdit ? "Update" : "Create")}</button>
             </div>
-          )}
-          <div>
-            <label className="block font-data-mono text-xs uppercase text-on-surface-variant">Max Attendees (optional, 1-100000)</label>
-            <input id="consultation-form-attendees" type="number" value={maxAttendees} onChange={(e) => setMaxAttendees(e.target.value)} placeholder="e.g. 50" className="mt-[4px] w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-cyan-400 focus:outline-none" />
-            {fieldErrors.max_attendees && <p className="text-xs text-red-400 mt-[2px]">{fieldErrors.max_attendees}</p>}
-          </div>
-          {visibility === "Private" && (
-            <div>
-              <label className="block font-data-mono text-xs uppercase text-on-surface-variant">Invite Citizen Emails (max 50, comma or newline separated)</label>
-              <textarea id="consultation-form-invites" rows={3} value={inviteEmailsText} onChange={(e) => setInviteEmailsText(e.target.value)} placeholder="citizen1@example.com, citizen2@example.com" className="mt-[4px] w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-cyan-400 focus:outline-none" />
-            </div>
-          )}
-          <div className="flex justify-end gap-[10px] pt-[8px]">
-            <button type="button" onClick={onClose} disabled={isSubmitting} className="rounded border border-white/20 px-[14px] py-[6px] text-xs text-white hover:bg-white/10">Cancel</button>
-            <button id="consultation-form-submit-btn" type="submit" disabled={isSubmitting} className="rounded bg-cyan-600 px-[16px] py-[6px] text-xs font-semibold text-white hover:bg-cyan-500 disabled:opacity-50">{isSubmitting ? "Saving..." : (isEdit ? "Update" : "Create")}</button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
-    </div>
-  );
-}
 
-interface CancelModalProps {
-  projectId: number;
-  consultation: ProjectConsultation;
-  onClose: () => void;
-  onSuccess: (msg: string) => void;
-}
-
-export function GovConsultationCancelModal({
-  projectId,
-  consultation,
-  onClose,
-  onSuccess,
-}: CancelModalProps) {
-  const [reason, setReason] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  async function handleCancel(e: React.FormEvent) {
-    e.preventDefault();
-    if (reason.trim().length < 10 || reason.trim().length > 500) {
-      setError("Cancel reason must be between 10 and 500 characters.");
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      await cancelProjectConsultation(projectId, consultation.id, reason.trim());
-      onSuccess("Consultation cancelled successfully.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Cancel failed");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-[16px] backdrop-blur-sm">
-      <div className="w-full max-w-[480px] rounded-[16px] border border-red-800/40 bg-surface-container-lowest p-[24px] shadow-2xl">
-        <h3 className="font-sans text-lg font-bold text-red-400">Cancel Consultation #{consultation.id}</h3>
-        <p className="mt-[6px] text-xs text-on-surface-variant">Please provide the reason for cancellation (10-500 characters). This will be displayed publicly or to invited attendees.</p>
-        <form onSubmit={handleCancel} className="mt-[14px] space-y-[12px]">
-          <textarea id="cancel-reason-textarea" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason for cancellation..." className="w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-red-400 focus:outline-none" />
-          {error && <p className="text-xs text-red-400">{error}</p>}
-          <div className="flex justify-end gap-[10px] pt-[6px]">
-            <button type="button" onClick={onClose} disabled={isSubmitting} className="rounded border border-white/20 px-[14px] py-[6px] text-xs text-white hover:bg-white/10">Back</button>
-            <button id="confirm-cancel-btn" type="submit" disabled={isSubmitting} className="rounded bg-red-700 px-[16px] py-[6px] text-xs font-semibold text-white hover:bg-red-600 disabled:opacity-50">{isSubmitting ? "Cancelling..." : "Confirm Cancellation"}</button>
-          </div>
-        </form>
-      </div>
-    </div>
+      {isMapOpen && (
+        <FullScreenMapModal
+          isOpen={isMapOpen}
+          mode="venue_pin"
+          city={city}
+          initialPinLat={venueLat}
+          initialPinLng={venueLng}
+          onClose={() => setIsMapOpen(false)}
+          onConfirm={(lat, lng) => {
+            setVenueLat(lat);
+            setVenueLng(lng);
+          }}
+          triggerButtonId="consultation-pick-map-btn"
+        />
+      )}
+    </>
   );
 }

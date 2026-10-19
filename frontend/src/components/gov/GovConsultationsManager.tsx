@@ -154,6 +154,7 @@ export function GovConsultationsManager({ project }: Props) {
                 <div className="flex items-center gap-[8px]">
                   <button
                     type="button"
+                    id={`consultation-edit-btn-${c.id}`}
                     onClick={() => {
                       setEditingItem(c);
                       setIsFormOpen(true);
@@ -164,6 +165,7 @@ export function GovConsultationsManager({ project }: Props) {
                   </button>
                   <button
                     type="button"
+                    id={`consultation-cancel-btn-${c.id}`}
                     onClick={() => setCancellingItem(c)}
                     className="rounded border border-red-700/50 px-[10px] py-[4px] font-sans text-xs text-red-300 hover:bg-red-950/60"
                   >
@@ -180,6 +182,7 @@ export function GovConsultationsManager({ project }: Props) {
       {isFormOpen && (
         <GovConsultationFormModal
           projectId={project.id}
+          city={project.city}
           consultation={editingItem}
           onClose={() => {
             setIsFormOpen(false);

@@ -19,6 +19,8 @@ def create_consultation(
     max_attendees: int | None,
     visibility: str,
     created_by: int,
+    venue_lat: float | None = None,
+    venue_lng: float | None = None,
 ) -> dict[str, Any]:
     with connection.cursor(row_factory=dict_row) as cur:
         cur.execute(
@@ -26,19 +28,19 @@ def create_consultation(
             INSERT INTO project_consultations (
                 project_id, title, description, starts_at, duration_minutes,
                 type, meeting_url, venue_address, city, max_attendees,
-                visibility, status, created_by, created_at, updated_at
+                visibility, status, created_by, venue_lat, venue_lng, created_at, updated_at
             )
             VALUES (
                 %s, %s, %s, %s, %s,
                 %s, %s, %s, %s, %s,
-                %s, 'Scheduled', %s, now(), now()
+                %s, 'Scheduled', %s, %s, %s, now(), now()
             )
             RETURNING *;
             """,
             (
                 project_id, title, description, starts_at, duration_minutes,
                 type, meeting_url, venue_address, city, max_attendees,
-                visibility, created_by
+                visibility, created_by, venue_lat, venue_lng
             ),
         )
         return cur.fetchone()
