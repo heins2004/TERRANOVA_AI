@@ -19,10 +19,13 @@ export function GovPlannerSearch({ projectId, isReassign = false, onSuccess, has
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const actionRef = useRef(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  async function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
-    if (query.trim().length < 2) {
+  async function handleSearch(e?: React.FormEvent) {
+    if (e) e.preventDefault();
+    const searchVal = (inputRef.current?.value ?? query).trim();
+    console.error("HANDLE_SEARCH_EXECUTED:", searchVal);
+    if (searchVal.length < 2) {
       setError("Please enter at least 2 characters to search planners.");
       return;
     }
@@ -31,7 +34,7 @@ export function GovPlannerSearch({ projectId, isReassign = false, onSuccess, has
     setSelectedPlanner(null);
 
     try {
-      const items = await searchPlanners(query.trim());
+      const items = await searchPlanners(searchVal);
       setResults(items);
       if (items.length === 0) {
         setError("No active planners found matching your search.");
@@ -90,24 +93,32 @@ export function GovPlannerSearch({ projectId, isReassign = false, onSuccess, has
         </div>
       )}
 
-      <form onSubmit={handleSearch} className="flex gap-[10px]">
+      <div className="flex gap-[10px]">
         <input
+          ref={inputRef}
           id="gov-planner-search-input"
           type="text"
-          value={query}
+          defaultValue=""
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              void handleSearch();
+            }
+          }}
           placeholder="Search planner name or ID..."
           className="flex-1 rounded border border-white/15 bg-surface-bright/20 px-[12px] py-[8px] text-sm text-white placeholder:text-on-surface-variant focus:border-primary focus:outline-none"
         />
         <button
-          type="submit"
+          type="button"
           id="gov-planner-search-btn"
           disabled={searching}
+          onClick={() => void handleSearch()}
           className="rounded border border-primary-container bg-primary-container/20 px-[16px] py-[8px] font-data-mono text-[12px] font-semibold text-primary uppercase transition-all hover:bg-primary-container/30 disabled:opacity-50"
         >
           {searching ? "Searching..." : "Search"}
         </button>
-      </form>
+      </div>
 
       {/* Results List: show name and city ONLY */}
       {results.length > 0 && (

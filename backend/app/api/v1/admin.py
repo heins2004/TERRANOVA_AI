@@ -1,5 +1,6 @@
 from typing import Any
 from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi.responses import FileResponse
 from psycopg import Connection
 
 from app.core.security import require_role
@@ -14,7 +15,11 @@ from app.schemas.admin import (
     UserStatusUpdate,
 )
 from app.schemas.auth import UserResponse
-from app.services import admin_service, user_admin_service
+from app.schemas.planner_credential import (
+    AdminPlannerCredentialsResponse,
+    RejectCredentialRequest,
+)
+from app.services import admin_service, planner_credential_service, user_admin_service
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -138,3 +143,60 @@ def update_user_status(
         current_user_id=current_user.id,
         connection=connection,
     )
+
+
+@router.get("/planner-credentials", response_model=AdminPlannerCredentialsResponse)
+def list_planner_credentials(
+    status: str | None = Query(None, description="Filter by status (Unsubmitted, Pending, Verified, Rejected)"),
+    limit: int = Query(25, ge=1, le=100, description="Page limit"),
+    offset: int = Query(0, ge=0, description="Page offset"),
+    connection: Connection = Depends(get_db),
+    _: UserResponse = Depends(require_role("Administrator")),
+) -> AdminPlannerCredentialsResponse:
+    return planner_credential_service.list_credentials_for_admin(
+        connection,
+        status_filter=status,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.get("/planner-credentials/{user_id}/document")
+def download_planner_credential_document(
+    user_id: int,
+    connection: Connection = Depends(get_db),
+    _: UserResponse = Depends(require_role("Administrator")),
+) -> FileResponse:
+    return planner_credential_service.get_planner_document_response(
+        connection,
+        user_id=user_id,
+    )
+
+
+@router.post("/planner-credentials/{user_id}/verify")
+def verify_planner_credentials_endpoint(
+    user_id: int,
+    connection: Connection = Depends(get_db),
+    admin_user: UserResponse = Depends(require_role("Administrator")),
+) -> dict[str, Any]:
+    return planner_credential_service.verify_planner_credentials(
+        connection,
+        user_id=user_id,
+        admin_user=admin_user,
+    )
+
+
+@router.post("/planner-credentials/{user_id}/reject")
+def reject_planner_credentials_endpoint(
+    user_id: int,
+    payload: RejectCredentialRequest,
+    connection: Connection = Depends(get_db),
+    admin_user: UserResponse = Depends(require_role("Administrator")),
+) -> dict[str, Any]:
+    return planner_credential_service.reject_planner_credentials(
+        connection,
+        user_id=user_id,
+        admin_user=admin_user,
+        reason=payload.reason,
+    )
+

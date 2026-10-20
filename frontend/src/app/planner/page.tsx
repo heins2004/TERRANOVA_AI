@@ -13,6 +13,7 @@ import {
   PlannerPendingInvite,
   PlannerProject,
 } from "@/services/planner";
+import { getPlannerCredentials, CredentialStatus } from "@/services/plannerCredentials";
 import { PendingInvitesSection } from "@/components/planner/PendingInvitesSection";
 
 const STAGE_GROUPS = [
@@ -31,6 +32,7 @@ function PlannerDashboardContent() {
   const { user, isReady, isAuthenticated } = useAuth();
   const [projects, setProjects] = useState<PlannerProject[]>([]);
   const [invites, setInvites] = useState<PlannerPendingInvite[]>([]);
+  const [credStatus, setCredStatus] = useState<CredentialStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -39,10 +41,11 @@ function PlannerDashboardContent() {
   const isPlanner = user?.role === "Urban Planner";
 
   const loadData = useCallback(() => {
-    Promise.all([getPendingInvites(), getPlannerProjects()])
-      .then(([invList, projList]) => {
+    Promise.all([getPendingInvites(), getPlannerProjects(), getPlannerCredentials().catch(() => null)])
+      .then(([invList, projList, credRes]) => {
         setInvites(invList);
         setProjects(projList.filter((p) => p.stage !== "Draft" && p.stage !== "Planner invited"));
+        if (credRes) setCredStatus(credRes.status);
         setError("");
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Unable to load planner data."))
@@ -121,6 +124,32 @@ function PlannerDashboardContent() {
               </p>
             </div>
           </header>
+
+          {credStatus && credStatus !== "Verified" && (
+            <div id="planner-credentials-banner" className="mt-[20px] flex flex-wrap items-center justify-between gap-[12px] rounded-xl border border-primary/40 bg-primary/10 p-[16px] text-primary">
+              <div className="flex items-center gap-[10px]">
+                <span className="material-symbols-outlined text-[24px]">verified_user</span>
+                <div>
+                  <p className="font-sans text-[14px] font-semibold text-white">
+                    Submit your credentials to be listed for invitations
+                  </p>
+                  <p className="mt-[2px] text-[12px] text-on-surface-variant">
+                    {credStatus === "Pending"
+                      ? "Your submission is currently pending administrator verification."
+                      : credStatus === "Rejected"
+                      ? "Your credential submission was rejected. Please review feedback on your profile and resubmit."
+                      : "Unverified planners are not visible in government planner searches."}
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/profile"
+                className="inline-flex items-center gap-[6px] rounded border border-primary bg-primary px-[14px] py-[7px] font-data-mono text-[11px] font-bold text-surface-container-lowest uppercase tracking-wider hover:opacity-90"
+              >
+                Go to Profile
+              </Link>
+            </div>
+          )}
 
           {error && <p className="mt-[20px] font-data-mono text-sm text-danger">{error}</p>}
 

@@ -10,6 +10,7 @@ import { RoleSummaryCard } from "@/components/profile/RoleSummaryCard";
 import { ChangePasswordCard } from "@/components/profile/ChangePasswordCard";
 import { FollowingSection } from "@/components/profile/FollowingSection";
 import { CitizenCommentsSection } from "@/components/profile/CitizenCommentsSection";
+import { PlannerCredentialsSection } from "@/components/profile/PlannerCredentialsSection";
 import { UserProfile, getProfile } from "@/services/profile";
 
 type TabKey = "overview" | "following" | "comments";
@@ -195,6 +196,7 @@ export default function ProfilePage() {
             {activeTab === "overview" && (
               <div className="flex flex-col gap-[24px]">
                 <RoleSummaryCard profile={profile} />
+                {profile.role === "Urban Planner" && <PlannerCredentialsSection />}
                 <ProfileEditForm
                   profile={profile}
                   onProfileUpdated={handleProfileUpdated}

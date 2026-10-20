@@ -10,13 +10,14 @@ def search_planners(connection: Connection, *, q: str, limit: int = 10) -> list[
         if clean_q.isdigit():
             cursor.execute(
                 """
-                SELECT id, full_name, city
-                FROM users
-                WHERE role = 'Urban Planner'
-                  AND is_active = true
-                  AND is_demo = false
-                  AND (id = %s OR full_name ILIKE %s)
-                ORDER BY id
+                SELECT u.id, u.full_name, u.city
+                FROM users u
+                JOIN planner_credentials pc ON pc.user_id = u.id AND pc.status = 'Verified'
+                WHERE u.role = 'Urban Planner'
+                  AND u.is_active = true
+                  AND u.is_demo = false
+                  AND (u.id = %s OR u.full_name ILIKE %s)
+                ORDER BY u.id
                 LIMIT %s
                 """,
                 (int(clean_q), pattern, limit),
@@ -24,13 +25,14 @@ def search_planners(connection: Connection, *, q: str, limit: int = 10) -> list[
         else:
             cursor.execute(
                 """
-                SELECT id, full_name, city
-                FROM users
-                WHERE role = 'Urban Planner'
-                  AND is_active = true
-                  AND is_demo = false
-                  AND full_name ILIKE %s
-                ORDER BY id
+                SELECT u.id, u.full_name, u.city
+                FROM users u
+                JOIN planner_credentials pc ON pc.user_id = u.id AND pc.status = 'Verified'
+                WHERE u.role = 'Urban Planner'
+                  AND u.is_active = true
+                  AND u.is_demo = false
+                  AND u.full_name ILIKE %s
+                ORDER BY u.id
                 LIMIT %s
                 """,
                 (pattern, limit),

@@ -15,6 +15,7 @@ import {
 } from "@/services/admin";
 import { AdminStatsCards } from "@/components/admin/AdminStatsCards";
 import { AdminAnalyticsSection } from "@/components/admin/AdminAnalyticsSection";
+import { AdminPlannerVerificationSection } from "@/components/admin/AdminPlannerVerificationSection";
 import { AdminLoginLogSection } from "@/components/admin/AdminLoginLogSection";
 import { AdminUserTable } from "@/components/admin/AdminUserTable";
 import { CreateOfficialModal } from "@/components/admin/CreateOfficialModal";
@@ -232,6 +233,7 @@ export default function AdminPage() {
           </div>
 
           <AdminAnalyticsSection />
+          <AdminPlannerVerificationSection />
 
           <AdminUserTable
             users={users}

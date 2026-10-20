@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict
 
 class NotificationItem(BaseModel):
     id: int
-    project_id: int
+    project_id: int | None = None
     kind: str
     message: str
     created_at: datetime

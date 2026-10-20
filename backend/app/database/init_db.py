@@ -283,6 +283,43 @@ CREATE INDEX IF NOT EXISTS idx_project_consultation_invites_user_id
     ON project_consultation_invites (user_id);
 """
 
+CREATE_PLANNER_CREDENTIALS_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS planner_credentials (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    registration_number VARCHAR(60),
+    body_name VARCHAR(120),
+    document_path VARCHAR(500),
+    document_original_name VARCHAR(150),
+    document_mime VARCHAR(40),
+    document_size INTEGER,
+    status VARCHAR(20) NOT NULL DEFAULT 'Unsubmitted' CHECK (status IN ('Unsubmitted', 'Pending', 'Verified', 'Rejected')),
+    rejection_reason TEXT,
+    submitted_at TIMESTAMPTZ,
+    reviewed_at TIMESTAMPTZ,
+    reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    is_backfilled BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_planner_credentials_size CHECK (
+        document_size IS NULL OR (document_size >= 1 AND document_size <= 5242880)
+    ),
+    CONSTRAINT chk_planner_credentials_rejection_reason CHECK (
+        (status = 'Rejected' AND rejection_reason IS NOT NULL AND length(trim(rejection_reason)) >= 10 AND length(rejection_reason) <= 500) OR
+        (status != 'Rejected' AND rejection_reason IS NULL)
+    ),
+    CONSTRAINT chk_planner_credentials_submission_fields CHECK (
+        (status = 'Unsubmitted') OR
+        (status = 'Verified' AND is_backfilled = TRUE) OR
+        (registration_number IS NOT NULL AND trim(registration_number) != '' AND
+         document_path IS NOT NULL AND
+         document_original_name IS NOT NULL AND
+         document_mime IS NOT NULL AND
+         document_size IS NOT NULL)
+    )
+);
+CREATE INDEX IF NOT EXISTS idx_planner_credentials_status ON planner_credentials (status);
+"""
+
 DEFAULT_TEST_USERS = [
     {"full_name": "Citizen User", "email": "citizen@test.com", "role": "Citizen"},
     {"full_name": "Urban Planner User", "email": "planner@test.com", "role": "Urban Planner"},
@@ -380,6 +417,7 @@ def init_db(database_url: str | None = None, app_env: str | None = None) -> None
             cursor.execute(CREATE_LOGIN_EVENTS_TABLE_SQL)
             cursor.execute(CREATE_PROJECT_CONSULTATIONS_TABLE_SQL)
             cursor.execute(CREATE_PROJECT_CONSULTATION_INVITES_TABLE_SQL)
+            cursor.execute(CREATE_PLANNER_CREDENTIALS_TABLE_SQL)
 
             if current_env == "development":
                 # Ensure default test users exist on fresh setup
@@ -394,6 +432,16 @@ def init_db(database_url: str | None = None, app_env: str | None = None) -> None
                         """,
                         (u["full_name"], u["email"], u["role"], default_hash),
                     )
+
+                cursor.execute(
+                    """
+                    INSERT INTO planner_credentials (user_id, status, is_backfilled, created_at, updated_at)
+                    SELECT id, 'Verified', true, now(), now()
+                    FROM users
+                    WHERE role = 'Urban Planner'
+                    ON CONFLICT (user_id) DO NOTHING
+                    """
+                )
 
                 # Ensure demo projects with varied statuses exist on setup
                 cursor.execute("SELECT id FROM users WHERE email = %s", ("planner@test.com",))

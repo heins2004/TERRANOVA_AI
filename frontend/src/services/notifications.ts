@@ -4,7 +4,7 @@ export type ProjectLinkKind = "gov" | "planner" | "public";
 
 export interface NotificationItem {
   id: number;
-  project_id: number;
+  project_id?: number | null;
   kind: string;
   message: string;
   created_at: string;

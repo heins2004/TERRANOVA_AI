@@ -91,26 +91,15 @@ export function NotificationBell({ className = "" }: { className?: string }) {
     if (!isOpen) return;
 
     function handleClickOutside(e: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node) &&
-        bellButtonRef.current &&
-        !bellButtonRef.current.contains(e.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) && bellButtonRef.current && !bellButtonRef.current.contains(e.target as Node)) {
         setIsOpen(false);
       }
     }
-
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        setIsOpen(false);
-        bellButtonRef.current?.focus();
-      }
+      if (e.key === "Escape") { setIsOpen(false); bellButtonRef.current?.focus(); }
     }
-
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleKeyDown);
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
@@ -136,14 +125,14 @@ export function NotificationBell({ className = "" }: { className?: string }) {
 
     try {
       if (!item.is_read) {
-        setItems((prev) =>
-          prev.map((n) => (n.id === item.id ? { ...n, is_read: true } : n))
-        );
+        setItems((prev) => prev.map((n) => (n.id === item.id ? { ...n, is_read: true } : n)));
         setUnreadCount((prev) => Math.max(0, prev - 1));
         await markNotificationRead(item.id).catch(() => {});
       }
       setIsOpen(false);
-      if (item.project_link_kind === "gov") {
+      if (!item.project_id) {
+        router.push("/planner");
+      } else if (item.project_link_kind === "gov") {
         router.push(`/gov/${item.project_id}`);
       } else if (item.project_link_kind === "planner") {
         router.push(`/planner/${item.project_id}`);

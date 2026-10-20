@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 from psycopg import Connection
 
 from app.core.security import hash_password
-from app.repositories import admin_repository
+from app.repositories import admin_repository, planner_credential_repository
 from app.schemas.admin import CreateOfficialRequest
 from app.schemas.auth import UserResponse
 
@@ -106,6 +106,8 @@ def create_government_official(
             city=payload.city.strip() if payload.city else None,
             role=db_role,
         )
+        if db_role == "Urban Planner":
+            planner_credential_repository.create_unsubmitted_row(connection, user_id=user["id"])
         admin_repository.insert_admin_action(
             connection,
             admin_id=admin_user.id,
