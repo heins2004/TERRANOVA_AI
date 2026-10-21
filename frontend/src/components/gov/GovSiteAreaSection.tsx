@@ -21,7 +21,7 @@ const FullScreenMapModal = dynamic(
 );
 
 interface GovSiteAreaSectionProps {
-  city?: string;
+  city?: string | null;
   centerLat: number | null;
   centerLng: number | null;
   radiusKm: number | null;

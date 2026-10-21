@@ -17,7 +17,7 @@ interface FormModalProps {
   consultation: ProjectConsultation | null;
   onClose: () => void;
   onSuccess: (msg: string) => void;
-  city?: string;
+  city?: string | null;
 }
 
 export function GovConsultationFormModal({

@@ -19,6 +19,7 @@ export interface ProjectConsultation {
   created_at?: string;
   updated_at?: string;
   invited_emails?: string[];
+  invite_emails?: string[] | null;
   invite_count?: number;
   venue_lat?: number | null;
   venue_lng?: number | null;

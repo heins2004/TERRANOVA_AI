@@ -24,6 +24,8 @@ type UnifiedConsultation = {
   visibility?: "Public" | "Private";
   status: "Scheduled" | "Cancelled";
   cancel_reason: string | null;
+  venue_lat?: number | null;
+  venue_lng?: number | null;
 };
 
 function formatIndiaTime(dateString: string): string {
