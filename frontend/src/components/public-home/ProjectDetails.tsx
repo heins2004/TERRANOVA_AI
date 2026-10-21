@@ -65,14 +65,17 @@ export function ProjectDetails({ detail }: ProjectDetailsProps) {
         </p>
       </div>
 
-      {/* Location & Coordinates */}
-      <div className="rounded-[10px] border border-white/10 bg-white/5 p-[10px]">
+      {/* Location & Coordinates (flexible map block) */}
+      <div
+        id="project-location-map"
+        className="rounded-[10px] border border-white/10 bg-white/5 p-[10px] flex flex-col flex-1 min-h-[140px] max-h-[280px]"
+      >
         <div className="flex items-center justify-between gap-[8px]">
           <h4 className="font-body-md text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
             Location
           </h4>
           <div className="flex items-center gap-[6px]">
-            <span className="rounded-full border border-primary-container/40 bg-primary-container/10 px-[8px] py-[2px] font-data-mono text-[10px] text-primary-container">
+            <span className="inline-flex items-center justify-center h-[22px] rounded-full border border-primary-container/40 bg-primary-container/10 px-[8px] font-data-mono text-[10px] text-primary-container">
               Simple
             </span>
             <button
@@ -80,10 +83,10 @@ export function ProjectDetails({ detail }: ProjectDetailsProps) {
               disabled
               aria-disabled="true"
               aria-label="Satellite view (Soon)"
-              className="flex items-center gap-[3px] rounded-full border border-white/15 bg-white/5 px-[8px] py-[2px] font-data-mono text-[10px] text-on-surface-variant/60 cursor-not-allowed"
+              className="inline-flex items-center justify-center gap-[3px] h-[22px] rounded-full border border-white/15 bg-white/5 px-[8px] font-data-mono text-[10px] text-on-surface-variant/60 cursor-not-allowed"
             >
               <span>Satellite</span>
-              <span className="text-[8px] uppercase tracking-wider text-on-surface-variant/50">
+              <span className="text-[10px] uppercase tracking-wider text-on-surface-variant/50">
                 (Soon)
               </span>
             </button>

@@ -35,7 +35,7 @@ export function StageTracker({ stage, haltReason }: StageTrackerProps) {
     stage === "Completed" ? 2 : stage === "InProgress" ? 1 : 0;
 
   return (
-    <ol className="flex flex-row gap-[6px] p-0 list-none font-body-md text-[11px] h-[30px] items-stretch">
+    <ol className="flex flex-row gap-[6px] p-0 list-none font-body-md text-[11px] h-[30px] min-h-[28px] shrink-0 items-stretch">
       {STAGES.map((s, idx) => {
         const isDone = idx < currentOrder;
         const isCurrent = idx === currentOrder;
@@ -43,7 +43,7 @@ export function StageTracker({ stage, haltReason }: StageTrackerProps) {
         return (
           <li
             key={s.key}
-            className={`flex-1 rounded-[6px] border px-[8px] flex items-center justify-center text-center transition-all ${
+            className={`flex-1 min-h-[28px] rounded-[6px] border px-[8px] flex items-center justify-center text-center transition-all ${
               isDone
                 ? "border-success/60 bg-success/10 text-on-surface font-medium"
                 : isCurrent

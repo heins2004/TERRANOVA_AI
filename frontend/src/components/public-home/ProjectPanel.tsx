@@ -51,6 +51,7 @@ export function ProjectPanel({
   const [commentsOffset, setCommentsOffset] = useState<number>(0);
 
   const [isClosedLocally, setIsClosedLocally] = useState<boolean>(false);
+  const [isClosing, setIsClosing] = useState<boolean>(false);
   const [postedCommentId, setPostedCommentId] = useState<number | null>(null);
   const [liveMessage, setLiveMessage] = useState<string>("");
 
@@ -110,6 +111,7 @@ export function ProjectPanel({
   const requestClose = useCallback(() => {
     if (isClosingRef.current) return;
     isClosingRef.current = true;
+    setIsClosing(true);
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const panel = panelRef.current;
@@ -142,19 +144,25 @@ export function ProjectPanel({
     const C = originCard.getBoundingClientRect();
     const clip = getClip(F, C);
 
-    dialog.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 900, fill: "forwards" });
+    dialog.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, fill: "forwards" });
     const closeAnim = panel.animate(
       [{ clipPath: FULL }, { clipPath: clip }],
-      { duration: 900, easing: EASE, fill: "forwards" }
+      { duration: 400, easing: EASE, fill: "forwards" }
     );
 
-    closeAnim.onfinish = () => {
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
       if (originCard) {
         originCard.style.visibility = "";
         originCard.focus();
       }
       onClose();
     };
+
+    closeAnim.onfinish = finish;
+    setTimeout(finish, 450);
   }, [originCard, onStartClose, onClose]);
 
   // Open animation & focus management
@@ -226,7 +234,7 @@ export function ProjectPanel({
   }, [requestClose]);
 
   // Lock body scroll behind dialog without layout shift
-  useBodyScrollLock(dialogRef);
+  useBodyScrollLock(dialogRef, isClosing);
 
   const isOpen =
     !isClosedLocally &&

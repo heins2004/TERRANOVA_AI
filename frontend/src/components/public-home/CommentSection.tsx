@@ -180,6 +180,40 @@ export function CommentSection({
         </div>
       )}
 
+      {/* Comment Form at the top: Guest vs Logged In (Open vs Closed) */}
+      <div className="mb-[20px] pb-[16px] border-b border-white/10">
+        {!user ? (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-[12px]">
+            <p className="font-body-md text-[13px] text-on-surface-variant">
+              Sign in to join the discussion and share your stance.
+            </p>
+            <Link
+              href="/login"
+              className="rounded-full bg-primary-container px-[20px] py-[8px] font-body-md text-[13px] font-semibold text-on-primary hover:opacity-90 transition-all cursor-pointer inline-flex items-center"
+            >
+              Log in to comment
+            </Link>
+          </div>
+        ) : !isOpen ? (
+          <div>
+            <p className="font-body-md text-[13px] text-on-surface-variant">
+              Comments are closed for this project.
+            </p>
+          </div>
+        ) : (
+          <CommentComposer
+            projectId={projectId}
+            onCommentPosted={(created) => {
+              setComments((prev) => [created, ...prev]);
+              setPostedCommentId(created.id);
+            }}
+            onProjectUpdated={onProjectUpdated}
+            setIsClosedLocally={setIsClosedLocally}
+            setLiveMessage={setLiveMessage}
+          />
+        )}
+      </div>
+
       <div className="flex flex-col gap-[14px]">
         {comments.length === 0 && !isLoadingComments && (
           <p className="font-body-md text-[13px] text-on-surface-variant">
@@ -224,40 +258,6 @@ export function CommentSection({
           </button>
         </div>
       )}
-
-      {/* Comment Section Footer: Guest vs Logged In (Open vs Closed) */}
-      <div className="mt-[20px] pt-[16px] border-t border-white/10">
-        {!user ? (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-[12px]">
-            <p className="font-body-md text-[13px] text-on-surface-variant">
-              Sign in to join the discussion and share your stance.
-            </p>
-            <Link
-              href="/login"
-              className="rounded-full bg-primary-container px-[20px] py-[8px] font-body-md text-[13px] font-semibold text-on-primary hover:opacity-90 transition-all cursor-pointer inline-flex items-center"
-            >
-              Log in to comment
-            </Link>
-          </div>
-        ) : !isOpen ? (
-          <div>
-            <p className="font-body-md text-[13px] text-on-surface-variant">
-              Comments are closed for this project.
-            </p>
-          </div>
-        ) : (
-          <CommentComposer
-            projectId={projectId}
-            onCommentPosted={(created) => {
-              setComments((prev) => [created, ...prev]);
-              setPostedCommentId(created.id);
-            }}
-            onProjectUpdated={onProjectUpdated}
-            setIsClosedLocally={setIsClosedLocally}
-            setLiveMessage={setLiveMessage}
-          />
-        )}
-      </div>
     </div>
   );
 }
