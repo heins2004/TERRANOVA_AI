@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/layout/auth-provider";
 import { TopBar } from "@/components/layout/TopBar";
+import { SidebarItem, SidebarLayout } from "@/components/layout/SidebarLayout";
 import {
   AdminStats,
   AdminUser,
@@ -13,18 +14,42 @@ import {
   reactivateUser,
   updateUserStatus,
 } from "@/services/admin";
-import { AdminStatsCards } from "@/components/admin/AdminStatsCards";
-import { AdminAnalyticsSection } from "@/components/admin/AdminAnalyticsSection";
-import { AdminPlannerVerificationSection } from "@/components/admin/AdminPlannerVerificationSection";
-import { AdminLoginLogSection } from "@/components/admin/AdminLoginLogSection";
-import { AdminUserTable } from "@/components/admin/AdminUserTable";
+import { AdminOverviewSection } from "@/components/admin/AdminOverviewSection";
+import { AdminAnalyticsTabSection } from "@/components/admin/AdminAnalyticsTabSection";
+import { AdminVerificationTabSection } from "@/components/admin/AdminVerificationTabSection";
+import { AdminLoginLogTabSection } from "@/components/admin/AdminLoginLogTabSection";
+import { AdminUsersSection } from "@/components/admin/AdminUsersSection";
 import { CreateOfficialModal } from "@/components/admin/CreateOfficialModal";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 
-export default function AdminPage() {
+const ADMIN_NAV_ITEMS: SidebarItem[] = [
+  { key: "overview", label: "Overview", icon: "dashboard" },
+  { key: "analytics", label: "Analytics", icon: "analytics" },
+  { key: "users", label: "Users", icon: "group" },
+  { key: "verification", label: "Planner verification", icon: "verified_user" },
+  { key: "login-log", label: "Login log", icon: "history" },
+];
+
+const VALID_SECTIONS = [
+  "overview",
+  "analytics",
+  "users",
+  "verification",
+  "login-log",
+] as const;
+
+type AdminSection = (typeof VALID_SECTIONS)[number];
+
+function AdminPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, isReady, isAuthenticated } = useAuth();
   const isAdministrator = user?.role === "Administrator";
+
+  const rawSection = searchParams.get("section");
+  const activeSection: AdminSection = VALID_SECTIONS.includes(rawSection as AdminSection)
+    ? (rawSection as AdminSection)
+    : "overview";
 
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -49,7 +74,6 @@ export default function AdminPage() {
 
   const [feedback, setFeedback] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
-  // Auth gate effect
   useEffect(() => {
     if (!isReady) return;
     if (!isAuthenticated) {
@@ -62,19 +86,14 @@ export default function AdminPage() {
     }
   }, [isReady, isAuthenticated, isAdministrator, router]);
 
-  // Data fetching effect (promise callbacks avoid synchronous setState)
   useEffect(() => {
     if (!isReady || !isAdministrator) return;
     let active = true;
 
     getAdminStats()
-      .then((data) => {
-        if (active) setStats(data);
-      })
+      .then((data) => { if (active) setStats(data); })
       .catch(() => {})
-      .finally(() => {
-        if (active) setStatsLoading(false);
-      });
+      .finally(() => { if (active) setStatsLoading(false); });
 
     getUsers({
       q: search || undefined,
@@ -97,16 +116,11 @@ export default function AdminPage() {
           });
         }
       })
-      .finally(() => {
-        if (active) setUsersLoading(false);
-      });
+      .finally(() => { if (active) setUsersLoading(false); });
 
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [isReady, isAdministrator, search, roleFilter, statusFilter, page, limit, reloadKey]);
 
-  // Ref guard for open-modal button
   const createBtnRef = useRef(false);
   function handleOpenCreateModal() {
     if (createBtnRef.current) return;
@@ -140,10 +154,16 @@ export default function AdminPage() {
     try {
       const updated = await updateUserStatus(userId, isActive);
       setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
-      setFeedback({ message: `User #${userId} status set to ${isActive ? "Active" : "Inactive"}`, type: "success" });
+      setFeedback({
+        message: `User #${userId} status set to ${isActive ? "Active" : "Inactive"}`,
+        type: "success",
+      });
       setReloadKey((k) => k + 1);
     } catch (err) {
-      setFeedback({ message: err instanceof Error ? err.message : "Failed to toggle status.", type: "error" });
+      setFeedback({
+        message: err instanceof Error ? err.message : "Failed to toggle status.",
+        type: "error",
+      });
     }
   }
 
@@ -164,13 +184,9 @@ export default function AdminPage() {
         <TopBar user={user} />
         <main className="flex-1 px-[24px] py-[32px]">
           <section className="glass-card mx-auto max-w-2xl rounded-[24px] p-[32px]">
-            <p className="font-data-mono text-[11px] font-semibold tracking-widest text-danger uppercase">
-              ACCESS DENIED
-            </p>
+            <p className="font-data-mono text-[11px] font-semibold tracking-widest text-danger uppercase">ACCESS DENIED</p>
             <h1 className="mt-[12px] font-display-md text-2xl font-bold">Administrator access is required.</h1>
-            <p className="mt-[12px] text-sm text-on-surface-variant">
-              You do not have permission to manage user accounts. Redirecting...
-            </p>
+            <p className="mt-[12px] text-sm text-on-surface-variant">You do not have permission to manage user accounts. Redirecting...</p>
           </section>
         </main>
       </div>
@@ -180,81 +196,37 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen flex flex-col bg-surface-container-lowest text-on-surface">
       <TopBar user={user} />
-      <main className="flex-1 px-[24px] py-[32px]">
+      <main className="flex-1 px-[16px] sm:px-[24px] py-[32px]">
         <div className="mx-auto max-w-7xl">
-          <div className="flex flex-wrap items-end justify-between gap-[16px]">
-            <div>
-              <p className="font-data-mono text-[11px] font-semibold tracking-widest text-primary uppercase">
-                ADMINISTRATION // CONSOLE
-              </p>
-              <h1 className="mt-[8px] font-display-md text-display-md font-bold">User Management</h1>
-              <p className="mt-[6px] text-sm text-on-surface-variant">
-                Manage account roles, deactivate access, provision government officials, and inspect platform aggregates.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              id="open-create-official-btn"
-              onClick={handleOpenCreateModal}
-              className="h-[38px] px-[16px] inline-flex items-center gap-[8px] rounded-[8px] border border-primary/60 bg-primary/15 text-primary hover:bg-primary/25 font-data-mono text-[12px] font-semibold tracking-wider uppercase shadow-[0_0_15px_rgba(34,211,238,0.25)] transition-all cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[18px]">person_add</span>
-              <span>Create account</span>
-            </button>
-          </div>
-
-          {feedback && (
-            <div
-              className={`mt-[20px] p-[12px] rounded-[10px] text-[13px] font-data-mono flex items-center justify-between border ${
-                feedback.type === "success"
-                  ? "bg-success/10 border-success/30 text-success"
-                  : "bg-danger/10 border-danger/30 text-danger"
-              }`}
-            >
-              <div className="flex items-center gap-[8px]">
-                <span className="material-symbols-outlined text-[18px]">
-                  {feedback.type === "success" ? "check_circle" : "error"}
-                </span>
-                <span>{feedback.message}</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setFeedback(null)}
-                className="text-on-surface-variant hover:text-foreground p-[2px]"
-              >
-                <span className="material-symbols-outlined text-[16px]">close</span>
-              </button>
-            </div>
-          )}
-
-          <div className="mt-[24px]">
-            <AdminStatsCards stats={stats} loading={statsLoading} />
-          </div>
-
-          <AdminAnalyticsSection />
-          <AdminPlannerVerificationSection />
-
-          <AdminUserTable
-            users={users}
-            total={total}
-            page={page}
-            limit={limit}
-            search={search}
-            roleFilter={roleFilter}
-            statusFilter={statusFilter}
-            currentUserId={user?.id}
-            loading={usersLoading}
-            onSearchChange={(val) => { setSearch(val); setPage(1); }}
-            onRoleFilterChange={(val) => { setRoleFilter(val); setPage(1); }}
-            onStatusFilterChange={(val) => { setStatusFilter(val); setPage(1); }}
-            onPageChange={setPage}
-            onLimitChange={(newLimit) => { setLimit(newLimit); setPage(1); }}
-            onOpenConfirm={(target, action) => setConfirmDialog({ isOpen: true, targetUser: target, action })}
-            onStatusChange={handleStatusChange}
-          />
-
-          <AdminLoginLogSection />
+          <SidebarLayout items={ADMIN_NAV_ITEMS} activeKey={activeSection}>
+            {activeSection === "overview" && <AdminOverviewSection stats={stats} loading={statsLoading} />}
+            {activeSection === "analytics" && <AdminAnalyticsTabSection />}
+            {activeSection === "users" && (
+              <AdminUsersSection
+                users={users}
+                total={total}
+                page={page}
+                limit={limit}
+                search={search}
+                roleFilter={roleFilter}
+                statusFilter={statusFilter}
+                currentUserId={user?.id}
+                loading={usersLoading}
+                feedback={feedback}
+                onClearFeedback={() => setFeedback(null)}
+                onOpenCreateModal={handleOpenCreateModal}
+                onSearchChange={(val) => { setSearch(val); setPage(1); }}
+                onRoleFilterChange={(val) => { setRoleFilter(val); setPage(1); }}
+                onStatusFilterChange={(val) => { setStatusFilter(val); setPage(1); }}
+                onPageChange={setPage}
+                onLimitChange={(newLimit) => { setLimit(newLimit); setPage(1); }}
+                onOpenConfirm={(target, action) => setConfirmDialog({ isOpen: true, targetUser: target, action })}
+                onStatusChange={handleStatusChange}
+              />
+            )}
+            {activeSection === "verification" && <AdminVerificationTabSection />}
+            {activeSection === "login-log" && <AdminLoginLogTabSection />}
+          </SidebarLayout>
         </div>
       </main>
 
@@ -272,5 +244,22 @@ export default function AdminPage() {
         onConfirm={handleExecuteConfirmAction}
       />
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex flex-col bg-surface-container-lowest text-on-surface">
+          <TopBar />
+          <main className="flex-1 px-[24px] py-[32px] flex items-center justify-center">
+            <p className="font-data-mono text-sm text-on-surface-variant">LOADING USER MANAGEMENT…</p>
+          </main>
+        </div>
+      }
+    >
+      <AdminPageContent />
+    </Suspense>
   );
 }
