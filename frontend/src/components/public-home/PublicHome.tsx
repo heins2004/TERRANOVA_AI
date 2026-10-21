@@ -8,7 +8,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/layout/auth-provider";
 import {
@@ -39,49 +39,20 @@ const CATEGORIES = [
 
 type ProjectCategoryOption = (typeof CATEGORIES)[number];
 
-const INDIA_OUTLINE: [number, number][] = [
-  [74, 37],
-  [77, 35.5],
-  [79, 34],
-  [78, 32.5],
-  [80, 30.5],
-  [84, 28.5],
-  [88, 27.5],
-  [89, 26.7],
-  [92, 27],
-  [95, 28.5],
-  [97, 28],
-  [95, 26],
-  [94, 24],
-  [93, 22],
-  [91, 24.5],
-  [89, 25],
-  [88.5, 22.5],
-  [87, 21.5],
-  [85, 19.5],
-  [83, 17.5],
-  [80.3, 15.5],
-  [80.2, 13],
-  [79.8, 10.5],
-  [78.2, 8.7],
-  [77.5, 8],
-  [76.5, 9],
-  [75.5, 11.5],
-  [74.8, 13.5],
-  [73.8, 16],
-  [72.8, 19],
-  [72.9, 21],
-  [70.5, 21],
-  [69, 22.3],
-  [68.2, 23.7],
-  [70, 24.5],
-  [71, 25.5],
-  [70.5, 28],
-  [72, 29.5],
-  [74, 31],
-  [74.5, 33],
-  [73.5, 34.5],
-];
+const MapPreviewCard = dynamic(
+  () => import("./MapPreviewCard").then((mod) => mod.MapPreviewCard),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        aria-label="Open map"
+        className="map-card group relative col-span-1 sm:col-span-2 row-span-1 sm:row-span-2 flex h-[360px] sm:h-[400px] flex-col justify-end overflow-hidden rounded-[16px] border border-white/10 bg-surface-container-lowest p-[22px] font-data-mono text-xs text-on-surface-variant"
+      >
+        LOADING MAP PREVIEW...
+      </div>
+    ),
+  }
+);
 
 export function PublicHome() {
   const { user, isAuthenticated } = useAuth();
@@ -314,15 +285,7 @@ export function PublicHome() {
     selectedSort,
   ]);
 
-  // SVG points for India decorative map outline
-  const indiaPolygonPoints = useMemo(() => {
-    return INDIA_OUTLINE.map(([lng, lat]) =>
-      [
-        ((lng - 68) * 13 + 20).toFixed(1),
-        ((37.5 - lat) * 13 + 10).toFixed(1),
-      ].join(",")
-    ).join(" ");
-  }, []);
+
 
   // Summary counts
   const openCount = useMemo(
@@ -597,67 +560,8 @@ export function PublicHome() {
           style={{ perspective: "1400px", transformStyle: "preserve-3d" }}
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[16px] [perspective:1400px] [transform-style:preserve-3d]"
         >
-          {/* Big Map Card (The ONLY link to /map) */}
-          <Link
-            href="/map"
-            aria-label="Open interactive map of India"
-            className="map-card group relative col-span-1 sm:col-span-2 row-span-1 sm:row-span-2 flex min-h-[300px] sm:min-h-[400px] flex-col justify-end overflow-hidden rounded-[16px] border border-white/10 bg-gradient-to-br from-white/5 to-transparent p-[22px] backdrop-blur-[20px] transition-all duration-300 hover:border-primary-container/60 hover:shadow-[0_0_30px_-6px_rgba(34,211,238,0.4)] hover:scale-[1.01] focus-visible:border-primary-container focus-visible:outline-none"
-          >
-            {/* Decorative SVG Map of India */}
-            <svg
-              viewBox="0 0 420 430"
-              role="img"
-              aria-label="Decorative schematic map of India"
-              className="pointer-events-none absolute inset-0 h-full w-full opacity-60 transition-opacity duration-300 group-hover:opacity-85"
-            >
-              <polygon
-                points={indiaPolygonPoints}
-                className="fill-primary-container/10 stroke-primary-container/40"
-                strokeWidth="1.5"
-              />
-              {/* Project coordinate markers from loaded projects */}
-              {projects
-                .filter(
-                  (p) => p.location_lat != null && p.location_lng != null
-                )
-                .map((p) => {
-                  const x = ((p.location_lng! - 68) * 13 + 20).toFixed(1);
-                  const y = ((37.5 - p.location_lat!) * 13 + 10).toFixed(1);
-                  return (
-                    <g key={p.id}>
-                      <circle
-                        cx={x}
-                        cy={y}
-                        r="4"
-                        className="fill-primary-container transition-all group-hover:r-5"
-                      />
-                      <circle
-                        cx={x}
-                        cy={y}
-                        r="9"
-                        fill="none"
-                        className="stroke-primary-container/40"
-                        strokeWidth="1"
-                      />
-                    </g>
-                  );
-                })}
-            </svg>
-
-            <span className="absolute top-[14px] left-[14px] z-10 rounded-full border border-white/15 bg-surface-container-lowest/80 px-[10px] py-[3px] font-body-md text-[11px] text-primary-container font-medium">
-              Map
-            </span>
-
-            <div className="relative z-10 flex flex-col gap-[4px]">
-              <h3 className="font-body-md text-[20px] sm:text-[22px] font-bold text-on-surface group-hover:text-primary transition-colors">
-                India map
-              </h3>
-              <p className="font-body-md text-[13px] text-on-surface-variant max-w-md">
-                {total} project{total === 1 ? "" : "s"} shown. Open the
-                interactive map to inspect sites and spatial telemetry.
-              </p>
-            </div>
-          </Link>
+          {/* Big Map Card (Leaflet Preview - The ONLY link to /map) */}
+          <MapPreviewCard projects={projects} total={total} />
 
           {/* Error State with Retry Button */}
           {error && (
