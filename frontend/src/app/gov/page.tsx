@@ -56,8 +56,8 @@ export default function GovDashboardPage() {
   return (
     <div className="min-h-screen flex flex-col bg-surface-container-lowest text-on-surface">
       <TopBar user={user} />
-      <main className="flex-1 px-[24px] py-[32px]">
-        <div className="mx-auto max-w-7xl">
+      <main className="flex-1 w-full px-[16px] md:px-[24px] py-[24px] md:py-[32px] flex justify-center">
+        <div className="w-full max-w-[2200px]">
           {/* Header */}
           <div className="flex flex-wrap items-end justify-between gap-[16px] border-b border-white/10 pb-[24px]">
             <div>

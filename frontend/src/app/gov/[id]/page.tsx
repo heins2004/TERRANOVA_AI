@@ -1,20 +1,48 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { useAuth } from "@/components/layout/auth-provider";
 import { TopBar } from "@/components/layout/TopBar";
 import { getGovProject, getProjectEvents, GovProject, GovProjectEvent } from "@/services/gov";
-import { GovStageActions } from "@/components/gov/GovStageActions";
-import { GovEventsTimeline } from "@/components/gov/GovEventsTimeline";
+import { SidebarItem, SidebarLayout } from "@/components/layout/SidebarLayout";
+import { GovProjectHeader } from "@/components/gov/GovProjectHeader";
+import { GovDetailsSection } from "@/components/gov/GovDetailsSection";
+import { GovSiteAreaTabSection } from "@/components/gov/GovSiteAreaTabSection";
+import { GovPlannerTabSection } from "@/components/gov/GovPlannerTabSection";
+import { GovConsultationsTabSection } from "@/components/gov/GovConsultationsTabSection";
+import { GovTimelineTabSection } from "@/components/gov/GovTimelineTabSection";
 import { GovEditModal } from "@/components/gov/GovEditModal";
-import { GovConsultationsManager } from "@/components/gov/GovConsultationsManager";
 
-export default function GovProjectDetailPage() {
+const GOV_NAV_ITEMS: SidebarItem[] = [
+  { key: "details", label: "Details", icon: "info" },
+  { key: "site-area", label: "Site area", icon: "location_on" },
+  { key: "planner", label: "Planner", icon: "person" },
+  { key: "consultations", label: "Consultations", icon: "forum" },
+  { key: "timeline", label: "Timeline", icon: "history" },
+];
+
+const VALID_SECTIONS = [
+  "details",
+  "site-area",
+  "planner",
+  "consultations",
+  "timeline",
+] as const;
+
+type GovSection = (typeof VALID_SECTIONS)[number];
+
+function GovProjectDetailContent() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const projectId = Number(params.id);
+
+  const rawSection = searchParams.get("section");
+  const activeSection: GovSection = VALID_SECTIONS.includes(rawSection as GovSection)
+    ? (rawSection as GovSection)
+    : "details";
 
   const { user, isReady, isAuthenticated } = useAuth();
   const [project, setProject] = useState<GovProject | null>(null);
@@ -91,94 +119,55 @@ export default function GovProjectDetailPage() {
   return (
     <div className="min-h-screen flex flex-col bg-surface-container-lowest text-on-surface">
       <TopBar user={user} />
-      <main className="flex-1 px-[24px] py-[32px]">
-        <div className="mx-auto max-w-5xl space-y-[28px]">
-          {/* Header navigation & title */}
-          <div>
-            <div className="flex items-center gap-[8px] font-data-mono text-[11px] text-on-surface-variant uppercase">
-              <Link href="/gov" className="hover:text-primary transition-colors">Official Portal</Link>
-              <span>/</span>
-              <span>Project #{project.id}</span>
-            </div>
-
-            <div className="mt-[8px] flex flex-wrap items-start justify-between gap-[16px]">
-              <div>
-                <div className="flex items-center gap-[10px]">
-                  <span className="rounded border border-primary-container/40 bg-primary-container/15 px-[10px] py-[3px] font-data-mono text-[11px] font-semibold text-primary uppercase">
-                    {project.stage}
-                  </span>
-                  <span className="font-data-mono text-xs text-on-surface-variant uppercase">
-                    City: {project.city ?? "National"}
-                  </span>
-                </div>
-                <h1 className="mt-[8px] font-sans text-[26px] font-bold text-white tracking-tight">
-                  {project.title}
-                </h1>
-                {project.description && (
-                  <p className="mt-[6px] text-sm text-on-surface-variant max-w-3xl">
-                    {project.description}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Info Grid */}
-          <div className="grid grid-cols-2 gap-[12px] sm:grid-cols-4 rounded-[12px] border border-white/10 bg-surface-container-lowest/70 p-[16px]">
-            <div>
-              <p className="font-data-mono text-[10px] text-on-surface-variant uppercase">Category</p>
-              <p className="mt-[2px] text-sm font-medium text-white">{project.category ?? "General"}</p>
-            </div>
-            <div>
-              <p className="font-data-mono text-[10px] text-on-surface-variant uppercase">Budget</p>
-              <p className="mt-[2px] font-data-mono text-sm font-semibold text-white">
-                {project.budget != null ? `₹${Number(project.budget).toLocaleString("en-IN")}` : "N/A"}
-              </p>
-            </div>
-            <div>
-              <p className="font-data-mono text-[10px] text-on-surface-variant uppercase">Dates</p>
-              <p className="mt-[2px] font-data-mono text-xs text-white">
-                {project.start_date ?? "—"} to {project.end_date ?? "—"}
-              </p>
-            </div>
-            <div>
-              <p className="font-data-mono text-[10px] text-on-surface-variant uppercase">Assigned Planner</p>
-              <p className="mt-[2px] font-data-mono text-xs text-primary font-semibold">
-                {project.planner_name ?? (project.planner_id ? `Planner #${project.planner_id}` : "None")}
-              </p>
-            </div>
-          </div>
-
-          {/* Stage Action Controls */}
-          <section>
-            <h3 className="mb-[12px] font-sans text-[16px] font-semibold text-white tracking-wide">
-              Stage Operations
-            </h3>
-            <GovStageActions
+      <main className="flex-1 w-full">
+        <SidebarLayout
+          items={GOV_NAV_ITEMS}
+          activeKey={activeSection}
+          basePath={`/gov/${projectId}`}
+          navTitle="Project Menu"
+          idPrefix="gov"
+        >
+          <div className="space-y-[24px]">
+            <GovProjectHeader
               project={project}
               onRefresh={loadData}
               onOpenEdit={() => setShowEditModal(true)}
             />
-          </section>
 
-          {/* Consultations Manager (Deployed Stages) */}
-          {["OpenForResponse", "InProgress", "Completed", "Halted"].includes(project.stage) && (
-            <GovConsultationsManager project={project} />
-          )}
-
-          {/* Events & Rejection Timeline */}
-          <GovEventsTimeline project={project} events={events} />
-
-          {/* Edit Modal (Draft / Approved final edit) */}
-          {showEditModal && (
-            <GovEditModal
-              project={project}
-              onClose={() => setShowEditModal(false)}
-              onSuccess={loadData}
-            />
-          )}
-        </div>
+            {activeSection === "details" && <GovDetailsSection project={project} />}
+            {activeSection === "site-area" && <GovSiteAreaTabSection project={project} />}
+            {activeSection === "planner" && <GovPlannerTabSection project={project} onRefresh={loadData} />}
+            {activeSection === "consultations" && <GovConsultationsTabSection project={project} />}
+            {activeSection === "timeline" && <GovTimelineTabSection project={project} events={events} />}
+          </div>
+        </SidebarLayout>
       </main>
+
+      {/* Edit Modal (Draft / Approved final edit) */}
+      {showEditModal && (
+        <GovEditModal
+          project={project}
+          onClose={() => setShowEditModal(false)}
+          onSuccess={loadData}
+        />
+      )}
     </div>
+  );
+}
+
+export default function GovProjectDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex flex-col bg-surface-container-lowest text-on-surface">
+          <TopBar />
+          <main className="flex-1 px-[24px] py-[32px] flex items-center justify-center">
+            <p className="font-data-mono text-sm text-on-surface-variant">LOADING PROJECT DETAILS...</p>
+          </main>
+        </div>
+      }
+    >
+      <GovProjectDetailContent />
+    </Suspense>
   );
 }

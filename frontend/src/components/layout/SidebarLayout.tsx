@@ -16,6 +16,7 @@ type SidebarLayoutProps = {
   children: React.ReactNode;
   basePath?: string;
   navTitle?: string;
+  idPrefix?: string;
 };
 
 export function SidebarLayout({
@@ -24,6 +25,7 @@ export function SidebarLayout({
   children,
   basePath = "/admin",
   navTitle = "Navigation",
+  idPrefix = "admin",
 }: SidebarLayoutProps) {
   const stripRef = useRef<HTMLDivElement | null>(null);
   const activeTabRef = useRef<HTMLAnchorElement | null>(null);
@@ -50,7 +52,7 @@ export function SidebarLayout({
       <div className="block md:hidden w-full px-[16px] pt-[16px] pb-[8px] border-b border-white/10 bg-surface-container-lowest/80 backdrop-blur-md">
         <div
           ref={stripRef}
-          id="admin-tab-strip"
+          id={`${idPrefix}-tab-strip`}
           className="flex items-center gap-[8px] overflow-x-auto whitespace-nowrap scrollbar-none pb-[4px]"
         >
           {items.map((item) => {
@@ -61,7 +63,7 @@ export function SidebarLayout({
                 key={item.key}
                 ref={isActive ? activeTabRef : undefined}
                 href={href}
-                id={`admin-tab-${item.key}`}
+                id={`${idPrefix}-tab-${item.key}`}
                 aria-current={isActive ? "page" : undefined}
                 className={`flex items-center gap-[8px] px-[14px] py-[8px] rounded-full text-[13px] font-data-mono font-medium shrink-0 transition-all ${
                   isActive
@@ -83,7 +85,7 @@ export function SidebarLayout({
 
       {/* Desktop Layout (>= 768px / md): Sticky Left Flush Sidebar */}
       <aside
-        id="admin-sidebar"
+        id={`${idPrefix}-sidebar`}
         className="hidden md:flex md:flex-col w-[240px] shrink-0 sticky top-[57px] h-[calc(100vh-57px)] border-r border-white/10 bg-surface-container-lowest/95 py-[20px] px-[12px] z-20 self-start"
       >
         <p className="px-[12px] pt-[4px] pb-[12px] font-data-mono text-[10px] font-semibold tracking-widest text-primary uppercase border-b border-white/5">
@@ -97,7 +99,7 @@ export function SidebarLayout({
               <Link
                 key={item.key}
                 href={href}
-                id={`admin-nav-${item.key}`}
+                id={`${idPrefix}-nav-${item.key}`}
                 aria-current={isActive ? "page" : undefined}
                 className={`flex items-center gap-[12px] px-[14px] py-[10px] rounded-[10px] text-[13px] font-body-md transition-all cursor-pointer ${
                   isActive
