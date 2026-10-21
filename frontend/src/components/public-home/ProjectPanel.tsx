@@ -3,11 +3,9 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/layout/auth-provider";
 import { PublicComment, PublicProject, getProject, listComments } from "@/services/publicProjects";
-import { StageTracker } from "./StageTracker";
 import { PanelHeader } from "./PanelHeader";
-import { ProjectDetails } from "./ProjectDetails";
-import { CommentSection } from "./CommentSection";
-import { ProjectConsultationsSection } from "./ProjectConsultationsSection";
+import { ProjectPanelBody } from "./ProjectPanelBody";
+import { useBodyScrollLock } from "./useBodyScrollLock";
 import { parseCommentError } from "./commentUtils";
 
 export { parseCommentError };
@@ -227,6 +225,9 @@ export function ProjectPanel({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [requestClose]);
 
+  // Lock body scroll behind dialog without layout shift
+  useBodyScrollLock(dialogRef);
+
   const isOpen =
     !isClosedLocally &&
     detail.stage === "OpenForResponse" &&
@@ -249,32 +250,22 @@ export function ProjectPanel({
     >
       <div
         ref={panelRef}
-        className="relative flex flex-col w-full max-w-[960px] max-h-[92vh] overflow-y-auto rounded-[20px] border border-white/15 bg-surface-container-lowest p-[20px] sm:p-[32px] shadow-2xl backdrop-blur-3xl"
+        className="relative flex flex-col w-full max-w-[1440px] h-[92vh] max-h-[900px] overflow-hidden rounded-[20px] border border-white/15 bg-surface-container-lowest p-[16px] sm:p-[24px] shadow-2xl backdrop-blur-3xl"
       >
         <PanelHeader
           title={detail.title}
           is_demo={detail.is_demo}
           category={detail.category}
           cityName={cityName}
+          isFollowed={isFollowed}
+          isFollowInFlight={isFollowInFlight}
+          onToggleFollow={() => onToggleFollow?.(detail.id)}
           closeButtonRef={closeButtonRef}
           onClose={requestClose}
         />
 
-        <div className="mt-[20px]">
-          <StageTracker stage={detail.stage} haltReason={detail.halt_reason ?? undefined} />
-        </div>
-
-        <ProjectDetails
+        <ProjectPanelBody
           detail={detail}
-          isFollowed={isFollowed}
-          isFollowInFlight={isFollowInFlight}
-          onToggleFollow={onToggleFollow}
-        />
-
-        <ProjectConsultationsSection projectId={detail.id} />
-
-        <CommentSection
-          projectId={detail.id}
           user={user}
           isOpen={isOpen}
           isGovOfficial={isGovOfficial}
