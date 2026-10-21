@@ -19,7 +19,6 @@ const STAGE_ORDER: StageGroupConfig[] = [
 ];
 
 const GOV_LIST_NAV_ITEMS: SidebarItem[] = [
-  { key: "all", label: "All projects", icon: "layers" },
   { key: "draft", label: "Draft", icon: "edit_note" },
   { key: "planner-invited", label: "Planner Invited", icon: "person_add" },
   { key: "site-proposed", label: "Site Proposed", icon: "location_searching" },
@@ -39,8 +38,8 @@ function GovDashboardContent() {
   const isOfficial = user?.role === "Government Official";
 
   const rawSection = searchParams.get("section");
-  const isValidSection = rawSection && (rawSection === "all" || STAGE_ORDER.some((g) => g.key === rawSection));
-  const activeSection = isValidSection ? (rawSection as string) : "all";
+  const isValidSection = rawSection && STAGE_ORDER.some((g) => g.key === rawSection);
+  const activeSection = isValidSection ? (rawSection as string) : "draft";
 
   useEffect(() => {
     if (!isReady) return;
@@ -70,9 +69,7 @@ function GovDashboardContent() {
     );
   }
 
-  const visibleGroups = activeSection === "all"
-    ? STAGE_ORDER
-    : STAGE_ORDER.filter((g) => g.key === activeSection);
+  const activeGroup = STAGE_ORDER.find((g) => g.key === activeSection) ?? STAGE_ORDER[0];
 
   return (
     <div className="min-h-screen flex flex-col bg-surface-container-lowest text-on-surface">
@@ -120,9 +117,7 @@ function GovDashboardContent() {
             </div>
           ) : (
             <div className="mt-[32px] space-y-[40px]">
-              {visibleGroups.map((group) => (
-                <GovStageGroupSection key={group.key} group={group} projects={projects} />
-              ))}
+              <GovStageGroupSection group={activeGroup} projects={projects} />
             </div>
           )}
         </SidebarLayout>
