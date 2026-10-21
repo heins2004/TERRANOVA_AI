@@ -6,7 +6,7 @@ import { useAuth } from "@/components/layout/auth-provider";
 import { Avatar } from "@/components/ui/Avatar";
 import { HamburgerMenuItems } from "./HamburgerMenuItems";
 
-export function HamburgerMenu() {
+export function HamburgerMenu({ className = "" }: { className?: string } = {}) {
   const { user, isAuthenticated, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -105,7 +105,7 @@ export function HamburgerMenu() {
   }
 
   return (
-    <div className="relative inline-block text-left">
+    <div className={`relative inline-block text-left md:hidden ${className}`}>
       {/* Hamburger Toggle Button */}
       <button
         ref={buttonRef}

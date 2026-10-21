@@ -41,6 +41,11 @@ export function TopBar({
   }
 
   const isHomeActive = pathname === "/";
+  const isProfileActive = pathname === "/profile";
+  const isGovActive = pathname.startsWith("/gov") && pathname !== "/gov/new";
+  const isNewProjectActive = pathname === "/gov/new";
+  const isPlannerActive = pathname.startsWith("/planner");
+  const isAdminActive = pathname.startsWith("/admin");
 
   return (
     <header
@@ -49,13 +54,13 @@ export function TopBar({
       className={`relative z-30 w-full border-b border-white/10 bg-surface-container-lowest/85 px-[16px] py-[10px] sm:px-[24px] backdrop-blur-md ${className}`}
     >
       <div className="flex w-full items-center justify-between gap-[16px]">
-        {/* Left: Brand text (plain text, never a link) + system readout */}
+        {/* Left: Brand text (plain text, never a link) + system readout (wide screens only) */}
         <div className="flex items-center gap-[10px] sm:gap-[16px]">
           <span className="font-display-md text-[14px] sm:text-[15px] font-semibold tracking-wider text-primary uppercase select-none">
             TERRANOVA AI
           </span>
-          <span className="h-[12px] w-[1px] bg-white/20" aria-hidden="true" />
-          <span className="font-data-mono text-[10px] sm:text-[11px] uppercase tracking-widest text-primary-container font-semibold">
+          <span className="hidden md:inline h-[12px] w-[1px] bg-white/20" aria-hidden="true" />
+          <span className="hidden md:inline font-data-mono text-[10px] sm:text-[11px] uppercase tracking-widest text-primary-container font-semibold">
             SYS.INIT.SEQ // V.4.2.1
           </span>
         </div>
@@ -81,27 +86,46 @@ export function TopBar({
           </div>
         )}
 
-        {/* Right Corner: Home, Gov Portal (for officials) and Logout / Login */}
+        {/* Right Corner: Navigation links, notification bell, hamburger and auth controls */}
         <div className="flex items-center gap-[8px] sm:gap-[12px]">
-          {!currentUser?.must_change_password && (
+          {isLoggedIn && !currentUser?.must_change_password && (
             <>
               {currentUser?.role === "Government Official" && (
-                <Link
-                  href="/gov"
-                  id="topbar-gov-link"
-                  aria-label="Government Portal"
-                  aria-current={pathname.startsWith("/gov") ? "page" : undefined}
-                  className={`h-[32px] inline-flex items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
-                    pathname.startsWith("/gov")
-                      ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
-                      : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
-                    account_balance
-                  </span>
-                  <span className="hidden sm:inline">Gov Portal</span>
-                </Link>
+                <>
+                  <Link
+                    href="/gov"
+                    id="topbar-gov-link"
+                    aria-label="Government Portal"
+                    aria-current={isGovActive ? "page" : undefined}
+                    className={`hidden md:inline-flex h-[32px] items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
+                      isGovActive
+                        ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
+                        : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[16px] pointer-events-none" aria-hidden="true">
+                      account_balance
+                    </span>
+                    <span className="pointer-events-none">Gov Portal</span>
+                  </Link>
+
+                  <Link
+                    href="/gov/new"
+                    id="topbar-new-project-link"
+                    aria-label="New Project"
+                    aria-current={isNewProjectActive ? "page" : undefined}
+                    className={`hidden md:inline-flex h-[32px] items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
+                      isNewProjectActive
+                        ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
+                        : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[16px] pointer-events-none" aria-hidden="true">
+                      add_circle
+                    </span>
+                    <span className="pointer-events-none">New project</span>
+                  </Link>
+                </>
               )}
 
               {currentUser?.role === "Urban Planner" && (
@@ -109,17 +133,17 @@ export function TopBar({
                   href="/planner"
                   id="topbar-planner-link"
                   aria-label="Planner Portal"
-                  aria-current={pathname.startsWith("/planner") ? "page" : undefined}
-                  className={`h-[32px] inline-flex items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
-                    pathname.startsWith("/planner")
+                  aria-current={isPlannerActive ? "page" : undefined}
+                  className={`hidden md:inline-flex h-[32px] items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
+                    isPlannerActive
                       ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
                       : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
+                  <span className="material-symbols-outlined text-[16px] pointer-events-none" aria-hidden="true">
                     architecture
                   </span>
-                  <span className="hidden sm:inline">Planner Portal</span>
+                  <span className="pointer-events-none">Planner Portal</span>
                 </Link>
               )}
 
@@ -128,17 +152,17 @@ export function TopBar({
                   href="/admin"
                   id="topbar-admin-link"
                   aria-label="Admin Portal"
-                  aria-current={pathname.startsWith("/admin") ? "page" : undefined}
-                  className={`h-[32px] inline-flex items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
-                    pathname.startsWith("/admin")
+                  aria-current={isAdminActive ? "page" : undefined}
+                  className={`hidden md:inline-flex h-[32px] items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
+                    isAdminActive
                       ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
                       : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
+                  <span className="material-symbols-outlined text-[16px] pointer-events-none" aria-hidden="true">
                     admin_panel_settings
                   </span>
-                  <span className="hidden sm:inline">Admin Portal</span>
+                  <span className="pointer-events-none">Admin Portal</span>
                 </Link>
               )}
 
@@ -147,16 +171,33 @@ export function TopBar({
                 id="topbar-home-link"
                 aria-label="Home"
                 aria-current={isHomeActive ? "page" : undefined}
-                className={`h-[32px] inline-flex items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
+                className={`hidden md:inline-flex h-[32px] items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
                   isHomeActive
                     ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
                     : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
                 }`}
               >
-                <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
+                <span className="material-symbols-outlined text-[16px] pointer-events-none" aria-hidden="true">
                   home
                 </span>
-                <span className="hidden sm:inline">Home</span>
+                <span className="pointer-events-none">Home</span>
+              </Link>
+
+              <Link
+                href="/profile"
+                id="topbar-profile-link"
+                aria-label="Profile"
+                aria-current={isProfileActive ? "page" : undefined}
+                className={`hidden md:inline-flex h-[32px] items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
+                  isProfileActive
+                    ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
+                    : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
+                }`}
+              >
+                <span className="material-symbols-outlined text-[16px] pointer-events-none" aria-hidden="true">
+                  account_circle
+                </span>
+                <span className="pointer-events-none">Profile</span>
               </Link>
             </>
           )}
@@ -172,27 +213,41 @@ export function TopBar({
               aria-label="Logout"
               disabled={isLoggingOut}
               onClick={() => void handleLogout()}
-              className="h-[32px] inline-flex items-center justify-center gap-[6px] rounded border border-danger/40 bg-danger/5 px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase text-danger transition-all hover:border-danger/80 hover:bg-danger/15 hover:shadow-[0_0_12px_rgba(248,113,113,0.25)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="hidden md:inline-flex h-[32px] items-center justify-center gap-[6px] rounded border border-danger/40 bg-danger/5 px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase text-danger transition-all hover:border-danger/80 hover:bg-danger/15 hover:shadow-[0_0_12px_rgba(248,113,113,0.25)] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
+              <span className="material-symbols-outlined text-[16px] pointer-events-none" aria-hidden="true">
                 logout
               </span>
-              <span className="hidden sm:inline">
+              <span className="pointer-events-none">
                 {isLoggingOut ? "Disconnecting..." : "Logout"}
               </span>
             </button>
           ) : (
-            <Link
-              href="/login"
-              id="topbar-login-link"
-              aria-label="Login"
-              className="h-[32px] inline-flex items-center justify-center gap-[6px] rounded border border-primary-container/60 bg-primary-container/10 px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase text-primary transition-all hover:bg-primary-container/20 hover:shadow-[0_0_15px_rgba(34,211,238,0.25)]"
-            >
-              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
-                login
-              </span>
-              <span className="hidden sm:inline">Login</span>
-            </Link>
+            <>
+              <Link
+                href="/login"
+                id="topbar-login-link"
+                aria-label="Login"
+                className="hidden md:inline-flex h-[32px] items-center justify-center gap-[6px] rounded border border-primary-container/60 bg-primary-container/10 px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase text-primary transition-all hover:bg-primary-container/20 hover:shadow-[0_0_15px_rgba(34,211,238,0.25)]"
+              >
+                <span className="material-symbols-outlined text-[16px] pointer-events-none" aria-hidden="true">
+                  login
+                </span>
+                <span className="pointer-events-none">Login</span>
+              </Link>
+
+              <Link
+                href="/register"
+                id="topbar-register-link"
+                aria-label="Register"
+                className="hidden md:inline-flex h-[32px] items-center justify-center gap-[6px] rounded border border-white/15 bg-white/[0.02] px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase text-on-surface-variant transition-all hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
+              >
+                <span className="material-symbols-outlined text-[16px] pointer-events-none" aria-hidden="true">
+                  person_add
+                </span>
+                <span className="pointer-events-none">Register</span>
+              </Link>
+            </>
           )}
         </div>
       </div>

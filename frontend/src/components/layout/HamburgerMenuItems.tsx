@@ -99,18 +99,32 @@ export function HamburgerMenuItems({
       )}
 
       {role === "Urban Planner" && (
-        <Link
-          href="/planner"
-          role="menuitem"
-          id="menu-item-planner-portal"
-          onClick={onLinkClick}
-          className="flex h-[38px] items-center gap-[10px] rounded-lg px-[12px] font-body-md text-[13px] text-on-surface transition-colors hover:bg-white/10 hover:text-primary"
-        >
-          <span className="material-symbols-outlined text-[18px] text-on-surface-variant pointer-events-none">
-            architecture
-          </span>
-          <span className="pointer-events-none">Planner portal</span>
-        </Link>
+        <>
+          <Link
+            href="/planner"
+            role="menuitem"
+            id="menu-item-planner-portal"
+            onClick={onLinkClick}
+            className="flex h-[38px] items-center gap-[10px] rounded-lg px-[12px] font-body-md text-[13px] text-on-surface transition-colors hover:bg-white/10 hover:text-primary"
+          >
+            <span className="material-symbols-outlined text-[18px] text-on-surface-variant pointer-events-none">
+              architecture
+            </span>
+            <span className="pointer-events-none">Planner portal</span>
+          </Link>
+          <Link
+            href="/"
+            role="menuitem"
+            id="menu-item-home"
+            onClick={onLinkClick}
+            className="flex h-[38px] items-center gap-[10px] rounded-lg px-[12px] font-body-md text-[13px] text-on-surface transition-colors hover:bg-white/10 hover:text-primary"
+          >
+            <span className="material-symbols-outlined text-[18px] text-on-surface-variant pointer-events-none">
+              home
+            </span>
+            <span className="pointer-events-none">Home</span>
+          </Link>
+        </>
       )}
 
       {role === "Government Official" && (
@@ -139,22 +153,48 @@ export function HamburgerMenuItems({
             </span>
             <span className="pointer-events-none">New project</span>
           </Link>
+          <Link
+            href="/"
+            role="menuitem"
+            id="menu-item-home"
+            onClick={onLinkClick}
+            className="flex h-[38px] items-center gap-[10px] rounded-lg px-[12px] font-body-md text-[13px] text-on-surface transition-colors hover:bg-white/10 hover:text-primary"
+          >
+            <span className="material-symbols-outlined text-[18px] text-on-surface-variant pointer-events-none">
+              home
+            </span>
+            <span className="pointer-events-none">Home</span>
+          </Link>
         </>
       )}
 
       {role === "Administrator" && (
-        <Link
-          href="/admin"
-          role="menuitem"
-          id="menu-item-admin-dashboard"
-          onClick={onLinkClick}
-          className="flex h-[38px] items-center gap-[10px] rounded-lg px-[12px] font-body-md text-[13px] text-on-surface transition-colors hover:bg-white/10 hover:text-primary"
-        >
-          <span className="material-symbols-outlined text-[18px] text-on-surface-variant pointer-events-none">
-            admin_panel_settings
-          </span>
-          <span className="pointer-events-none">Admin dashboard</span>
-        </Link>
+        <>
+          <Link
+            href="/admin"
+            role="menuitem"
+            id="menu-item-admin-dashboard"
+            onClick={onLinkClick}
+            className="flex h-[38px] items-center gap-[10px] rounded-lg px-[12px] font-body-md text-[13px] text-on-surface transition-colors hover:bg-white/10 hover:text-primary"
+          >
+            <span className="material-symbols-outlined text-[18px] text-on-surface-variant pointer-events-none">
+              admin_panel_settings
+            </span>
+            <span className="pointer-events-none">Admin dashboard</span>
+          </Link>
+          <Link
+            href="/"
+            role="menuitem"
+            id="menu-item-home"
+            onClick={onLinkClick}
+            className="flex h-[38px] items-center gap-[10px] rounded-lg px-[12px] font-body-md text-[13px] text-on-surface transition-colors hover:bg-white/10 hover:text-primary"
+          >
+            <span className="material-symbols-outlined text-[18px] text-on-surface-variant pointer-events-none">
+              home
+            </span>
+            <span className="pointer-events-none">Home</span>
+          </Link>
+        </>
       )}
 
       {/* Shared Profile & Logout across all authenticated roles */}

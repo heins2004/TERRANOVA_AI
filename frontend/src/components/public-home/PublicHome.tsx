@@ -21,8 +21,8 @@ import {
   followProject,
   unfollowProject,
 } from "@/services/follows";
-import { NotificationBell } from "@/components/notifications/NotificationBell";
-import { HamburgerMenu } from "@/components/layout/HamburgerMenu";
+import { TopBar } from "@/components/layout/TopBar";
+import { HomeSearchRow } from "./HomeSearchRow";
 import { ProjectCard } from "./ProjectCard";
 import { ProjectPanel } from "./ProjectPanel";
 import { ParticleCloak } from "./ParticleCloak";
@@ -84,7 +84,7 @@ const INDIA_OUTLINE: [number, number][] = [
 ];
 
 export function PublicHome() {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const searchInputId = useId();
 
   const [searchInput, setSearchInput] = useState("");
@@ -461,82 +461,15 @@ export function PublicHome() {
       {/* Particle Cloak Background */}
       <ParticleCloak />
 
-      {/* Main Header */}
-      <header className="relative z-10 mx-auto flex max-w-[1596px] flex-wrap items-center justify-between gap-[14px] px-[16px] py-[18px] sm:px-[32px] lg:px-[48px]">
-        {/* Brand Text (not a link) */}
-        <div className="font-body-md text-[17px] sm:text-[18px] font-bold tracking-[0.04em] text-on-surface select-none">
-          TERRANOVA AI
-        </div>
+      {/* Shared Top Navigation */}
+      <TopBar />
 
-        {/* Search Bar */}
-        <label
-          htmlFor={searchInputId}
-          className="order-3 flex h-[46px] w-full flex-1 sm:order-2 sm:w-auto max-w-[640px] items-center gap-[10px] rounded-full border border-white/15 bg-white/5 px-[18px] shadow-sm backdrop-blur-[18px] transition-all focus-within:border-primary-container focus-within:shadow-[0_0_0_3px_rgba(34,211,238,0.25)]"
-        >
-          <span
-            className="text-[16px] text-on-surface-variant select-none"
-            aria-hidden="true"
-          >
-            ⌕
-          </span>
-          <input
-            id={searchInputId}
-            type="search"
-            maxLength={80}
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value.slice(0, 80))}
-            placeholder="Search a city, area or project"
-            aria-label="Search a city, area or project"
-            className="w-full min-w-0 bg-transparent font-body-md text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none"
-          />
-        </label>
-
-        {/* Action Controls & Authentication */}
-        <div className="order-2 sm:order-3 flex items-center gap-[8px]">
-          {/* Switched-off Theme Toggle */}
-          <button
-            type="button"
-            disabled
-            aria-disabled="true"
-            aria-label="Switch theme (Soon)"
-            className="flex h-[42px] w-[42px] items-center justify-center rounded-full border border-white/15 bg-white/5 text-[15px] text-on-surface-variant/60 cursor-not-allowed"
-          >
-            ◐
-          </button>
-
-          {/* User Auth Controls */}
-          {isAuthenticated && user ? (
-            <div className="flex items-center gap-[8px]">
-              <NotificationBell />
-              <HamburgerMenu />
-
-              <button
-                type="button"
-                onClick={() => logout()}
-                className="h-[42px] rounded-full border border-primary-container/60 bg-primary-container/10 px-[18px] font-body-md text-[13px] text-primary transition-colors hover:bg-primary-container/20 focus-visible:outline-none focus-visible:border-primary-container"
-              >
-                Log out
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-[8px]">
-              <Link
-                href="/login"
-                className="flex h-[42px] items-center rounded-full border border-primary-container/60 bg-primary-container/10 px-[18px] font-body-md text-[13px] text-primary transition-colors hover:bg-primary-container/20 focus-visible:outline-none focus-visible:border-primary-container"
-              >
-                Log in
-              </Link>
-              <Link
-                href="/register"
-                className="flex h-[42px] items-center rounded-full border border-white/15 bg-white/5 px-[18px] font-body-md text-[13px] text-on-surface-variant transition-colors hover:border-primary-container hover:text-on-surface focus-visible:outline-none"
-              >
-                Register
-              </Link>
-              <HamburgerMenu />
-            </div>
-          )}
-        </div>
-      </header>
+      {/* Search Bar & Theme Toggle */}
+      <HomeSearchRow
+        searchInputId={searchInputId}
+        searchInput={searchInput}
+        onSearchChange={setSearchInput}
+      />
 
       {/* Main Container */}
       <main className="relative z-10 mx-auto max-w-[1596px] px-[16px] pb-[48px] sm:px-[32px] lg:px-[48px]">
