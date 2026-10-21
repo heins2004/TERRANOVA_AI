@@ -74,7 +74,7 @@ export function AdminUsersSection({
           type="button"
           id="open-create-official-btn"
           onClick={onOpenCreateModal}
-          className="h-[38px] px-[16px] inline-flex items-center gap-[8px] rounded-[8px] border border-primary/60 bg-primary/15 text-primary hover:bg-primary/25 font-data-mono text-[12px] font-semibold tracking-wider uppercase shadow-[0_0_15px_rgba(34,211,238,0.25)] transition-all cursor-pointer"
+          className="h-[38px] px-[16px] inline-flex items-center gap-[8px] rounded-[8px] border border-primary/60 bg-primary/15 text-primary hover:bg-primary/25 font-data-mono text-[12px] font-semibold tracking-wider uppercase shadow-[0_0_15px_rgba(34,211,238,0.25)] transition-all cursor-pointer whitespace-nowrap shrink-0"
         >
           <span className="material-symbols-outlined text-[18px]">person_add</span>
           <span>Create account</span>

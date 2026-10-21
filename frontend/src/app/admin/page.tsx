@@ -196,38 +196,36 @@ function AdminPageContent() {
   return (
     <div className="min-h-screen flex flex-col bg-surface-container-lowest text-on-surface">
       <TopBar user={user} />
-      <main className="flex-1 px-[16px] sm:px-[24px] py-[32px]">
-        <div className="mx-auto max-w-7xl">
-          <SidebarLayout items={ADMIN_NAV_ITEMS} activeKey={activeSection}>
-            {activeSection === "overview" && <AdminOverviewSection stats={stats} loading={statsLoading} />}
-            {activeSection === "analytics" && <AdminAnalyticsTabSection />}
-            {activeSection === "users" && (
-              <AdminUsersSection
-                users={users}
-                total={total}
-                page={page}
-                limit={limit}
-                search={search}
-                roleFilter={roleFilter}
-                statusFilter={statusFilter}
-                currentUserId={user?.id}
-                loading={usersLoading}
-                feedback={feedback}
-                onClearFeedback={() => setFeedback(null)}
-                onOpenCreateModal={handleOpenCreateModal}
-                onSearchChange={(val) => { setSearch(val); setPage(1); }}
-                onRoleFilterChange={(val) => { setRoleFilter(val); setPage(1); }}
-                onStatusFilterChange={(val) => { setStatusFilter(val); setPage(1); }}
-                onPageChange={setPage}
-                onLimitChange={(newLimit) => { setLimit(newLimit); setPage(1); }}
-                onOpenConfirm={(target, action) => setConfirmDialog({ isOpen: true, targetUser: target, action })}
-                onStatusChange={handleStatusChange}
-              />
-            )}
-            {activeSection === "verification" && <AdminVerificationTabSection />}
-            {activeSection === "login-log" && <AdminLoginLogTabSection />}
-          </SidebarLayout>
-        </div>
+      <main className="flex-1 w-full">
+        <SidebarLayout items={ADMIN_NAV_ITEMS} activeKey={activeSection}>
+          {activeSection === "overview" && <AdminOverviewSection stats={stats} loading={statsLoading} />}
+          {activeSection === "analytics" && <AdminAnalyticsTabSection />}
+          {activeSection === "users" && (
+            <AdminUsersSection
+              users={users}
+              total={total}
+              page={page}
+              limit={limit}
+              search={search}
+              roleFilter={roleFilter}
+              statusFilter={statusFilter}
+              currentUserId={user?.id}
+              loading={usersLoading}
+              feedback={feedback}
+              onClearFeedback={() => setFeedback(null)}
+              onOpenCreateModal={handleOpenCreateModal}
+              onSearchChange={(val) => { setSearch(val); setPage(1); }}
+              onRoleFilterChange={(val) => { setRoleFilter(val); setPage(1); }}
+              onStatusFilterChange={(val) => { setStatusFilter(val); setPage(1); }}
+              onPageChange={setPage}
+              onLimitChange={(newLimit) => { setLimit(newLimit); setPage(1); }}
+              onOpenConfirm={(target, action) => setConfirmDialog({ isOpen: true, targetUser: target, action })}
+              onStatusChange={handleStatusChange}
+            />
+          )}
+          {activeSection === "verification" && <AdminVerificationTabSection />}
+          {activeSection === "login-log" && <AdminLoginLogTabSection />}
+        </SidebarLayout>
       </main>
 
       <CreateOfficialModal

@@ -119,17 +119,17 @@ export function AdminUserTable({
 
       {/* Users Table */}
       <div className="overflow-x-auto mt-[16px]">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-left border-collapse table-auto">
           <thead>
             <tr className="border-b border-white/10 text-[11px] font-data-mono uppercase tracking-wider text-on-surface-variant">
-              <th className="py-[12px] px-[12px]">User</th>
-              <th className="py-[12px] px-[12px]">Email</th>
-              <th className="py-[12px] px-[12px]">Role</th>
-              <th className="py-[12px] px-[12px]">City</th>
-              <th className="py-[12px] px-[12px]">Status</th>
-              <th className="py-[12px] px-[12px]">Created</th>
-              <th className="py-[12px] px-[12px]">Last Login</th>
-              <th className="py-[12px] px-[12px] text-right">Actions</th>
+              <th className="py-[12px] px-[8px] xl:px-[12px] max-w-[220px]">User</th>
+              <th className="py-[12px] px-[8px] xl:px-[12px] whitespace-nowrap">Email</th>
+              <th className="py-[12px] px-[8px] xl:px-[12px] whitespace-nowrap">Role</th>
+              <th className="py-[12px] px-[8px] xl:px-[12px] whitespace-nowrap">City</th>
+              <th className="py-[12px] px-[8px] xl:px-[12px] whitespace-nowrap">Status</th>
+              <th className="py-[12px] px-[8px] xl:px-[12px] whitespace-nowrap">Created</th>
+              <th className="py-[12px] px-[8px] xl:px-[12px] whitespace-nowrap">Last Login</th>
+              <th className="py-[12px] px-[8px] xl:px-[12px] text-right whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5 text-[13px]">
@@ -154,23 +154,23 @@ export function AdminUserTable({
                 return (
                   <tr key={item.id} className="hover:bg-white/[0.02] transition-colors">
                     {/* Column 0: Full Name & ID */}
-                    <td className="py-[12px] px-[12px]">
-                      <div className="flex items-center gap-[8px] flex-wrap">
-                        <span className="font-semibold text-foreground">{displayName}</span>
+                    <td className="py-[12px] px-[8px] xl:px-[12px] max-w-[220px] break-words">
+                      <div className="flex items-center gap-[6px] flex-wrap">
+                        <span className="font-semibold text-foreground break-words">{displayName}</span>
                         {isSelf && (
-                          <span className="px-[6px] py-[1px] rounded text-[10px] font-data-mono border border-primary/40 bg-primary/10 text-primary">
+                          <span className="px-[6px] py-[1px] rounded text-[10px] font-data-mono border border-primary/40 bg-primary/10 text-primary whitespace-nowrap">
                             YOU
                           </span>
                         )}
                         {item.is_demo && (
-                          <span className="px-[6px] py-[1px] rounded text-[10px] font-data-mono border border-white/20 bg-white/5 text-on-surface-variant">
+                          <span className="px-[6px] py-[1px] rounded text-[10px] font-data-mono border border-white/20 bg-white/5 text-on-surface-variant whitespace-nowrap">
                             DEMO
                           </span>
                         )}
                         {isFlaggedInactive && (
                           <span
                             data-testid="inactive-20-badge"
-                            className="px-[6px] py-[1px] rounded text-[10px] font-data-mono border border-cyan-400/30 bg-cyan-950/40 text-cyan-300 font-medium"
+                            className="px-[6px] py-[1px] rounded text-[10px] font-data-mono border border-cyan-400/30 bg-cyan-950/40 text-cyan-300 font-medium whitespace-nowrap"
                           >
                             Inactive 20+ days
                           </span>
@@ -180,34 +180,34 @@ export function AdminUserTable({
                     </td>
 
                     {/* Column 1: Email (Matches test_j5 td[1]) */}
-                    <td className="py-[12px] px-[12px] font-data-mono text-[12px] text-foreground">
+                    <td className="py-[12px] px-[8px] xl:px-[12px] font-data-mono text-[12px] text-foreground whitespace-nowrap">
                       {item.email}
                     </td>
 
                     {/* Column 2: Role */}
-                    <td className="py-[12px] px-[12px]">
-                      <span className="inline-block px-[8px] py-[2px] rounded-[6px] bg-surface-muted/60 border border-white/10 text-[12px] font-sans font-medium text-foreground">
+                    <td className="py-[12px] px-[8px] xl:px-[12px] whitespace-nowrap">
+                      <span className="inline-block whitespace-nowrap px-[8px] py-[2px] rounded-[6px] bg-surface-muted/60 border border-white/10 text-[12px] font-sans font-medium text-foreground">
                         {item.role}
                       </span>
                     </td>
 
                     {/* Column 3: City */}
-                    <td className="py-[12px] px-[12px] font-data-mono text-[12px] text-on-surface-variant capitalize">
+                    <td className="py-[12px] px-[8px] xl:px-[12px] font-data-mono text-[12px] text-on-surface-variant capitalize whitespace-nowrap">
                       {item.city || "—"}
                     </td>
 
                     {/* Column 4: Status (Matches test_j4 input aria-label) */}
-                    <td className="py-[12px] px-[12px]">
-                      <div className="flex items-center gap-[8px]">
+                    <td className="py-[12px] px-[8px] xl:px-[12px] whitespace-nowrap">
+                      <div className="flex items-center gap-[8px] whitespace-nowrap">
                         <input
                           type="checkbox"
                           aria-label={`Active status for ${displayName}`}
                           checked={item.is_active}
                           disabled={isSelf}
                           onChange={(e) => onStatusChange(item.id, e.target.checked)}
-                          className="h-[16px] w-[16px] accent-primary rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="h-[16px] w-[16px] accent-primary rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                         />
-                        <span className={`inline-block px-[8px] py-[2px] rounded-full text-[10px] font-data-mono font-medium ${
+                        <span className={`inline-block whitespace-nowrap px-[8px] py-[2px] rounded-full text-[10px] font-data-mono font-medium ${
                           item.is_active
                             ? "bg-success/10 text-success border border-success/30"
                             : "bg-danger/10 text-danger border border-danger/30"
@@ -218,17 +218,17 @@ export function AdminUserTable({
                     </td>
 
                     {/* Column 5: Created Date */}
-                    <td className="py-[12px] px-[12px] font-data-mono text-[11px] text-on-surface-variant">
+                    <td className="py-[12px] px-[8px] xl:px-[12px] font-data-mono text-[11px] text-on-surface-variant whitespace-nowrap">
                       {item.created_at ? item.created_at.slice(0, 10) : "—"}
                     </td>
 
                     {/* Column 6: Last Login */}
-                    <td className="py-[12px] px-[12px] font-data-mono text-[11px] text-on-surface-variant">
+                    <td className="py-[12px] px-[8px] xl:px-[12px] font-data-mono text-[11px] text-on-surface-variant whitespace-nowrap">
                       {item.last_login_at ? item.last_login_at.slice(0, 10) : "Never"}
                     </td>
 
                     {/* Column 7: Actions */}
-                    <td className="py-[12px] px-[12px] text-right">
+                    <td className="py-[12px] px-[8px] xl:px-[12px] text-right whitespace-nowrap">
                       {isSelf ? (
                         <span className="text-[11px] font-data-mono text-on-surface-variant/50 italic">Protected</span>
                       ) : item.is_active ? (
@@ -236,7 +236,7 @@ export function AdminUserTable({
                           type="button"
                           id={`deactivate-user-${item.id}-btn`}
                           onClick={() => onOpenConfirm(item, "deactivate")}
-                          className="h-[28px] px-[10px] rounded-[6px] border border-danger/40 bg-danger/10 text-danger hover:bg-danger/20 font-data-mono text-[11px] font-medium transition-colors"
+                          className="inline-flex items-center justify-center whitespace-nowrap h-[28px] px-[10px] rounded-[6px] border border-danger/40 bg-danger/10 text-danger hover:bg-danger/20 font-data-mono text-[11px] font-medium transition-colors"
                         >
                           Deactivate
                         </button>
@@ -245,7 +245,7 @@ export function AdminUserTable({
                           type="button"
                           id={`reactivate-user-${item.id}-btn`}
                           onClick={() => onOpenConfirm(item, "reactivate")}
-                          className="h-[28px] px-[10px] rounded-[6px] border border-success/40 bg-success/10 text-success hover:bg-success/20 font-data-mono text-[11px] font-medium transition-colors"
+                          className="inline-flex items-center justify-center whitespace-nowrap h-[28px] px-[10px] rounded-[6px] border border-success/40 bg-success/10 text-success hover:bg-success/20 font-data-mono text-[11px] font-medium transition-colors"
                         >
                           Reactivate
                         </button>
