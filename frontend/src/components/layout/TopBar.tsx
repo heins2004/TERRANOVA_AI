@@ -42,8 +42,7 @@ export function TopBar({
 
   const isHomeActive = pathname === "/";
   const isProfileActive = pathname === "/profile";
-  const isGovActive = pathname.startsWith("/gov") && pathname !== "/gov/new";
-  const isNewProjectActive = pathname === "/gov/new";
+  const isGovActive = pathname.startsWith("/gov");
   const isPlannerActive = pathname.startsWith("/planner");
   const isAdminActive = pathname.startsWith("/admin");
 
@@ -91,41 +90,22 @@ export function TopBar({
           {isLoggedIn && !currentUser?.must_change_password && (
             <>
               {currentUser?.role === "Government Official" && (
-                <>
-                  <Link
-                    href="/gov"
-                    id="topbar-gov-link"
-                    aria-label="Government Portal"
-                    aria-current={isGovActive ? "page" : undefined}
-                    className={`hidden md:inline-flex h-[32px] items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
-                      isGovActive
-                        ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
-                        : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-[16px] pointer-events-none" aria-hidden="true">
-                      account_balance
-                    </span>
-                    <span className="pointer-events-none">Gov Portal</span>
-                  </Link>
-
-                  <Link
-                    href="/gov/new"
-                    id="topbar-new-project-link"
-                    aria-label="New Project"
-                    aria-current={isNewProjectActive ? "page" : undefined}
-                    className={`hidden md:inline-flex h-[32px] items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
-                      isNewProjectActive
-                        ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
-                        : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-[16px] pointer-events-none" aria-hidden="true">
-                      add_circle
-                    </span>
-                    <span className="pointer-events-none">New project</span>
-                  </Link>
-                </>
+                <Link
+                  href="/gov"
+                  id="topbar-gov-link"
+                  aria-label="Government Portal"
+                  aria-current={isGovActive ? "page" : undefined}
+                  className={`hidden md:inline-flex h-[32px] items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
+                    isGovActive
+                      ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
+                      : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[16px] pointer-events-none" aria-hidden="true">
+                    account_balance
+                  </span>
+                  <span className="pointer-events-none">Gov Portal</span>
+                </Link>
               )}
 
               {currentUser?.role === "Urban Planner" && (

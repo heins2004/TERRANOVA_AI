@@ -142,18 +142,6 @@ export function HamburgerMenuItems({
             <span className="pointer-events-none">Government portal</span>
           </Link>
           <Link
-            href="/gov/new"
-            role="menuitem"
-            id="menu-item-new-project"
-            onClick={onLinkClick}
-            className="flex h-[38px] items-center gap-[10px] rounded-lg px-[12px] font-body-md text-[13px] text-on-surface transition-colors hover:bg-white/10 hover:text-primary"
-          >
-            <span className="material-symbols-outlined text-[18px] text-on-surface-variant pointer-events-none">
-              add_circle
-            </span>
-            <span className="pointer-events-none">New project</span>
-          </Link>
-          <Link
             href="/"
             role="menuitem"
             id="menu-item-home"
