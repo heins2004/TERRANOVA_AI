@@ -11,7 +11,7 @@ import { ModalHeaderBar } from "./ModalHeaderBar";
 
 export interface FullScreenGovProps {
   mode: "gov";
-  city?: string;
+  city?: string | null;
   initialCenterLat: number | null;
   initialCenterLng: number | null;
   initialRadiusKm: number | null;
@@ -30,7 +30,7 @@ export interface FullScreenPlannerProps {
 
 export interface FullScreenVenuePinProps {
   mode: "venue_pin";
-  city?: string;
+  city?: string | null;
   initialPinLat: number | null;
   initialPinLng: number | null;
   onConfirm: (lat: number | null, lng: number | null) => void;

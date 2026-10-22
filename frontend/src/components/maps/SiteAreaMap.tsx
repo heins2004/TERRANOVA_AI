@@ -42,7 +42,7 @@ function MapClickHandler({ onClick }: { onClick: (latlng: L.LatLng) => void }) {
 
 export interface SiteAreaMapGovProps {
   mode: "gov";
-  city?: string;
+  city?: string | null;
   centerLat: number | null;
   centerLng: number | null;
   radiusKm: number | null;
@@ -53,7 +53,7 @@ export interface SiteAreaMapGovProps {
 
 export interface SiteAreaMapPlannerProps {
   mode: "planner";
-  city?: string;
+  city?: string | null;
   circleCenterLat: number;
   circleCenterLng: number;
   circleRadiusKm: number;
