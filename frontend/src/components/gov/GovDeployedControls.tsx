@@ -14,6 +14,7 @@ interface GovDeployedControlsProps {
   onExecute: (name: string, fn: () => Promise<unknown>) => Promise<void>;
   onOpenReason: (action: "halt" | "recall", title: string) => void;
   onError: (err: string) => void;
+  extraAction?: React.ReactNode;
 }
 
 export function GovDeployedControls({
@@ -22,6 +23,7 @@ export function GovDeployedControls({
   onExecute,
   onOpenReason,
   onError,
+  extraAction,
 }: GovDeployedControlsProps) {
   const [extendDate, setExtendDate] = useState("");
 
@@ -60,7 +62,7 @@ export function GovDeployedControls({
             </button>
           </div>
 
-          <div className="flex flex-wrap gap-[10px] pt-[8px] border-t border-white/10">
+          <div className="flex flex-wrap items-center gap-[10px] pt-[8px] border-t border-white/10">
             <button
               type="button"
               id="gov-in-progress-btn"
@@ -86,20 +88,30 @@ export function GovDeployedControls({
             >
               Recall Project
             </button>
+            {extraAction}
           </div>
         </div>
       )}
 
       {project.stage === "InProgress" && (
-        <button
-          type="button"
-          id="gov-complete-btn"
-          disabled={loadingAction === "complete"}
-          onClick={() => void onExecute("complete", () => completeProject(project.id))}
-          className="rounded border border-primary-container bg-primary-container/25 px-[16px] py-[10px] font-data-mono text-[12px] font-semibold text-primary uppercase hover:bg-primary-container/35 disabled:opacity-50"
-        >
-          Mark Project Completed
-        </button>
+        <div className="flex flex-wrap items-center gap-[10px]">
+          <button
+            type="button"
+            id="gov-complete-btn"
+            disabled={loadingAction === "complete"}
+            onClick={() => void onExecute("complete", () => completeProject(project.id))}
+            className="rounded border border-primary-container bg-primary-container/25 px-[16px] py-[10px] font-data-mono text-[12px] font-semibold text-primary uppercase hover:bg-primary-container/35 disabled:opacity-50"
+          >
+            Mark Project Completed
+          </button>
+          {extraAction}
+        </div>
+      )}
+
+      {project.stage !== "OpenForResponse" && project.stage !== "InProgress" && extraAction && (
+        <div className="flex flex-wrap items-center gap-[10px]">
+          {extraAction}
+        </div>
       )}
 
       {project.halt_reason && (

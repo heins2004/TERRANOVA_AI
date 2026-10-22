@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, Suspense } from "react";
 import { useAuth } from "@/components/layout/auth-provider";
 import { TopBar } from "@/components/layout/TopBar";
 import { getGovProject, getProjectEvents, GovProject, GovProjectEvent } from "@/services/gov";
-import { SidebarItem, SidebarLayout } from "@/components/layout/SidebarLayout";
 import { GovProjectHeader } from "@/components/gov/GovProjectHeader";
 import { GovDetailsSection } from "@/components/gov/GovDetailsSection";
 import { GovSiteAreaTabSection } from "@/components/gov/GovSiteAreaTabSection";
@@ -15,34 +14,10 @@ import { GovConsultationsTabSection } from "@/components/gov/GovConsultationsTab
 import { GovTimelineTabSection } from "@/components/gov/GovTimelineTabSection";
 import { GovEditModal } from "@/components/gov/GovEditModal";
 
-const GOV_NAV_ITEMS: SidebarItem[] = [
-  { key: "details", label: "Details", icon: "info" },
-  { key: "site-area", label: "Site area", icon: "location_on" },
-  { key: "planner", label: "Planner", icon: "person" },
-  { key: "consultations", label: "Consultations", icon: "forum" },
-  { key: "timeline", label: "Timeline", icon: "history" },
-];
-
-const VALID_SECTIONS = [
-  "details",
-  "site-area",
-  "planner",
-  "consultations",
-  "timeline",
-] as const;
-
-type GovSection = (typeof VALID_SECTIONS)[number];
-
 function GovProjectDetailContent() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const projectId = Number(params.id);
-
-  const rawSection = searchParams.get("section");
-  const activeSection: GovSection = VALID_SECTIONS.includes(rawSection as GovSection)
-    ? (rawSection as GovSection)
-    : "details";
 
   const { user, isReady, isAuthenticated } = useAuth();
   const [project, setProject] = useState<GovProject | null>(null);
@@ -119,28 +94,20 @@ function GovProjectDetailContent() {
   return (
     <div className="min-h-screen flex flex-col bg-surface-container-lowest text-on-surface">
       <TopBar user={user} />
-      <main className="flex-1 w-full">
-        <SidebarLayout
-          items={GOV_NAV_ITEMS}
-          activeKey={activeSection}
-          basePath={`/gov/${projectId}`}
-          navTitle="Project Menu"
-          idPrefix="gov"
-        >
-          <div className="space-y-[24px]">
-            <GovProjectHeader
-              project={project}
-              onRefresh={loadData}
-              onOpenEdit={() => setShowEditModal(true)}
-            />
+      <main className="flex-1 w-full max-w-7xl mx-auto px-[16px] md:px-[24px] py-[24px] md:py-[32px]">
+        <div className="space-y-[32px]">
+          <GovProjectHeader
+            project={project}
+            onRefresh={loadData}
+            onOpenEdit={() => setShowEditModal(true)}
+          />
 
-            {activeSection === "details" && <GovDetailsSection project={project} />}
-            {activeSection === "site-area" && <GovSiteAreaTabSection project={project} />}
-            {activeSection === "planner" && <GovPlannerTabSection project={project} onRefresh={loadData} />}
-            {activeSection === "consultations" && <GovConsultationsTabSection project={project} />}
-            {activeSection === "timeline" && <GovTimelineTabSection project={project} events={events} />}
-          </div>
-        </SidebarLayout>
+          <GovDetailsSection project={project} />
+          <GovSiteAreaTabSection project={project} />
+          <GovPlannerTabSection project={project} onRefresh={loadData} />
+          <GovConsultationsTabSection project={project} />
+          <GovTimelineTabSection project={project} events={events} />
+        </div>
       </main>
 
       {/* Edit Modal (Draft / Approved final edit) */}
