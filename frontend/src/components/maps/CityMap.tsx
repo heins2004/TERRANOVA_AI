@@ -1,13 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import L from "leaflet";
-import { useEffect, useMemo, useState } from "react";
-import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import { useState } from "react";
+import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
-import { projectStatusClasses, projectStatusMarkerColors } from "@/components/projects/StatusBadge";
-import { getProjects, Project } from "@/services/projects";
 import OsmReferenceLayerManager, { ActiveOsmLayers } from "@/components/maps/OsmReferenceLayerManager";
 
 const cityCenter: [number, number] = [20.5937, 78.9629];
@@ -35,25 +31,8 @@ const LABEL_LAYERS: Record<Basemap, string> = {
   satellite: "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
 };
 
-function markerIcon(color: string) {
-  return L.divIcon({
-    className: "terranova-map-marker",
-    html: `<span class="terranova-map-marker__dot terranova-map-marker__dot--project" style="--marker-color:${color}"></span>`,
-    iconSize: [22, 22],
-    iconAnchor: [11, 11],
-    popupAnchor: [0, -12],
-  });
-}
-
-function hasCoordinates(item: { location_lat: number | null; location_lng: number | null }) {
-  return item.location_lat !== null && item.location_lng !== null;
-}
-
 export function CityMap() {
   const [activeBasemap, setActiveBasemap] = useState<Basemap>("dark");
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [showProjects, setShowProjects] = useState(true);
-  const [error, setError] = useState("");
   const [activeOsmLayers, setActiveOsmLayers] = useState<ActiveOsmLayers>({
     road: false,
     school: false,
@@ -62,21 +41,9 @@ export function CityMap() {
   const [isOsmLoading, setIsOsmLoading] = useState(false);
   const [isTooZoomedOut, setIsTooZoomedOut] = useState(false);
 
-  useEffect(() => {
-    getProjects()
-      .then((projectRecords) => {
-        setProjects(projectRecords);
-      })
-      .catch((caught) => setError(caught instanceof Error ? caught.message : "Unable to load map records."));
-  }, []);
-
-  const locatedProjects = useMemo(() => projects.filter(hasCoordinates), [projects]);
-  const mapCenter = locatedProjects[0];
-  const center: [number, number] = mapCenter ? [mapCenter.location_lat!, mapCenter.location_lng!] : cityCenter;
-
   return (
     <div className="relative h-full w-full">
-      <MapContainer center={center} className="h-full w-full" scrollWheelZoom zoom={mapCenter ? 13 : 5}>
+      <MapContainer center={cityCenter} className="h-full w-full" scrollWheelZoom zoom={5}>
         {/*
           IMPORTANT: no `key` prop here. react-leaflet's TileLayer already updates `url` and
           `attribution` in place (via Leaflet's internal setUrl) when these props change —
@@ -88,32 +55,6 @@ export function CityMap() {
           url={BASEMAPS[activeBasemap].url}
         />
         <TileLayer url={LABEL_LAYERS[activeBasemap]} />
-        {showProjects &&
-          locatedProjects.map((project) => (
-            <Marker
-              icon={markerIcon(projectStatusMarkerColors[project.status] ?? projectStatusMarkerColors.Proposed)}
-              key={`project-${project.id}`}
-              position={[project.location_lat!, project.location_lng!]}
-            >
-              <Popup>
-                <div className="terranova-popup">
-                  <p className="font-data-mono text-[11px] uppercase tracking-wider text-on-surface-variant">
-                    Project
-                  </p>
-                  <p className="mt-[4px] font-display-md text-[18px] text-on-surface">{project.title}</p>
-                  <span
-                    className={`mt-[10px] inline-block rounded-full border px-[8px] py-[3px] font-data-mono text-[10px] uppercase ${projectStatusClasses[project.status] ?? projectStatusClasses.Proposed
-                      }`}
-                  >
-                    {project.status}
-                  </span>
-                  <Link className="mt-[14px] block font-data-mono text-[11px] text-primary" href={`/projects/${project.id}`}>
-                    OPEN PROJECT &rarr;
-                  </Link>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
         <OsmReferenceLayerManager
           activeLayers={activeOsmLayers}
           onLoadingChange={setIsOsmLoading}
@@ -125,35 +66,26 @@ export function CityMap() {
         <p className="font-label-caps text-label-caps tracking-widest text-primary">BASEMAP</p>
         <div className="mt-[10px] grid grid-cols-2 gap-[4px] rounded-lg border border-white/10 bg-surface-container-lowest/80 p-[3px]">
           <button
-            className={`rounded-md py-[6px] text-center font-data-mono text-[11px] uppercase transition-all ${activeBasemap === "dark"
+            className={`rounded-md py-[6px] text-center font-data-mono text-[11px] uppercase transition-all ${
+              activeBasemap === "dark"
                 ? "border border-primary-container/50 bg-primary-container/20 font-medium text-primary shadow-sm"
                 : "border border-transparent text-on-surface-variant hover:text-on-surface"
-              }`}
+            }`}
             onClick={() => setActiveBasemap("dark")}
             type="button"
           >
             Dark
           </button>
           <button
-            className={`rounded-md py-[6px] text-center font-data-mono text-[11px] uppercase transition-all ${activeBasemap === "satellite"
+            className={`rounded-md py-[6px] text-center font-data-mono text-[11px] uppercase transition-all ${
+              activeBasemap === "satellite"
                 ? "border border-primary-container/50 bg-primary-container/20 font-medium text-primary shadow-sm"
                 : "border border-transparent text-on-surface-variant hover:text-on-surface"
-              }`}
+            }`}
             onClick={() => setActiveBasemap("satellite")}
             type="button"
           >
             Satellite
-          </button>
-        </div>
-        <div className="mt-[12px] flex flex-col gap-[8px]">
-          <p className="font-label-caps text-label-caps tracking-widest text-primary">PROJECT DATA</p>
-          <button
-            className={`block w-full border px-[12px] py-[8px] text-left font-data-mono text-[11px] rounded-lg ${showProjects ? "border-primary-container/60 text-primary bg-primary-container/10" : "border-white/15 text-on-surface-variant"
-              }`}
-            onClick={() => setShowProjects((current) => !current)}
-            type="button"
-          >
-            {showProjects ? "\u2713" : "\u25CB"} PROJECTS ({locatedProjects.length})
           </button>
         </div>
 
@@ -219,23 +151,6 @@ export function CityMap() {
             </p>
           )}
         </div>
-
-        {error ? (
-          error.includes("Authentication required") || error.includes("401") ? (
-            <div className="mt-[12px]">
-              <p className="text-on-surface">Log in to see this</p>
-              <Link className="mt-[8px] inline-block font-semibold text-primary hover:underline" href="/login">
-                Log in
-              </Link>
-            </div>
-          ) : (
-            <p className="mt-[12px] font-data-mono text-[11px] text-danger">{error}</p>
-          )
-        ) : !locatedProjects.length ? (
-          <p className="mt-[12px] font-data-mono text-[11px] leading-5 text-on-surface-variant">
-            NO RECORDS WITH COORDINATES YET.
-          </p>
-        ) : null}
       </aside>
     </div>
   );
