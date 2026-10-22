@@ -11,7 +11,7 @@ export function MapBoundsController({
   centerLng,
   radiusMeters,
 }: {
-  city?: string;
+  city?: string | null;
   centerLat: number | null;
   centerLng: number | null;
   radiusMeters?: number;
