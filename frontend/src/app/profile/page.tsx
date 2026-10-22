@@ -10,14 +10,12 @@ import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
 import { RoleSummaryCard } from "@/components/profile/RoleSummaryCard";
 import { ChangePasswordCard } from "@/components/profile/ChangePasswordCard";
 import { FollowingSection } from "@/components/profile/FollowingSection";
-import { CitizenCommentsSection } from "@/components/profile/CitizenCommentsSection";
 import { PlannerCredentialsSection } from "@/components/profile/PlannerCredentialsSection";
 import { UserProfile, getProfile } from "@/services/profile";
 
 const PROFILE_NAV_ITEMS: SidebarItem[] = [
   { key: "overview", label: "Overview", icon: "badge" },
   { key: "following", label: "Following", icon: "bookmark" },
-  { key: "my-comments", label: "My comments", icon: "chat" },
   { key: "edit-profile", label: "Edit profile", icon: "edit" },
   { key: "change-password", label: "Change password", icon: "lock" },
 ];
@@ -25,7 +23,6 @@ const PROFILE_NAV_ITEMS: SidebarItem[] = [
 const VALID_SECTIONS = [
   "overview",
   "following",
-  "my-comments",
   "edit-profile",
   "change-password",
 ] as const;
@@ -87,24 +84,6 @@ function ProfileContent() {
       return prev;
     });
   }
-
-  function handleCommentCountChanged(newCount: number) {
-    setProfile((prev) => {
-      if (!prev) return prev;
-      if (prev.role === "Citizen" && prev.counts && "comments" in prev.counts) {
-        return {
-          ...prev,
-          counts: {
-            ...prev.counts,
-            comments: newCount,
-          },
-        };
-      }
-      return prev;
-    });
-  }
-
-  const isCitizen = profile?.role === "Citizen";
 
   if (!isReady || (!isAuthenticated && isReady)) {
     return (
@@ -170,20 +149,6 @@ function ProfileContent() {
                 <FollowingSection
                   onFollowCountChanged={handleFollowCountChanged}
                 />
-              )}
-
-              {activeSection === "my-comments" && (
-                isCitizen ? (
-                  <CitizenCommentsSection
-                    onCommentCountChanged={handleCommentCountChanged}
-                  />
-                ) : (
-                  <div className="rounded-xl border border-white/10 bg-white/[0.02] p-[32px] text-center">
-                    <p className="font-data-mono text-sm text-on-surface-variant">
-                      Comments are only available for Citizen accounts.
-                    </p>
-                  </div>
-                )
               )}
 
               {activeSection === "edit-profile" && (
