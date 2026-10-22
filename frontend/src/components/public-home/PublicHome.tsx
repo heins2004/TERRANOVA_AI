@@ -561,7 +561,7 @@ export function PublicHome() {
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[16px] [perspective:1400px] [transform-style:preserve-3d]"
         >
           {/* Big Map Card (Leaflet Preview - The ONLY link to /map) */}
-          <MapPreviewCard projects={projects} total={total} />
+          <MapPreviewCard />
 
           {/* Error State with Retry Button */}
           {error && (

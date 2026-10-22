@@ -1,13 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import L from "leaflet";
-import { useMemo } from "react";
-import { MapContainer, Marker, TileLayer } from "react-leaflet";
+import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-
-import { projectStatusMarkerColors } from "@/components/projects/StatusBadge";
-import { PublicProject } from "@/services/publicProjects";
 
 const BASEMAP_URL =
   "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}";
@@ -17,42 +12,7 @@ const BASEMAP_ATTRIBUTION = "Tiles &copy; Esri";
 
 const INDIA_CENTER: [number, number] = [21.5, 78.9629];
 
-function markerIcon(color: string) {
-  return L.divIcon({
-    className: "terranova-map-marker",
-    html: `<span class="terranova-map-marker__dot terranova-map-marker__dot--project" style="--marker-color:${color}"></span>`,
-    iconSize: [22, 22],
-    iconAnchor: [11, 11],
-  });
-}
-
-function getPinColor(stage: string): string {
-  if (stage === "Halted" || stage === "OnHold") {
-    return projectStatusMarkerColors.OnHold;
-  }
-  if (stage === "InProgress") {
-    return projectStatusMarkerColors.InProgress;
-  }
-  if (stage === "Completed") {
-    return projectStatusMarkerColors.Completed;
-  }
-  return projectStatusMarkerColors.Approved;
-}
-
-type MapPreviewCardProps = {
-  projects: PublicProject[];
-  total: number;
-};
-
-export function MapPreviewCard({ projects, total }: MapPreviewCardProps) {
-  const locatedProjects = useMemo(
-    () =>
-      projects.filter(
-        (p) => p.location_lat !== null && p.location_lng !== null
-      ),
-    [projects]
-  );
-
+export function MapPreviewCard() {
   return (
     <Link
       href="/map"
@@ -60,7 +20,7 @@ export function MapPreviewCard({ projects, total }: MapPreviewCardProps) {
       aria-label="Open map"
       className="map-card group relative col-span-1 sm:col-span-2 row-span-1 sm:row-span-2 flex h-[360px] sm:h-[400px] flex-col justify-end overflow-hidden rounded-[16px] border border-white/10 bg-surface-container-lowest p-[22px] backdrop-blur-[20px] transition-all duration-300 hover:border-primary-container/60 hover:shadow-[0_0_30px_-6px_rgba(34,211,238,0.4)] hover:scale-[1.01] focus-visible:border-primary-container focus-visible:outline-none cursor-pointer"
     >
-      {/* Non-interactive Leaflet Map with loaded tiles and pins */}
+      {/* Non-interactive Leaflet Map with loaded tiles */}
       <div className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-hidden">
         <MapContainer
           center={INDIA_CENTER}
@@ -77,13 +37,6 @@ export function MapPreviewCard({ projects, total }: MapPreviewCardProps) {
         >
           <TileLayer attribution={BASEMAP_ATTRIBUTION} url={BASEMAP_URL} />
           <TileLayer url={LABEL_LAYER_URL} />
-          {locatedProjects.map((project) => (
-            <Marker
-              key={`preview-pin-${project.id}`}
-              position={[project.location_lat!, project.location_lng!]}
-              icon={markerIcon(getPinColor(project.stage))}
-            />
-          ))}
         </MapContainer>
       </div>
 
@@ -104,8 +57,7 @@ export function MapPreviewCard({ projects, total }: MapPreviewCardProps) {
           India map
         </h3>
         <p className="font-body-md text-[13px] text-on-surface-variant max-w-md">
-          {total} project{total === 1 ? "" : "s"} shown. Open the interactive
-          map to inspect sites and spatial telemetry.
+          Open the interactive map to explore all projects.
         </p>
       </div>
     </Link>
