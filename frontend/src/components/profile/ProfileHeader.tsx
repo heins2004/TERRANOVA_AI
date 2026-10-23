@@ -1,6 +1,7 @@
 "use client";
 
 import { Avatar } from "@/components/ui/Avatar";
+import { CopyButton } from "@/components/common/CopyButton";
 import { UserProfile } from "@/services/profile";
 
 type ProfileHeaderProps = {
@@ -78,7 +79,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
         </div>
 
         {/* Read-only extras info card if present */}
-        {(profile.organization || profile.designation || profile.expertise) && (
+        {(profile.organization || profile.designation || profile.expertise || profile.id != null) && (
           <div className="flex flex-col gap-[4px] rounded-xl border border-white/5 bg-white/[0.02] p-[12px] sm:min-w-[220px]">
             {profile.organization && (
               <div className="text-[12px]">
@@ -98,6 +99,19 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
                 <p className="font-body-md font-medium text-on-surface truncate">
                   {profile.designation}
                 </p>
+              </div>
+            )}
+            {profile.id != null && (
+              <div id="profile-user-id-row" className="text-[12px]">
+                <span className="font-data-mono text-on-surface-variant/70 uppercase tracking-wider text-[10px]">
+                  {profile.role === "Urban Planner" ? "PLANNER ID" : "USER ID"}:
+                </span>
+                <div className="flex items-center gap-[8px]">
+                  <p className="font-body-md font-medium text-on-surface">
+                    {profile.id}
+                  </p>
+                  <CopyButton text={profile.id} label="Copy ID" />
+                </div>
               </div>
             )}
             {profile.expertise && (

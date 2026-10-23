@@ -142,9 +142,15 @@ export function GovPlannerSearch({ projectId, isReassign = false, onSuccess, has
                 >
                   <div>
                     <p className="text-sm font-medium text-white">{p.name}</p>
-                    <p className="font-data-mono text-[11px] text-on-surface-variant">
-                      City: {p.city ?? "National"}
-                    </p>
+                    <div className="flex items-center gap-[8px] font-data-mono text-[11px] text-on-surface-variant">
+                      <span>City: {p.city ?? "National"}</span>
+                      {p.id != null && (
+                        <>
+                          <span className="text-white/20">•</span>
+                          <span id={`gov-planner-id-${p.id}`}>ID {p.id}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                   <span className={`h-4 w-4 rounded-full border ${isSelected ? "border-primary bg-primary" : "border-white/30"}`} />
                 </div>

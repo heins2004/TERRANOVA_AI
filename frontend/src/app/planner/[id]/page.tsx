@@ -9,6 +9,7 @@ import { getPlannerProject, PlannerProject } from "@/services/planner";
 import { PlannerStageActions } from "@/components/planner/PlannerStageActions";
 import { PlannerEventsTimeline } from "@/components/planner/PlannerEventsTimeline";
 import { PlannerConsultationsList } from "@/components/planner/PlannerConsultationsList";
+import { CopyButton } from "@/components/common/CopyButton";
 
 function PlannerProjectDetailContent() {
   const router = useRouter();
@@ -104,6 +105,10 @@ function PlannerProjectDetailContent() {
                   <h1 className="mt-[6px] font-display-md text-[26px] font-semibold text-foreground">
                     {project.title}
                   </h1>
+                  <div id="planner-project-id-row" className="mt-[6px] flex flex-wrap items-center gap-[8px] font-data-mono text-xs text-on-surface-variant">
+                    <span>Project ID: {project.id}</span>
+                    <CopyButton text={project.id} label="Copy ID" />
+                  </div>
                   <p className="mt-[8px] max-w-3xl text-sm leading-relaxed text-on-surface-variant">
                     {project.description || "No project description provided."}
                   </p>

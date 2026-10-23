@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { CopyButton } from "@/components/common/CopyButton";
 import {
   approveProposal,
   cancelInvite,
@@ -97,6 +98,10 @@ export function GovProjectHeader({ project, onRefresh, onOpenEdit }: GovProjectH
             <h1 className="mt-[8px] font-sans text-[26px] font-bold text-white tracking-tight">
               {project.title}
             </h1>
+            <div id="gov-project-id-row" className="mt-[6px] flex flex-wrap items-center gap-[8px] font-data-mono text-xs text-on-surface-variant">
+              <span>Project ID: {project.id}</span>
+              <CopyButton text={project.id} label="Copy ID" />
+            </div>
             {project.description && (
               <p className="mt-[6px] text-sm text-on-surface-variant">
                 {project.description}
