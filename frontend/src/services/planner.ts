@@ -21,6 +21,9 @@ export interface PlannerProject {
   proposal_rejection_reason: string | null;
   created_by?: number | null;
   official_name?: string | null;
+  official_email?: string | null;
+  official_organization?: string | null;
+  official_designation?: string | null;
   site_area_lat?: number | null;
   site_area_lng?: number | null;
   site_area_radius_km?: number | null;

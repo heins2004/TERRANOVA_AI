@@ -219,7 +219,7 @@ def get_project_for_caller(
             )
         # If site was proposed, opening it transitions to Under consideration
         if project["stage"] == "Site proposed":
-            project = transition_project_stage(
+            transition_project_stage(
                 connection,
                 project_id=project_id,
                 actor_id=user.id,
@@ -227,6 +227,7 @@ def get_project_for_caller(
                 to_stage="Under consideration",
                 note="Project opened by official for consideration",
             )
+            project = project_repository.get_project_by_id(connection, project_id)
     elif user.role == "Urban Planner":
         active_invite = workflow_repository.get_active_project_invite(connection, project_id)
         is_assigned = project.get("planner_id") == user.id
@@ -255,6 +256,18 @@ def get_project_for_caller(
         project["site_area_lat"] = None
         project["site_area_lng"] = None
         project["site_area_radius_km"] = None
+
+    can_see_official = (
+        (user.role == "Government Official" and project.get("created_by") == user.id)
+        or (user.role == "Urban Planner" and (project.get("planner_id") == user.id or is_invited))
+        or (user.role == "Administrator")
+    )
+    if not can_see_official:
+        project = dict(project)
+        project["official_name"] = None
+        project["official_email"] = None
+        project["official_organization"] = None
+        project["official_designation"] = None
 
     return project
 
@@ -286,6 +299,18 @@ def list_projects_for_caller(
             p_dict["site_area_lat"] = None
             p_dict["site_area_lng"] = None
             p_dict["site_area_radius_km"] = None
+
+        can_see_official = (
+            (user.role == "Government Official" and p_dict.get("created_by") == user.id)
+            or (user.role == "Urban Planner" and p_dict.get("planner_id") == user.id)
+            or (user.role == "Administrator")
+        )
+        if not can_see_official:
+            p_dict["official_name"] = None
+            p_dict["official_email"] = None
+            p_dict["official_organization"] = None
+            p_dict["official_designation"] = None
+
         results.append(p_dict)
     return results
 

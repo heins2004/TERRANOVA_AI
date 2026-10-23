@@ -176,30 +176,40 @@ def get_projects_for_user(
     params: list[Any] = []
 
     if role == "Government Official":
-        clauses.append("created_by = %s")
+        clauses.append("p.created_by = %s")
         params.append(user_id)
     elif role == "Urban Planner":
-        clauses.append("planner_id = %s")
+        clauses.append("p.planner_id = %s")
         params.append(user_id)
     elif role == "Administrator":
-        clauses.append("stage = ANY(%s)")
+        clauses.append("p.stage = ANY(%s)")
         params.append(["OpenForResponse", "InProgress", "Completed", "Halted"])
     else:
         # Citizens see none via this internal management endpoint
         return []
 
     if status_filter:
-        clauses.append("status = %s")
+        clauses.append("p.status = %s")
         params.append(status_filter)
     if category:
-        clauses.append("category = %s")
+        clauses.append("p.category = %s")
         params.append(category)
     if city:
-        clauses.append("city = %s")
+        clauses.append("p.city = %s")
         params.append(city)
 
     where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
-    sql = f"SELECT * FROM projects{where} ORDER BY created_at DESC"
+    sql = f"""
+        SELECT p.*,
+               u.full_name AS official_name,
+               u.email AS official_email,
+               u.organization AS official_organization,
+               u.designation AS official_designation
+        FROM projects p
+        LEFT JOIN users u ON u.id = p.created_by
+        {where}
+        ORDER BY p.created_at DESC
+    """
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
         rows = cursor.fetchall()

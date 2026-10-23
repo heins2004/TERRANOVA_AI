@@ -162,3 +162,7 @@ class ProjectResponse(BaseModel):
     site_area_lat: float | None = None
     site_area_lng: float | None = None
     site_area_radius_km: Decimal | float | None = None
+    official_name: str | None = None
+    official_email: str | None = None
+    official_organization: str | None = None
+    official_designation: str | None = None

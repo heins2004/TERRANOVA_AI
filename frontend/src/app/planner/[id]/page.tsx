@@ -107,6 +107,30 @@ function PlannerProjectDetailContent() {
                   <p className="mt-[8px] max-w-3xl text-sm leading-relaxed text-on-surface-variant">
                     {project.description || "No project description provided."}
                   </p>
+                  {(project.official_name || project.official_email || project.official_organization || project.official_designation) && (
+                    <div id="planner-official-line" className="mt-[12px] flex flex-wrap items-center gap-[6px] text-xs font-data-mono text-on-surface-variant">
+                      <span>
+                        Government official: <strong className="text-foreground font-medium">{project.official_name || "Official"}</strong>
+                      </span>
+                      {(project.official_designation || project.official_organization) && (
+                        <span className="text-on-surface-variant">
+                          ({[project.official_designation, project.official_organization].filter(Boolean).join(", ")})
+                        </span>
+                      )}
+                      {project.official_email && (
+                        <>
+                          <span className="text-white/40">•</span>
+                          <a
+                            id="planner-official-email-link"
+                            href={`mailto:${project.official_email}`}
+                            className="text-cyan-400 underline hover:text-cyan-300"
+                          >
+                            {project.official_email}
+                          </a>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col items-end gap-[8px]">

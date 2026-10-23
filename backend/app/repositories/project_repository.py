@@ -62,7 +62,19 @@ def create_from_candidate_site(
 
 def get_project_by_id(connection: Connection, project_id: int) -> dict | None:
     with connection.cursor() as cursor:
-        cursor.execute("SELECT * FROM projects WHERE id = %s", (project_id,))
+        cursor.execute(
+            """
+            SELECT p.*,
+                   u.full_name AS official_name,
+                   u.email AS official_email,
+                   u.organization AS official_organization,
+                   u.designation AS official_designation
+            FROM projects p
+            LEFT JOIN users u ON u.id = p.created_by
+            WHERE p.id = %s
+            """,
+            (project_id,),
+        )
         return cursor.fetchone()
 
 
