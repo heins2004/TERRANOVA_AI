@@ -57,8 +57,6 @@ class ProjectCreate(BaseModel):
 
     @model_validator(mode="after")
     def validate_dates(self) -> "ProjectCreate":
-        if self.start_date and self.end_date and self.end_date < self.start_date:
-            raise ValueError("End date cannot be before start date.")
         area_fields = [self.site_area_lat, self.site_area_lng, self.site_area_radius_km]
         provided = sum(1 for f in area_fields if f is not None)
         if 0 < provided < 3:
@@ -120,8 +118,6 @@ class ProjectUpdate(BaseModel):
 
     @model_validator(mode="after")
     def validate_dates(self) -> "ProjectUpdate":
-        if self.start_date and self.end_date and self.end_date < self.start_date:
-            raise ValueError("End date cannot be before start date.")
         area_keys = {"site_area_lat", "site_area_lng", "site_area_radius_km"}
         if area_keys.intersection(self.model_fields_set):
             area_fields = [self.site_area_lat, self.site_area_lng, self.site_area_radius_km]

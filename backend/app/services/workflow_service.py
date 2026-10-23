@@ -16,7 +16,7 @@ from app.schemas.workflow import (
     ReassignPlannerRequest,
     SiteProposalRequest,
 )
-from app.services import notification_service
+from app.services import notification_service, project_date_rules
 
 # Allowed stage transitions map: from_stage -> set of (to_stage, allowed_actor_role)
 ALLOWED_TRANSITIONS = {
@@ -181,6 +181,7 @@ def create_project(
         )
 
     values = payload.model_dump()
+    project_date_rules.validate_create_dates(values)
     row = project_repository.create_project(
         connection,
         created_by=user.id,
@@ -801,6 +802,8 @@ def deploy_project(
     project = project_repository.get_project_by_id(connection, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found.")
+
+    project_date_rules.validate_deploy_dates(project, payload.response_deadline)
 
     # Check planner permission unless planner deadline has passed
     p_deadline = project.get("planner_deadline")

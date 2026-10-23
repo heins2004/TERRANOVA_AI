@@ -63,8 +63,6 @@ class ProjectCreateWorkflow(BaseModel):
 
     @model_validator(mode="after")
     def validate_dates(self) -> "ProjectCreateWorkflow":
-        if self.start_date and self.end_date and self.end_date < self.start_date:
-            raise ValueError("End date cannot be before start date.")
         area_fields = [self.site_area_lat, self.site_area_lng, self.site_area_radius_km]
         provided = sum(1 for f in area_fields if f is not None)
         if 0 < provided < 3:

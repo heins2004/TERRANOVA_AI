@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { GovProject, GovProjectCreatePayload, updateGovProject } from "@/services/gov";
 import { GovSiteAreaSection } from "@/components/gov/GovSiteAreaSection";
+import { getKolkataToday, isDateInPast, isEndAfterStart } from "@/lib/dateRules";
 
 interface GovEditModalProps {
   project: GovProject;
@@ -11,9 +12,14 @@ interface GovEditModalProps {
 }
 
 export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps) {
+  const initialStartDate = project.start_date ? project.start_date.split("T")[0] : "";
+  const initialEndDate = project.end_date ? project.end_date.split("T")[0] : "";
+
   const [title, setTitle] = useState(project.title);
   const [description, setDescription] = useState(project.description ?? "");
   const [budget, setBudget] = useState(project.budget != null ? String(project.budget) : "");
+  const [startDate, setStartDate] = useState(initialStartDate);
+  const [endDate, setEndDate] = useState(initialEndDate);
   const [siteAreaLat, setSiteAreaLat] = useState<number | null>(project.site_area_lat ?? null);
   const [siteAreaLng, setSiteAreaLng] = useState<number | null>(project.site_area_lng ?? null);
   const [siteAreaRadiusKm, setSiteAreaRadiusKm] = useState<number | null>(
@@ -23,6 +29,7 @@ export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps)
   const [submitting, setSubmitting] = useState(false);
   const isSubmittingRef = useRef(false);
 
+  const minStartDate = getKolkataToday();
   const canEditSiteArea = project.stage === "Draft" || project.stage === "Planner invited";
   const canClearSiteArea = project.stage === "Draft";
 
@@ -32,11 +39,34 @@ export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps)
     setSiteAreaRadiusKm(rad);
   }
 
+  const startDateChanged = startDate !== initialStartDate;
+  const endDateChanged = endDate !== initialEndDate;
+
+  const startDateInlineError =
+    startDate && startDateChanged && isDateInPast(startDate)
+      ? "Start date must be today or in the future."
+      : "";
+
+  const endDateInlineError =
+    startDate && endDate && !isEndAfterStart(startDate, endDate)
+      ? "End date must be after start date."
+      : "";
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (isSubmittingRef.current) return;
     if (!title.trim()) {
       setError("Title cannot be empty.");
+      return;
+    }
+
+    if (startDateChanged && startDate && isDateInPast(startDate)) {
+      setError("Start date must be today or in the future.");
+      return;
+    }
+
+    if ((startDateChanged || endDateChanged) && startDate && endDate && !isEndAfterStart(startDate, endDate)) {
+      setError("End date must be after start date.");
       return;
     }
 
@@ -59,6 +89,13 @@ export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps)
         description: description.trim() || undefined,
         budget: budget ? Number(budget) : undefined,
       };
+
+      if (startDateChanged) {
+        payload.start_date = startDate || undefined;
+      }
+      if (endDateChanged) {
+        payload.end_date = endDate || undefined;
+      }
 
       if (canEditSiteArea) {
         payload.site_area_lat = siteAreaLat;
@@ -126,15 +163,50 @@ export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps)
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-white">Budget (₹ INR)</label>
-            <input
-              type="number"
-              id="gov-edit-budget"
-              value={budget}
-              onChange={(e) => setBudget(e.target.value)}
-              className="mt-[6px] w-full rounded border border-white/15 bg-surface-bright/20 px-[12px] py-[8px] font-data-mono text-sm text-white focus:border-primary focus:outline-none"
-            />
+          <div className="grid gap-[16px] sm:grid-cols-3">
+            <div>
+              <label className="block text-sm font-medium text-white">Budget (₹ INR)</label>
+              <input
+                type="number"
+                id="gov-edit-budget"
+                value={budget}
+                onChange={(e) => setBudget(e.target.value)}
+                className="mt-[6px] w-full rounded border border-white/15 bg-surface-bright/20 px-[12px] py-[8px] font-data-mono text-sm text-white focus:border-primary focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-white">Start Date</label>
+              <input
+                type="date"
+                id="gov-edit-start-date"
+                min={minStartDate}
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="mt-[6px] w-full rounded border border-white/15 bg-surface-bright/20 px-[12px] py-[8px] font-data-mono text-sm text-white focus:border-primary focus:outline-none"
+              />
+              {startDateInlineError && (
+                <p id="gov-edit-start-date-error" className="mt-[4px] text-[12px] text-danger">
+                  {startDateInlineError}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-white">End Date</label>
+              <input
+                type="date"
+                id="gov-edit-end-date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="mt-[6px] w-full rounded border border-white/15 bg-surface-bright/20 px-[12px] py-[8px] font-data-mono text-sm text-white focus:border-primary focus:outline-none"
+              />
+              {endDateInlineError && (
+                <p id="gov-edit-end-date-error" className="mt-[4px] text-[12px] text-danger">
+                  {endDateInlineError}
+                </p>
+              )}
+            </div>
           </div>
 
           {canEditSiteArea && (

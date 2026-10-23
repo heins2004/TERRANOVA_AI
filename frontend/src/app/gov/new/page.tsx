@@ -9,6 +9,7 @@ import { createGovProject, GovProjectCreatePayload } from "@/services/gov";
 import { GovSiteAreaSection } from "@/components/gov/GovSiteAreaSection";
 import { SUPPORTED_CITIES } from "@/lib/cities";
 import { GovNewDatesBudget } from "@/components/gov/GovNewDatesBudget";
+import { isDateInPast, isEndAfterStart } from "@/lib/dateRules";
 
 const CATEGORIES = ["Energy", "Transport", "Housing", "Water", "Green Space", "Waste Management", "Healthcare", "Education"];
 
@@ -20,7 +21,7 @@ export default function NewGovProjectPage() {
   const [formData, setFormData] = useState({
     title: "", description: "", category: "Energy", city: "delhi",
     location_lat: "28.6139", location_lng: "77.2090", budget: "10000000",
-    start_date: "2026-01-01", end_date: "2026-12-31",
+    start_date: "", end_date: "",
   });
 
   const [siteArea, setSiteArea] = useState<{ centerLat: number | null; centerLng: number | null; radiusKm: number | null }>({
@@ -57,9 +58,13 @@ export default function NewGovProjectPage() {
       if (isNaN(budgetNum) || budgetNum < 0) errors.budget = "Budget must be positive.";
     }
 
+    if (formData.start_date && isDateInPast(formData.start_date)) {
+      errors.start_date = "Start date must be today or in the future.";
+    }
+
     if (formData.start_date && formData.end_date) {
-      if (new Date(formData.end_date) < new Date(formData.start_date)) {
-        errors.end_date = "End date cannot be earlier than start date.";
+      if (!isEndAfterStart(formData.start_date, formData.end_date)) {
+        errors.end_date = "End date must be after start date.";
       }
     }
 
@@ -242,7 +247,16 @@ export default function NewGovProjectPage() {
               onStartDateChange={(val) => setFormData({ ...formData, start_date: val })}
               onEndDateChange={(val) => setFormData({ ...formData, end_date: val })}
               budgetError={fieldErrors.budget}
-              endDateError={fieldErrors.end_date}
+              startDateError={
+                formData.start_date && isDateInPast(formData.start_date)
+                  ? "Start date must be today or in the future."
+                  : fieldErrors.start_date
+              }
+              endDateError={
+                formData.start_date && formData.end_date && !isEndAfterStart(formData.start_date, formData.end_date)
+                  ? "End date must be after start date."
+                  : fieldErrors.end_date
+              }
             />
 
             <div className="pt-[16px]">

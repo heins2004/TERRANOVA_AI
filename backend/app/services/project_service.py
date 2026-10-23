@@ -8,6 +8,7 @@ from app.schemas.projects import (
     ProjectCreate,
     ProjectUpdate,
 )
+from app.services import project_date_rules
 
 
 def _not_found(resource: str) -> None:
@@ -32,6 +33,7 @@ def create_project(*, payload: ProjectCreate, created_by: int, connection: Conne
     values = payload.model_dump()
     _validate_city(values)
     _validate_coordinate_pair(values)
+    project_date_rules.validate_create_dates(values)
     return project_repository.create_project(connection, created_by=created_by, **values)
 
 
@@ -61,6 +63,7 @@ def update_project(
     values = payload.model_dump(exclude_unset=True)
     _validate_city(values)
     _validate_coordinate_pair(values)
+    project_date_rules.validate_update_dates(values, existing)
 
     area_keys = {"site_area_lat", "site_area_lng", "site_area_radius_km"}
     if area_keys.intersection(values):
