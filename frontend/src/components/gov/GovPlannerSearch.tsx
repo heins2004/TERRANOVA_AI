@@ -93,7 +93,7 @@ export function GovPlannerSearch({ projectId, isReassign = false, onSuccess, has
         </div>
       )}
 
-      <div className="flex gap-[10px]">
+      <div className="flex flex-wrap gap-[10px]">
         <input
           ref={inputRef}
           id="gov-planner-search-input"
@@ -107,7 +107,7 @@ export function GovPlannerSearch({ projectId, isReassign = false, onSuccess, has
             }
           }}
           placeholder="Search planner name or ID..."
-          className="flex-1 rounded border border-white/15 bg-surface-bright/20 px-[12px] py-[8px] text-sm text-white placeholder:text-on-surface-variant focus:border-primary focus:outline-none"
+          className="flex-1 min-w-0 rounded border border-white/15 bg-surface-bright/20 px-[12px] py-[8px] text-sm text-white placeholder:text-on-surface-variant focus:border-primary focus:outline-none"
         />
         <button
           type="button"
