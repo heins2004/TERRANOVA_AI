@@ -48,9 +48,11 @@ export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps)
       : "";
 
   const endDateInlineError =
-    startDate && endDate && !isEndAfterStart(startDate, endDate)
+    (startDateChanged || endDateChanged) && startDate && endDate && !isEndAfterStart(startDate, endDate)
       ? "End date must be after start date."
       : "";
+
+  const isDateBlocked = Boolean(startDateInlineError || endDateInlineError);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -140,7 +142,7 @@ export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps)
           </div>
         )}
 
-        <form onSubmit={handleSave} className="space-y-[16px]">
+        <form onSubmit={handleSave} noValidate className="space-y-[16px]">
           <div>
             <label className="block text-sm font-medium text-white">Project Title</label>
             <input
@@ -180,7 +182,7 @@ export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps)
               <input
                 type="date"
                 id="gov-edit-start-date"
-                min={minStartDate}
+                min={startDateChanged ? minStartDate : undefined}
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 className="mt-[6px] w-full rounded border border-white/15 bg-surface-bright/20 px-[12px] py-[8px] font-data-mono text-sm text-white focus:border-primary focus:outline-none"
@@ -232,8 +234,8 @@ export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps)
             <button
               type="submit"
               id="gov-edit-save-btn"
-              disabled={submitting}
-              className="rounded border border-primary-container bg-primary-container/20 px-[16px] py-[8px] font-data-mono text-[12px] font-semibold text-primary uppercase transition-all hover:bg-primary-container/30 disabled:opacity-50"
+              disabled={submitting || isDateBlocked}
+              className="rounded border border-primary-container bg-primary-container/20 px-[16px] py-[8px] font-data-mono text-[12px] font-semibold text-primary uppercase transition-all hover:bg-primary-container/30 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? "Saving..." : "Save Changes"}
             </button>
