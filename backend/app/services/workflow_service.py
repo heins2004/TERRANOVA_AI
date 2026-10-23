@@ -239,6 +239,8 @@ def get_project_for_caller(
                 detail="You are not assigned or invited to this project.",
             )
     elif user.role == "Administrator":
+        if project["stage"] not in project_date_rules.DEPLOYED_STAGES:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Administrators cannot access pre-deployment project details.")
         is_invited = False
     else:
         # Citizens cannot access internal projects endpoint
