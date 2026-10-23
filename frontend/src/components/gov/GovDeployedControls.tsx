@@ -43,7 +43,7 @@ export function GovDeployedControls({
   }
 
   return (
-    <div className="rounded-[12px] border border-white/10 bg-surface-container-lowest/80 p-[20px] space-y-[16px]">
+    <div className="w-full md:w-auto min-w-0 max-w-full rounded-[12px] border border-white/10 bg-surface-container-lowest/80 p-[16px] sm:p-[20px] space-y-[16px]">
       <span className="font-data-mono text-[11px] text-primary uppercase">ACTIVE DEPLOYMENT CONTROLS</span>
       {project.stage === "OpenForResponse" && (
         <div className="space-y-[16px]">

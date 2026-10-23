@@ -110,7 +110,7 @@ export function GovProjectHeader({ project, onRefresh, onOpenEdit }: GovProjectH
           </div>
 
           {/* Top Right Corner of Page Header: Stage operation button(s) & Add consultation */}
-          <div className="flex flex-wrap items-center gap-[10px] shrink-0">
+          <div className="flex flex-wrap items-center gap-[10px] w-full md:w-auto min-w-0 md:shrink-0">
             {/* Stage: Draft */}
             {project.stage === "Draft" && (
               <button
