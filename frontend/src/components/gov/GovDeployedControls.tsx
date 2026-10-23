@@ -7,6 +7,7 @@ import {
   GovProject,
   startInProgress,
 } from "@/services/gov";
+import { GovInProgressConfirmModal } from "./GovInProgressConfirmModal";
 
 interface GovDeployedControlsProps {
   project: GovProject;
@@ -26,6 +27,20 @@ export function GovDeployedControls({
   extraAction,
 }: GovDeployedControlsProps) {
   const [extendDate, setExtendDate] = useState("");
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  function handleMoveToInProgressClick() {
+    const isFutureDeadline =
+      project.stage === "OpenForResponse" &&
+      Boolean(project.response_deadline) &&
+      new Date(project.response_deadline!).getTime() > Date.now();
+
+    if (isFutureDeadline) {
+      setShowConfirmModal(true);
+    } else {
+      void onExecute("in_progress", () => startInProgress(project.id));
+    }
+  }
 
   return (
     <div className="rounded-[12px] border border-white/10 bg-surface-container-lowest/80 p-[20px] space-y-[16px]">
@@ -67,7 +82,7 @@ export function GovDeployedControls({
               type="button"
               id="gov-in-progress-btn"
               disabled={loadingAction === "in_progress"}
-              onClick={() => void onExecute("in_progress", () => startInProgress(project.id))}
+              onClick={handleMoveToInProgressClick}
               className="rounded border border-primary-container bg-primary-container/20 px-[14px] py-[8px] font-data-mono text-[11px] text-primary uppercase hover:bg-primary-container/30 disabled:opacity-50"
             >
               Move to In Progress
@@ -116,6 +131,18 @@ export function GovDeployedControls({
 
       {project.halt_reason && (
         <p className="text-xs text-warning font-data-mono">HALT REASON: {project.halt_reason}</p>
+      )}
+
+      {showConfirmModal && project.response_deadline && (
+        <GovInProgressConfirmModal
+          deadline={project.response_deadline}
+          onClose={() => setShowConfirmModal(false)}
+          onConfirm={() => {
+            setShowConfirmModal(false);
+            void onExecute("in_progress", () => startInProgress(project.id));
+          }}
+          submitting={loadingAction === "in_progress"}
+        />
       )}
     </div>
   );
