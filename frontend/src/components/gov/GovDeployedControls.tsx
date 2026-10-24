@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from "@/components/layout/auth-provider";
 import {
   completeProject,
-  extendDeadline,
   GovProject,
   startInProgress,
 } from "@/services/gov";
 import { GovInProgressConfirmModal } from "./GovInProgressConfirmModal";
+import { GovExtendDeadlineModal } from "./GovExtendDeadlineModal";
 
 interface GovDeployedControlsProps {
   project: GovProject;
@@ -23,11 +24,12 @@ export function GovDeployedControls({
   loadingAction,
   onExecute,
   onOpenReason,
-  onError,
   extraAction,
 }: GovDeployedControlsProps) {
-  const [extendDate, setExtendDate] = useState("");
+  const { user } = useAuth();
+  const isCreator = user?.role === "Government Official" && user?.id === project.created_by;
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showExtendModal, setShowExtendModal] = useState(false);
 
   function handleMoveToInProgressClick() {
     const isFutureDeadline =
@@ -47,37 +49,17 @@ export function GovDeployedControls({
       <span className="font-data-mono text-[11px] text-primary uppercase">ACTIVE DEPLOYMENT CONTROLS</span>
       {project.stage === "OpenForResponse" && (
         <div className="space-y-[16px]">
-          <div className="flex gap-[10px] items-end">
-            <div className="flex-1">
-              <label className="block font-data-mono text-[11px] text-on-surface-variant uppercase">
-                Extend Deadline (Never Shorten)
-              </label>
-              <input
-                type="date"
-                id="gov-extend-date"
-                value={extendDate}
-                onChange={(e) => setExtendDate(e.target.value)}
-                className="mt-[4px] w-full rounded border border-white/15 bg-surface-bright/20 px-[12px] py-[8px] font-data-mono text-sm text-white focus:border-primary focus:outline-none"
-              />
-            </div>
-            <button
-              type="button"
-              id="gov-extend-deadline-btn"
-              disabled={!extendDate || loadingAction === "extend"}
-              onClick={() => {
-                if (project.response_deadline && new Date(extendDate) <= new Date(project.response_deadline)) {
-                  onError("Extended deadline must be strictly after the current deadline.");
-                  return;
-                }
-                void onExecute("extend", () => extendDeadline(project.id, new Date(extendDate).toISOString()));
-              }}
-              className="rounded border border-primary-container bg-primary-container/20 px-[16px] py-[8px] font-data-mono text-[12px] text-primary uppercase hover:bg-primary-container/30 disabled:opacity-50"
-            >
-              Extend
-            </button>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-[10px] pt-[8px] border-t border-white/10">
+          <div className="flex flex-wrap items-center gap-[10px]">
+            {isCreator && (
+              <button
+                type="button"
+                id="gov-extend-deadline-btn"
+                onClick={() => setShowExtendModal(true)}
+                className="rounded border border-primary-container bg-primary-container/20 px-[14px] py-[8px] font-data-mono text-[11px] text-primary uppercase hover:bg-primary-container/30 disabled:opacity-50"
+              >
+                Extend deadline
+              </button>
+            )}
             <button
               type="button"
               id="gov-in-progress-btn"
@@ -142,6 +124,16 @@ export function GovDeployedControls({
             void onExecute("in_progress", () => startInProgress(project.id));
           }}
           submitting={loadingAction === "in_progress"}
+        />
+      )}
+
+      {showExtendModal && (
+        <GovExtendDeadlineModal
+          project={project}
+          onClose={() => setShowExtendModal(false)}
+          onSuccess={() => {
+            void onExecute("extend_deadline", async () => {});
+          }}
         />
       )}
     </div>

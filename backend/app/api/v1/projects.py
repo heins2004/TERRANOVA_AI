@@ -19,7 +19,7 @@ from app.schemas.workflow import (
     ReassignPlannerRequest,
     SiteProposalRequest,
 )
-from app.services import project_service, workflow_service
+from app.services import project_deadline_service, project_service, workflow_service
 from app.repositories import workflow_repository
 
 EDITOR_ROLES = ("Urban Planner", "Government Official", "Administrator")
@@ -279,11 +279,11 @@ def extend_deadline_endpoint(
     connection: Connection = Depends(get_db),
     user: UserResponse = Depends(require_role("Government Official")),
 ) -> dict:
-    return workflow_service.extend_deadline(
+    return project_deadline_service.extend_response_deadline(
         connection=connection,
         user=user,
         project_id=project_id,
-        payload=payload,
+        new_deadline=payload.response_deadline,
     )
 
 
