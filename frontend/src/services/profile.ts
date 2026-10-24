@@ -45,20 +45,6 @@ export type FollowingResponse = {
   total: number;
 };
 
-export type UserComment = {
-  id: number;
-  project_id: number;
-  project_title: string;
-  stance: string | null;
-  body: string;
-  created_at: string;
-  can_delete: boolean;
-};
-
-export type UserCommentsResponse = {
-  items: UserComment[];
-  total: number;
-};
 
 export async function getProfile(): Promise<UserProfile> {
   const res = await fetch(`${API_BASE_URL}/api/me/profile`, {
@@ -125,25 +111,6 @@ export async function getFollowingProjects(
   return res.json();
 }
 
-export async function getMyComments(
-  limit: number = 10,
-  offset: number = 0,
-): Promise<UserCommentsResponse> {
-  const res = await fetch(
-    `${API_BASE_URL}/api/me/comments?limit=${limit}&offset=${offset}`,
-    {
-      method: "GET",
-      credentials: "include",
-      cache: "no-store",
-    },
-  );
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Failed to fetch comments");
-  }
-  return res.json();
-}
-
 export async function unfollowProject(projectId: number): Promise<void> {
   const res = await fetch(`${API_BASE_URL}/api/projects/${projectId}/follow`, {
     method: "DELETE",
@@ -152,16 +119,5 @@ export async function unfollowProject(projectId: number): Promise<void> {
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
     throw new Error(errorData.detail || "Failed to unfollow project");
-  }
-}
-
-export async function deleteComment(commentId: number): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}/api/comments/${commentId}`, {
-    method: "DELETE",
-    credentials: "include",
-  });
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Failed to delete comment");
   }
 }
