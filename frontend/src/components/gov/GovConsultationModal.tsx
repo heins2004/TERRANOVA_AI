@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import {
   ProjectConsultation,
   ProjectConsultationCreatePayload,
@@ -142,9 +143,11 @@ export function GovConsultationFormModal({
     }
   }
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-[16px] backdrop-blur-sm">
+      <div className="fixed inset-0 z-[1050] flex items-center justify-center bg-black/70 p-[16px] backdrop-blur-sm">
         <div className="max-h-[90vh] w-full max-w-[560px] overflow-y-auto rounded-[16px] border border-white/20 bg-surface-container-lowest p-[24px] shadow-2xl">
           <h3 className="font-sans text-lg font-bold text-white">{isEdit ? `Edit Consultation #${consultation?.id}` : "New Consultation"}</h3>
           <form onSubmit={handleSubmit} className="mt-[16px] space-y-[12px]">
@@ -275,6 +278,7 @@ export function GovConsultationFormModal({
           triggerButtonId="consultation-pick-map-btn"
         />
       )}
-    </>
+    </>,
+    document.body
   );
 }

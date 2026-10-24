@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { ProjectConsultation, cancelProjectConsultation } from "@/services/projectConsultations";
 
 interface CancelModalProps {
@@ -37,8 +38,10 @@ export function GovConsultationCancelModal({
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-[16px] backdrop-blur-sm">
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[1050] flex items-center justify-center bg-black/70 p-[16px] backdrop-blur-sm">
       <div className="w-full max-w-[480px] rounded-[16px] border border-red-800/40 bg-surface-container-lowest p-[24px] shadow-2xl">
         <h3 className="font-sans text-lg font-bold text-red-400">Cancel Consultation #{consultation.id}</h3>
         <p className="mt-[6px] text-xs text-on-surface-variant">Please provide the reason for cancellation (10-500 characters). This will be displayed publicly or to invited attendees.</p>
@@ -51,6 +54,7 @@ export function GovConsultationCancelModal({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
