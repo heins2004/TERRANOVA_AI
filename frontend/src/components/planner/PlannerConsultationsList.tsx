@@ -5,6 +5,7 @@ import {
   ProjectConsultation,
   getProjectConsultations,
 } from "@/services/projectConsultations";
+import { formatISTDateTime } from "@/lib/dateRules";
 
 interface Props {
   projectId: number;
@@ -108,8 +109,7 @@ export function PlannerConsultationsList({ projectId }: Props) {
 
                   <div className="text-right font-data-mono text-xs">
                     <p className="text-cyan-300">
-                      {new Date(c.starts_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}{" "}
-                      IST
+                      {formatISTDateTime(c.starts_at)}
                     </p>
                     <p className="text-[11px] text-on-surface-variant">
                       Duration: {c.duration_minutes} mins

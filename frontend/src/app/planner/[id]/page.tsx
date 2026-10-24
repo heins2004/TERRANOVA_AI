@@ -10,6 +10,7 @@ import { PlannerStageActions } from "@/components/planner/PlannerStageActions";
 import { PlannerEventsTimeline } from "@/components/planner/PlannerEventsTimeline";
 import { PlannerConsultationsList } from "@/components/planner/PlannerConsultationsList";
 import { CopyButton } from "@/components/common/CopyButton";
+import { formatISTDateTime } from "@/lib/dateRules";
 
 function PlannerProjectDetailContent() {
   const router = useRouter();
@@ -156,15 +157,14 @@ function PlannerProjectDetailContent() {
                 <div>
                   <span className="text-muted-foreground block text-[10px] uppercase">Timeline</span>
                   <span className="text-foreground">
-                    {project.start_date || "TBD"} &rarr; {project.end_date || "TBD"}
+                    {project.start_date ? formatISTDateTime(project.start_date) : "TBD"} &rarr;{" "}
+                    {project.end_date ? formatISTDateTime(project.end_date) : "TBD"}
                   </span>
                 </div>
                 <div>
                   <span className="text-muted-foreground block text-[10px] uppercase">Planner Deadline</span>
                   <span className="text-foreground">
-                    {project.planner_deadline
-                      ? new Date(project.planner_deadline).toLocaleString("en-IN")
-                      : "None"}
+                    {project.planner_deadline ? formatISTDateTime(project.planner_deadline) : "None"}
                   </span>
                 </div>
               </div>

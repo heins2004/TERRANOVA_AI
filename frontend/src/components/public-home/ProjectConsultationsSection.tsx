@@ -28,23 +28,10 @@ type UnifiedConsultation = {
   venue_lng?: number | null;
 };
 
+import { formatISTDateTime } from "@/lib/dateRules";
+
 function formatIndiaTime(dateString: string): string {
-  try {
-    const d = new Date(dateString);
-    return (
-      d.toLocaleString("en-IN", {
-        timeZone: "Asia/Kolkata",
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      }) + " IST"
-    );
-  } catch {
-    return dateString;
-  }
+  return formatISTDateTime(dateString);
 }
 
 export function ProjectConsultationsSection({ projectId }: Props) {

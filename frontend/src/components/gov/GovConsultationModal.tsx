@@ -10,6 +10,7 @@ import {
 } from "@/services/projectConsultations";
 import FullScreenMapModal from "@/components/maps/FullScreenMapModal";
 import { GovConsultationVenueLocationSection } from "./GovConsultationVenueLocationSection";
+import { DateTimeInput } from "@/components/common/DateTimeInput";
 export { GovConsultationCancelModal } from "./GovConsultationCancelModal";
 
 interface FormModalProps {
@@ -30,11 +31,7 @@ export function GovConsultationFormModal({
   const isEdit = consultation != null;
   const [title, setTitle] = useState(consultation?.title || "");
   const [description, setDescription] = useState(consultation?.description || "");
-  const [startsAt, setStartsAt] = useState(() => {
-    if (!consultation?.starts_at) return "";
-    const d = new Date(consultation.starts_at);
-    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-  });
+  const [startsAt, setStartsAt] = useState(consultation?.starts_at || "");
   const [duration, setDuration] = useState(String(consultation?.duration_minutes || 60));
   const [type, setType] = useState<"Online" | "Venue">(consultation?.type || "Online");
   const [meetingUrl, setMeetingUrl] = useState(consultation?.meeting_url || "");
@@ -163,11 +160,15 @@ export function GovConsultationFormModal({
               {fieldErrors.description && <p className="text-xs text-red-400 mt-[2px]">{fieldErrors.description}</p>}
             </div>
             <div className="grid grid-cols-2 gap-[12px]">
-              <div>
-                <label className="block font-data-mono text-xs uppercase text-on-surface-variant">Start Time</label>
-                <input id="consultation-form-time" type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} className="mt-[4px] w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-cyan-400 focus:outline-none" />
-                {fieldErrors.starts_at && <p className="text-xs text-red-400 mt-[2px]">{fieldErrors.starts_at}</p>}
-              </div>
+              <DateTimeInput
+                id="consultation-form-time"
+                label="Start Time"
+                labelClassName="block font-data-mono text-xs uppercase text-on-surface-variant"
+                value={startsAt}
+                onChange={setStartsAt}
+                error={fieldErrors.starts_at}
+                inputClassName="w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] font-data-mono text-sm text-white focus:border-cyan-400 focus:outline-none"
+              />
               <div>
                 <label className="block font-data-mono text-xs uppercase text-on-surface-variant">Duration (15-480 min)</label>
                 <input id="consultation-form-duration" type="number" min={15} max={480} value={duration} onChange={(e) => setDuration(e.target.value)} className="mt-[4px] w-full rounded border border-white/15 bg-black/40 px-[10px] py-[6px] text-sm text-white focus:border-cyan-400 focus:outline-none" />

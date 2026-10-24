@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { GovProject, GovProjectCreatePayload, updateGovProject } from "@/services/gov";
 import { GovSiteAreaSection } from "@/components/gov/GovSiteAreaSection";
 import { getKolkataToday, isDateInPast, isEndAfterStart } from "@/lib/dateRules";
+import { DateTimeInput } from "@/components/common/DateTimeInput";
 
 interface GovEditModalProps {
   project: GovProject;
@@ -12,8 +13,8 @@ interface GovEditModalProps {
 }
 
 export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps) {
-  const initialStartDate = project.start_date ? project.start_date.split("T")[0] : "";
-  const initialEndDate = project.end_date ? project.end_date.split("T")[0] : "";
+  const initialStartDate = project.start_date || "";
+  const initialEndDate = project.end_date || "";
 
   const [title, setTitle] = useState(project.title);
   const [description, setDescription] = useState(project.description ?? "");
@@ -177,38 +178,24 @@ export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps)
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-white">Start Date</label>
-              <input
-                type="date"
-                id="gov-edit-start-date"
-                min={startDateChanged ? minStartDate : undefined}
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="mt-[6px] w-full rounded border border-white/15 bg-surface-bright/20 px-[12px] py-[8px] font-data-mono text-sm text-white focus:border-primary focus:outline-none"
-              />
-              {startDateInlineError && (
-                <p id="gov-edit-start-date-error" className="mt-[4px] text-[12px] text-danger">
-                  {startDateInlineError}
-                </p>
-              )}
-            </div>
+            <DateTimeInput
+              id="gov-edit-start-date"
+              label="Start Date"
+              min={startDateChanged ? minStartDate : undefined}
+              value={startDate}
+              onChange={setStartDate}
+              error={startDateInlineError}
+              errorId="gov-edit-start-date-error"
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-white">End Date</label>
-              <input
-                type="date"
-                id="gov-edit-end-date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="mt-[6px] w-full rounded border border-white/15 bg-surface-bright/20 px-[12px] py-[8px] font-data-mono text-sm text-white focus:border-primary focus:outline-none"
-              />
-              {endDateInlineError && (
-                <p id="gov-edit-end-date-error" className="mt-[4px] text-[12px] text-danger">
-                  {endDateInlineError}
-                </p>
-              )}
-            </div>
+            <DateTimeInput
+              id="gov-edit-end-date"
+              label="End Date"
+              value={endDate}
+              onChange={setEndDate}
+              error={endDateInlineError}
+              errorId="gov-edit-end-date-error"
+            />
           </div>
 
           {canEditSiteArea && (

@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { extendDeadline, GovProject } from "@/services/gov";
+import { formatISTDateTime } from "@/lib/dateRules";
+import { DateTimeInput } from "@/components/common/DateTimeInput";
 
 interface GovExtendDeadlineModalProps {
   project: GovProject;
@@ -41,7 +43,7 @@ export function GovExtendDeadlineModal({
   }, [onClose]);
 
   const formattedCurrentDeadline = project.response_deadline
-    ? new Date(project.response_deadline).toLocaleString("en-IN")
+    ? formatISTDateTime(project.response_deadline)
     : "Not set";
 
   async function handleExtendSubmit() {
@@ -50,7 +52,7 @@ export function GovExtendDeadlineModal({
       return;
     }
 
-    const selectedDateTime = new Date(`${newDate}T23:59:59`);
+    const selectedDateTime = new Date(newDate);
     const now = new Date();
 
     if (selectedDateTime.getTime() <= now.getTime()) {
@@ -124,25 +126,17 @@ export function GovExtendDeadlineModal({
           <strong className="text-white font-medium">{formattedCurrentDeadline}</strong>
         </div>
 
-        <div className="space-y-[6px]">
-          <label
-            htmlFor="extend-deadline-date-input"
-            className="block font-data-mono text-[11px] text-on-surface-variant uppercase"
-          >
-            New Response Deadline
-          </label>
-          <input
-            id="extend-deadline-date-input"
-            type="date"
-            min={tomorrow}
-            value={newDate}
-            onChange={(e) => {
-              setNewDate(e.target.value);
-              setError("");
-            }}
-            className="w-full rounded border border-white/15 bg-surface-bright/20 px-[12px] py-[8px] font-data-mono text-sm text-white focus:border-primary focus:outline-none"
-          />
-        </div>
+        <DateTimeInput
+          id="extend-deadline-date-input"
+          label="New Response Deadline"
+          labelClassName="block font-data-mono text-[11px] text-on-surface-variant uppercase"
+          min={tomorrow}
+          value={newDate}
+          onChange={(val) => {
+            setNewDate(val);
+            setError("");
+          }}
+        />
 
         {error && (
           <div

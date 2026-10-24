@@ -1,6 +1,7 @@
 "use client";
 
 import { GovProject } from "@/services/gov";
+import { formatISTDateTime } from "@/lib/dateRules";
 
 interface GovDetailsSectionProps {
   project: GovProject;
@@ -26,7 +27,8 @@ export function GovDetailsSection({ project }: GovDetailsSectionProps) {
         <div>
           <p className="font-data-mono text-[10px] text-on-surface-variant uppercase">Dates</p>
           <p className="mt-[2px] font-data-mono text-xs text-white">
-            {project.start_date ?? "—"} to {project.end_date ?? "—"}
+            {project.start_date ? formatISTDateTime(project.start_date) : "—"} to{" "}
+            {project.end_date ? formatISTDateTime(project.end_date) : "—"}
           </p>
         </div>
         <div>

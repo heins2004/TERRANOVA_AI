@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { invitePlanner, PlannerSearchItem, reassignPlanner, searchPlanners } from "@/services/gov";
+import { DateTimeInput } from "@/components/common/DateTimeInput";
 
 interface GovPlannerSearchProps {
   projectId: number;
@@ -162,17 +163,13 @@ export function GovPlannerSearch({ projectId, isReassign = false, onSuccess, has
 
       {selectedPlanner && (
         <div className="space-y-[12px] border-t border-white/10 pt-[16px]">
-          <div>
-            <label className="block font-data-mono text-[11px] text-on-surface-variant uppercase">
-              Proposal Deadline
-            </label>
-            <input
-              type="date"
-              value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
-              className="mt-[4px] w-full rounded border border-white/15 bg-surface-bright/20 px-[12px] py-[8px] font-data-mono text-sm text-white focus:border-primary focus:outline-none"
-            />
-          </div>
+          <DateTimeInput
+            id="gov-planner-deadline"
+            label="Proposal Deadline"
+            labelClassName="block font-data-mono text-[11px] text-on-surface-variant uppercase"
+            value={deadline}
+            onChange={setDeadline}
+          />
 
           {!hasArea && (
             <p className="rounded border border-warning/30 bg-warning/10 p-[10px] text-xs text-warning">

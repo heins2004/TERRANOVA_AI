@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { GovProject } from "@/services/gov";
 import { isStartDateAfterDeadline } from "@/lib/dateRules";
+import { DateTimeInput } from "@/components/common/DateTimeInput";
 
 interface GovApprovedControlsProps {
   project: GovProject;
@@ -39,18 +40,13 @@ export function GovApprovedControls({
       </div>
 
       <div className="space-y-[10px] border-t border-white/10 pt-[10px]">
-        <div>
-          <label className="block font-data-mono text-[11px] text-on-surface-variant uppercase">
-            Public Response Deadline
-          </label>
-          <input
-            type="date"
-            id="gov-deploy-deadline"
-            value={deployDeadline}
-            onChange={(e) => setDeployDeadline(e.target.value)}
-            className="mt-[4px] w-full rounded border border-white/15 bg-surface-bright/20 px-[12px] py-[6px] font-data-mono text-sm text-white focus:border-primary focus:outline-none"
-          />
-        </div>
+        <DateTimeInput
+          id="gov-deploy-deadline"
+          label="Public Response Deadline"
+          labelClassName="block font-data-mono text-[11px] text-on-surface-variant uppercase"
+          value={deployDeadline}
+          onChange={setDeployDeadline}
+        />
 
         {!isDateValid && (
           <p id="gov-deploy-date-error" className="text-xs text-danger font-data-mono">

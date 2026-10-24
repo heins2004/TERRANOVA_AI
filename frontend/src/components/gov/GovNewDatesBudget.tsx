@@ -1,6 +1,7 @@
 "use client";
 
 import { getKolkataToday } from "@/lib/dateRules";
+import { DateTimeInput } from "@/components/common/DateTimeInput";
 
 interface GovNewDatesBudgetProps {
   budget: string;
@@ -42,38 +43,24 @@ export function GovNewDatesBudget({
       </div>
 
       <div className="grid gap-[16px] sm:grid-cols-2">
-        <div>
-          <label className="block text-sm font-medium text-white">Start Date</label>
-          <input
-            id="gov-input-start-date"
-            type="date"
-            min={minStartDate}
-            value={startDate}
-            onChange={(e) => onStartDateChange(e.target.value)}
-            className="mt-[6px] w-full rounded border border-white/15 bg-surface-bright/20 px-[14px] py-[10px] font-data-mono text-sm text-white focus:border-primary focus:outline-none"
-          />
-          {startDateError && (
-            <p id="gov-start-date-error" className="mt-[4px] text-[12px] text-danger">
-              {startDateError}
-            </p>
-          )}
-        </div>
+        <DateTimeInput
+          id="gov-input-start-date"
+          label="Start Date"
+          min={minStartDate}
+          value={startDate}
+          onChange={onStartDateChange}
+          error={startDateError}
+          errorId="gov-start-date-error"
+        />
 
-        <div>
-          <label className="block text-sm font-medium text-white">End Date</label>
-          <input
-            id="gov-input-end-date"
-            type="date"
-            value={endDate}
-            onChange={(e) => onEndDateChange(e.target.value)}
-            className="mt-[6px] w-full rounded border border-white/15 bg-surface-bright/20 px-[14px] py-[10px] font-data-mono text-sm text-white focus:border-primary focus:outline-none"
-          />
-          {endDateError && (
-            <p id="gov-end-date-error" className="mt-[4px] text-[12px] text-danger">
-              {endDateError}
-            </p>
-          )}
-        </div>
+        <DateTimeInput
+          id="gov-input-end-date"
+          label="End Date"
+          value={endDate}
+          onChange={onEndDateChange}
+          error={endDateError}
+          errorId="gov-end-date-error"
+        />
       </div>
     </>
   );
