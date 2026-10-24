@@ -10,6 +10,7 @@ export type ProjectStage =
 type StageTrackerProps = {
   stage: ProjectStage;
   haltReason?: string;
+  daysLeft?: number | null;
 };
 
 const STAGES = [
@@ -18,7 +19,7 @@ const STAGES = [
   { key: "Completed", label: "Completed", order: 2 },
 ];
 
-export function StageTracker({ stage, haltReason }: StageTrackerProps) {
+export function StageTracker({ stage, haltReason, daysLeft }: StageTrackerProps) {
   if (stage === "Halted") {
     return (
       <div
@@ -34,9 +35,20 @@ export function StageTracker({ stage, haltReason }: StageTrackerProps) {
   const currentOrder =
     stage === "Completed" ? 2 : stage === "InProgress" ? 1 : 0;
 
+  const stages = STAGES.map((s) => {
+    if (
+      s.key === "OpenForResponse" &&
+      stage === "OpenForResponse" &&
+      daysLeft === 0
+    ) {
+      return { ...s, label: "Response period ended" };
+    }
+    return s;
+  });
+
   return (
     <ol className="flex flex-row gap-[6px] p-0 list-none font-body-md text-[11px] h-[30px] min-h-[28px] shrink-0 items-stretch">
-      {STAGES.map((s, idx) => {
+      {stages.map((s, idx) => {
         const isDone = idx < currentOrder;
         const isCurrent = idx === currentOrder;
 

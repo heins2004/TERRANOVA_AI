@@ -28,6 +28,8 @@ export function ProjectCard({
       ? "Completed"
       : project.stage === "InProgress"
       ? "In progress"
+      : project.stage === "OpenForResponse" && project.days_left === 0
+      ? "Response period ended"
       : project.days_left != null
       ? `${project.days_left} days left`
       : project.stage === "OpenForResponse"

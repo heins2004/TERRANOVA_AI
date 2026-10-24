@@ -48,7 +48,11 @@ export function ProjectPanelBody({
     <div className="flex-1 min-h-0 mt-[16px] overflow-y-auto md:overflow-hidden md:flex md:flex-row md:gap-[24px] no-scrollbar">
       {/* LEFT (details): stays in place and does not scroll when content fits; fallback overflow-y-auto */}
       <div className="flex flex-col gap-[10px] md:flex-1 md:min-w-0 md:h-full md:overflow-y-auto no-scrollbar">
-        <StageTracker stage={detail.stage} haltReason={detail.halt_reason ?? undefined} />
+        <StageTracker
+          stage={detail.stage}
+          haltReason={detail.halt_reason ?? undefined}
+          daysLeft={detail.days_left}
+        />
         <ProjectDetails detail={detail} />
         <ProjectConsultationsSection projectId={detail.id} />
       </div>
