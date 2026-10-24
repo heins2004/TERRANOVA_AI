@@ -3,7 +3,6 @@ from fastapi import APIRouter
 from app.api.v1.auth import router as auth_router
 from app.api.v1.admin import router as admin_router
 from app.api.v1.cities import router as cities_router
-from app.api.v1.complaints import router as complaints_router
 from app.api.v1.consultations import router as consultations_router
 from app.api.v1.projects import projects_router
 from app.api.v1.study_areas import router as study_areas_router
@@ -21,7 +20,6 @@ api_router.include_router(auth_router)
 api_router.include_router(admin_router)
 api_router.include_router(cities_router)
 api_router.include_router(projects_router)
-api_router.include_router(complaints_router)
 api_router.include_router(consultations_router)
 api_router.include_router(study_areas_router)
 api_router.include_router(candidate_sites_router)
