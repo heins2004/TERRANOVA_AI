@@ -1,6 +1,9 @@
 from datetime import date, datetime
 from decimal import Decimal
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from typing import Any
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator, model_validator
+
+from app.services.project_date_rules import format_ist_iso, to_kolkata_datetime
 
 
 class ProjectCreate(BaseModel):
@@ -12,11 +15,16 @@ class ProjectCreate(BaseModel):
     location_lat: float | None = None
     location_lng: float | None = None
     budget: Decimal | None = None
-    start_date: date | None = None
-    end_date: date | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
     site_area_lat: float | None = None
     site_area_lng: float | None = None
     site_area_radius_km: Decimal | float | None = None
+
+    @field_validator("start_date", "end_date", mode="before")
+    @classmethod
+    def validate_dates_input(cls, v: Any) -> datetime | None:
+        return to_kolkata_datetime(v)
 
     @field_validator("location_lat")
     @classmethod
@@ -73,11 +81,16 @@ class ProjectUpdate(BaseModel):
     location_lat: float | None = None
     location_lng: float | None = None
     budget: Decimal | None = None
-    start_date: date | None = None
-    end_date: date | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
     site_area_lat: float | None = None
     site_area_lng: float | None = None
     site_area_radius_km: Decimal | float | None = None
+
+    @field_validator("start_date", "end_date", mode="before")
+    @classmethod
+    def validate_dates_input(cls, v: Any) -> datetime | None:
+        return to_kolkata_datetime(v)
 
     @field_validator("location_lat")
     @classmethod
@@ -138,9 +151,13 @@ class ProjectResponse(BaseModel):
     location_lat: float | None = None
     location_lng: float | None = None
     budget: Decimal | None = None
-    start_date: date | None = None
-    end_date: date | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
     candidate_site_id: int | None = None
+
+    @field_serializer("start_date", "end_date")
+    def serialize_dates(self, v: datetime | None) -> str | None:
+        return format_ist_iso(v)
     created_by: int | None = None
     created_at: datetime
     updated_at: datetime

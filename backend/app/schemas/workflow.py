@@ -18,11 +18,17 @@ class ProjectCreateWorkflow(BaseModel):
     location_lat: float
     location_lng: float
     budget: Decimal | None = None
-    start_date: date | None = None
-    end_date: date | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
     site_area_lat: float | None = None
     site_area_lng: float | None = None
     site_area_radius_km: Decimal | float | None = None
+
+    @field_validator("start_date", "end_date", mode="before")
+    @classmethod
+    def validate_dates_input(cls, v: object) -> datetime | None:
+        from app.services.project_date_rules import to_kolkata_datetime
+        return to_kolkata_datetime(v)
 
     @field_validator("location_lat")
     @classmethod

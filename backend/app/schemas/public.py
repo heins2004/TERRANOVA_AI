@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 
 class PublicProjectItem(BaseModel):
@@ -14,8 +14,13 @@ class PublicProjectItem(BaseModel):
     location_lat: float | None = None
     location_lng: float | None = None
     budget: float | None = None
-    start_date: date | None = None
-    end_date: date | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+
+    @field_serializer("start_date", "end_date")
+    def serialize_dates(self, v: datetime | None) -> str | None:
+        from app.services.project_date_rules import format_ist_iso
+        return format_ist_iso(v)
     stage: str
     response_deadline: datetime | None = None
     days_left: int | None = None
