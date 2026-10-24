@@ -3,7 +3,7 @@ from typing import Any
 from fastapi import HTTPException, status
 from psycopg import Connection
 
-from app.repositories import project_repository, workflow_repository
+from app.repositories import notification_repository, project_repository, workflow_repository
 from app.schemas.auth import UserResponse
 from app.services import project_date_rules
 
@@ -81,7 +81,7 @@ def extend_response_deadline(
             (new_deadline, now_local, project_id),
         )
 
-    workflow_repository.create_project_event(
+    event = workflow_repository.create_project_event(
         connection,
         project_id=project_id,
         actor_id=user.id,
@@ -90,6 +90,24 @@ def extend_response_deadline(
         note=f"Response deadline extended to {new_deadline.isoformat()}",
         auto_commit=False,
     )
+
+    # Rule 2: notify every follower except the acting official
+    follower_ids = notification_repository.get_project_follower_user_ids(connection, project_id)
+    recipients = [uid for uid in follower_ids if uid != user.id]
+    if recipients:
+        msg = f'Response deadline for project "{project["title"]}" has been extended.'
+        notifs = [
+            {
+                "user_id": uid,
+                "project_id": project_id,
+                "event_id": event.get("id") if event else None,
+                "kind": "deadline_extended",
+                "message": msg,
+            }
+            for uid in recipients
+        ]
+        notification_repository.create_notifications_batch(connection, notifs, auto_commit=False)
+
     connection.commit()
 
     updated = project_repository.get_project_by_id(connection, project_id)

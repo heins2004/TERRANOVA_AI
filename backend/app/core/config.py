@@ -23,6 +23,8 @@ class Settings:
     rate_limit_login_max_failures: int
     rate_limit_login_window_seconds: int
     rate_limit_real_ip_header: str | None
+    deadline_scheduler_enabled: bool
+    deadline_scheduler_interval_seconds: int
 
 
 def _parse_bool(value: str, default: bool) -> bool:
@@ -93,4 +95,10 @@ def get_settings() -> Settings:
         rate_limit_login_max_failures=int(os.getenv("RATE_LIMIT_LOGIN_MAX_FAILURES", "10")),
         rate_limit_login_window_seconds=int(os.getenv("RATE_LIMIT_LOGIN_WINDOW_SECONDS", "900")),
         rate_limit_real_ip_header=os.getenv("RATE_LIMIT_REAL_IP_HEADER"),
+        deadline_scheduler_enabled=_parse_bool(
+            os.getenv("DEADLINE_SCHEDULER_ENABLED", "true"), True
+        ),
+        deadline_scheduler_interval_seconds=int(
+            os.getenv("DEADLINE_SCHEDULER_INTERVAL_SECONDS", "60")
+        ),
     )

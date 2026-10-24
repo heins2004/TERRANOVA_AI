@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -10,6 +11,7 @@ from app.core.config import get_settings
 from app.core.rate_limit import check_public_rate_limit
 from app.database.init_db import init_db
 from app.database.migrate import get_pending_migrations_count
+from app.services.deadline_scheduler import run_deadline_scheduler_loop
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +31,15 @@ def _check_pending_migrations() -> None:
 async def lifespan(_: FastAPI):
     init_db()
     _check_pending_migrations()
-    yield
+    scheduler_task = asyncio.create_task(run_deadline_scheduler_loop())
+    try:
+        yield
+    finally:
+        scheduler_task.cancel()
+        try:
+            await scheduler_task
+        except asyncio.CancelledError:
+            pass
 
 
 settings = get_settings()
