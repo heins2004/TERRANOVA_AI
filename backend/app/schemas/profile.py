@@ -53,16 +53,3 @@ class FollowingProjectsResponse(BaseModel):
     total: int
 
 
-class UserCommentItem(BaseModel):
-    id: int
-    project_id: int
-    project_title: str
-    stance: str | None = None
-    body: str
-    created_at: str
-    can_delete: bool
-
-
-class UserCommentsResponse(BaseModel):
-    items: list[UserCommentItem]
-    total: int

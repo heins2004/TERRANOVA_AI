@@ -195,37 +195,3 @@ def get_following_projects(
     return rows, total
 
 
-def get_user_comments(
-    connection: Connection,
-    user_id: int,
-    limit: int = 20,
-    offset: int = 0,
-) -> tuple[list[dict[str, Any]], int]:
-    stages = list(PUBLIC_STAGES)
-    with connection.cursor(row_factory=dict_row) as cursor:
-        cursor.execute(
-            """
-            SELECT count(*) AS total
-            FROM comments c
-            JOIN projects p ON p.id = c.project_id
-            WHERE c.user_id = %s AND p.stage = ANY(%s)
-            """,
-            (user_id, stages),
-        )
-        total_row = cursor.fetchone()
-        total = total_row["total"] if total_row else 0
-
-        cursor.execute(
-            """
-            SELECT c.id, c.project_id, p.title AS project_title, c.stance, c.body, c.created_at
-            FROM comments c
-            JOIN projects p ON p.id = c.project_id
-            WHERE c.user_id = %s AND p.stage = ANY(%s)
-            ORDER BY c.created_at DESC, c.id DESC
-            LIMIT %s OFFSET %s
-            """,
-            (user_id, stages, limit, offset),
-        )
-        rows = cursor.fetchall()
-
-    return rows, total

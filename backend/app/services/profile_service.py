@@ -11,8 +11,6 @@ from app.schemas.profile import (
     FollowingProjectItem,
     FollowingProjectsResponse,
     ProfileResponse,
-    UserCommentItem,
-    UserCommentsResponse,
 )
 from app.services.profile_validation import validate_profile_patch
 from app.services.public_project_service import compute_days_left, resolve_city_name
@@ -168,39 +166,4 @@ def get_following_projects(
     return FollowingProjectsResponse(items=items, total=total)
 
 
-def get_user_comments(
-    connection: Connection,
-    current_user: UserResponse,
-    limit: int = 20,
-    offset: int = 0,
-) -> UserCommentsResponse:
-    safe_limit = max(1, min(100, limit))
-    safe_offset = max(0, offset)
 
-    rows, total = profile_repository.get_user_comments(
-        connection,
-        current_user.id,
-        limit=safe_limit,
-        offset=safe_offset,
-    )
-
-    items: list[UserCommentItem] = []
-    for r in rows:
-        created_at = (
-            r["created_at"].isoformat()
-            if hasattr(r["created_at"], "isoformat")
-            else str(r["created_at"])
-        )
-        items.append(
-            UserCommentItem(
-                id=r["id"],
-                project_id=r["project_id"],
-                project_title=r["project_title"],
-                stance=r.get("stance"),
-                body=r["body"],
-                created_at=created_at,
-                can_delete=True,
-            )
-        )
-
-    return UserCommentsResponse(items=items, total=total)

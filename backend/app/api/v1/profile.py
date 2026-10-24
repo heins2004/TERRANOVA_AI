@@ -11,7 +11,6 @@ from app.schemas.profile import (
     ChangePasswordRequest,
     FollowingProjectsResponse,
     ProfileResponse,
-    UserCommentsResponse,
 )
 from app.services import profile_service
 
@@ -77,21 +76,6 @@ def get_my_following(
     current_user: UserResponse = Depends(require_authenticated_user()),
 ) -> FollowingProjectsResponse:
     return profile_service.get_following_projects(
-        connection=connection,
-        current_user=current_user,
-        limit=limit,
-        offset=offset,
-    )
-
-
-@router.get("/comments", response_model=UserCommentsResponse)
-def get_my_comments(
-    limit: int = Query(20, ge=1, le=100),
-    offset: int = Query(0, ge=0),
-    connection: Connection = Depends(get_db),
-    current_user: UserResponse = Depends(require_authenticated_user()),
-) -> UserCommentsResponse:
-    return profile_service.get_user_comments(
         connection=connection,
         current_user=current_user,
         limit=limit,
