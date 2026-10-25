@@ -183,11 +183,12 @@ export function GovSiteChangeModal({
                 {circleLat != null && circleLng != null && (
                   <div className="relative h-[160px] w-full rounded overflow-hidden border border-white/10">
                     <SiteAreaMap
+                      mode="gov"
                       centerLat={circleLat}
                       centerLng={circleLng}
                       radiusKm={circleRadiusKm ?? 5.0}
                       readOnly={false}
-                      onChange={(lat, lng) => {
+                      onSetCenter={(lat: number, lng: number) => {
                         setCircleLat(lat);
                         setCircleLng(lng);
                       }}

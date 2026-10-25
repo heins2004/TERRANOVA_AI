@@ -127,12 +127,11 @@ export function PlannerSiteChangeSection({
               </div>
               <div className="relative h-[200px] w-full rounded overflow-hidden border border-white/10">
                 <SiteAreaMap
+                  mode="gov"
                   centerLat={change.proposed_site_lat!}
                   centerLng={change.proposed_site_lng!}
                   radiusKm={0.5}
                   readOnly={true}
-                  pinLat={change.proposed_site_lat!}
-                  pinLng={change.proposed_site_lng!}
                 />
               </div>
               <a
