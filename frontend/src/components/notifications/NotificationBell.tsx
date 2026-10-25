@@ -130,7 +130,9 @@ export function NotificationBell({ className = "" }: { className?: string }) {
         await markNotificationRead(item.id).catch(() => {});
       }
       setIsOpen(false);
-      if (!item.project_id) {
+      if (item.kind === "chat" && item.project_id) {
+        router.push(`/chat?project=${item.project_id}`);
+      } else if (!item.project_id) {
         router.push("/planner");
       } else if (item.project_link_kind === "gov") {
         router.push(`/gov/${item.project_id}`);

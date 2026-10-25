@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/components/layout/auth-provider";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { HamburgerMenu } from "@/components/layout/HamburgerMenu";
 import { AuthUser } from "@/lib/auth";
+import { getChatUnreadCount } from "@/services/chat";
 
 type TopBarProps = {
   user?: AuthUser | null;
@@ -26,10 +27,45 @@ export function TopBar({
   const pathname = usePathname();
   const { user: authUser, logout, isReady, isAuthenticated } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [chatUnreadCount, setChatUnreadCount] = useState(0);
 
   // If propUser is explicitly passed (even null), respect it. Otherwise fallback to auth context.
   const currentUser = propUser !== undefined ? propUser : (authUser ?? null);
   const isLoggedIn = Boolean(currentUser ?? (isReady && isAuthenticated));
+
+  const isEligibleForChat =
+    isLoggedIn &&
+    !currentUser?.must_change_password &&
+    (currentUser?.role === "Government Official" || currentUser?.role === "Urban Planner");
+
+  const displayUnreadCount = isEligibleForChat ? chatUnreadCount : 0;
+
+  useEffect(() => {
+    if (!isEligibleForChat) return;
+
+    let isMounted = true;
+    const fetchUnread = async () => {
+      try {
+        const res = await getChatUnreadCount();
+        if (isMounted) setChatUnreadCount(res.unread_count);
+      } catch {
+        // ignore
+      }
+    };
+
+    fetchUnread();
+
+    const intervalId = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchUnread();
+      }
+    }, 30000);
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(intervalId);
+    };
+  }, [isEligibleForChat]);
 
   async function handleLogout() {
     setIsLoggingOut(true);
@@ -45,6 +81,37 @@ export function TopBar({
   const isGovActive = pathname.startsWith("/gov");
   const isPlannerActive = pathname.startsWith("/planner");
   const isAdminActive = pathname.startsWith("/admin");
+  const isChatActive = pathname.startsWith("/chat");
+
+  const navLinkClass = (active: boolean) =>
+    `hidden md:inline-flex h-[32px] items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
+      active
+        ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
+        : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
+    }`;
+
+  const renderChatLink = () => (
+    <Link
+      href="/chat"
+      id="topbar-chat-link"
+      aria-label={`Chat${displayUnreadCount > 0 ? `, ${displayUnreadCount} unread` : ""}`}
+      aria-current={isChatActive ? "page" : undefined}
+      className={navLinkClass(isChatActive)}
+    >
+      <span className="material-symbols-outlined text-[16px] pointer-events-none" aria-hidden="true">
+        chat
+      </span>
+      <span className="pointer-events-none">Chat</span>
+      {displayUnreadCount > 0 && (
+        <span
+          id="topbar-chat-unread-badge"
+          className="ml-[2px] inline-flex items-center justify-center min-w-[16px] h-[16px] px-[4px] rounded-full bg-primary text-black font-data-mono text-[9px] font-bold"
+        >
+          {displayUnreadCount}
+        </span>
+      )}
+    </Link>
+  );
 
   return (
     <header
@@ -90,41 +157,39 @@ export function TopBar({
           {isLoggedIn && !currentUser?.must_change_password && (
             <>
               {currentUser?.role === "Government Official" && (
-                <Link
-                  href="/gov"
-                  id="topbar-gov-link"
-                  aria-label="Government Portal"
-                  aria-current={isGovActive ? "page" : undefined}
-                  className={`hidden md:inline-flex h-[32px] items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
-                    isGovActive
-                      ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
-                      : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[16px] pointer-events-none" aria-hidden="true">
-                    account_balance
-                  </span>
-                  <span className="pointer-events-none">Gov Portal</span>
-                </Link>
+                <>
+                  <Link
+                    href="/gov"
+                    id="topbar-gov-link"
+                    aria-label="Government Portal"
+                    aria-current={isGovActive ? "page" : undefined}
+                    className={navLinkClass(isGovActive)}
+                  >
+                    <span className="material-symbols-outlined text-[16px] pointer-events-none" aria-hidden="true">
+                      account_balance
+                    </span>
+                    <span className="pointer-events-none">Gov Portal</span>
+                  </Link>
+                  {renderChatLink()}
+                </>
               )}
 
               {currentUser?.role === "Urban Planner" && (
-                <Link
-                  href="/planner"
-                  id="topbar-planner-link"
-                  aria-label="Planner Portal"
-                  aria-current={isPlannerActive ? "page" : undefined}
-                  className={`hidden md:inline-flex h-[32px] items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
-                    isPlannerActive
-                      ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
-                      : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[16px] pointer-events-none" aria-hidden="true">
-                    architecture
-                  </span>
-                  <span className="pointer-events-none">Planner Portal</span>
-                </Link>
+                <>
+                  <Link
+                    href="/planner"
+                    id="topbar-planner-link"
+                    aria-label="Planner Portal"
+                    aria-current={isPlannerActive ? "page" : undefined}
+                    className={navLinkClass(isPlannerActive)}
+                  >
+                    <span className="material-symbols-outlined text-[16px] pointer-events-none" aria-hidden="true">
+                      architecture
+                    </span>
+                    <span className="pointer-events-none">Planner Portal</span>
+                  </Link>
+                  {renderChatLink()}
+                </>
               )}
 
               {currentUser?.role === "Administrator" && (
@@ -133,11 +198,7 @@ export function TopBar({
                   id="topbar-admin-link"
                   aria-label="Admin Portal"
                   aria-current={isAdminActive ? "page" : undefined}
-                  className={`hidden md:inline-flex h-[32px] items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
-                    isAdminActive
-                      ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
-                      : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
-                  }`}
+                  className={navLinkClass(isAdminActive)}
                 >
                   <span className="material-symbols-outlined text-[16px] pointer-events-none" aria-hidden="true">
                     admin_panel_settings
@@ -151,11 +212,7 @@ export function TopBar({
                 id="topbar-home-link"
                 aria-label="Home"
                 aria-current={isHomeActive ? "page" : undefined}
-                className={`hidden md:inline-flex h-[32px] items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
-                  isHomeActive
-                    ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
-                    : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
-                }`}
+                className={navLinkClass(isHomeActive)}
               >
                 <span className="material-symbols-outlined text-[16px] pointer-events-none" aria-hidden="true">
                   home
@@ -168,11 +225,7 @@ export function TopBar({
                 id="topbar-profile-link"
                 aria-label="Profile"
                 aria-current={isProfileActive ? "page" : undefined}
-                className={`hidden md:inline-flex h-[32px] items-center justify-center gap-[6px] rounded px-[12px] font-data-mono text-[11px] font-semibold tracking-wider uppercase transition-all ${
-                  isProfileActive
-                    ? "border border-primary-container/80 bg-primary-container/15 text-primary shadow-[0_0_12px_rgba(34,211,238,0.25)]"
-                    : "border border-white/15 bg-white/[0.02] text-on-surface-variant hover:border-primary-container/50 hover:bg-white/[0.06] hover:text-foreground"
-                }`}
+                className={navLinkClass(isProfileActive)}
               >
                 <span className="material-symbols-outlined text-[16px] pointer-events-none" aria-hidden="true">
                   account_circle
@@ -184,7 +237,7 @@ export function TopBar({
 
           {isLoggedIn && !currentUser?.must_change_password && <NotificationBell />}
 
-          <HamburgerMenu />
+          <HamburgerMenu chatUnreadCount={displayUnreadCount} />
 
           {isLoggedIn ? (
             <button

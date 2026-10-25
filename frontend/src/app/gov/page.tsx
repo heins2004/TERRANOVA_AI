@@ -25,6 +25,7 @@ const GOV_LIST_NAV_ITEMS: SidebarItem[] = [
   { key: "under-consideration", label: "Under Consideration", icon: "fact_check" },
   { key: "approved", label: "Approved", icon: "verified" },
   { key: "deployed-stages", label: "Deployed Stages", icon: "rocket_launch" },
+  { key: "chat", label: "Chat", icon: "chat", href: "/chat" },
 ];
 
 function GovDashboardContent() {

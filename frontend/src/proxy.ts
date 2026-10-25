@@ -9,6 +9,7 @@ const prefixProtectedRoutes = [
   "/admin",
   "/gov",
   "/planner",
+  "/chat",
 ];
 
 export function proxy(request: NextRequest) {
@@ -37,6 +38,8 @@ export const config = {
     "/gov/:path*",
     "/planner",
     "/planner/:path*",
+    "/chat",
+    "/chat/:path*",
     "/login",
     "/register",
   ],

@@ -6,7 +6,13 @@ import { useAuth } from "@/components/layout/auth-provider";
 import { Avatar } from "@/components/ui/Avatar";
 import { HamburgerMenuItems } from "./HamburgerMenuItems";
 
-export function HamburgerMenu({ className = "" }: { className?: string } = {}) {
+export function HamburgerMenu({
+  className = "",
+  chatUnreadCount = 0,
+}: {
+  className?: string;
+  chatUnreadCount?: number;
+} = {}) {
   const { user, isAuthenticated, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -170,6 +176,7 @@ export function HamburgerMenu({ className = "" }: { className?: string } = {}) {
                 isAuthenticated={isAuthenticated}
                 mustChangePassword={user?.must_change_password}
                 isLoggingOut={isLoggingOut}
+                chatUnreadCount={chatUnreadCount}
                 onLinkClick={() => {
                   setTimeout(() => setIsOpen(false), 10);
                 }}
