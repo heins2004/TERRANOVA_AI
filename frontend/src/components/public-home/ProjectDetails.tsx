@@ -65,53 +65,42 @@ export function ProjectDetails({ detail }: ProjectDetailsProps) {
         </p>
       </div>
 
-      {/* Location & Coordinates (flexible map block) */}
+      {/* Location & Coordinates (row with square map link button) */}
       <div
         id="project-location-map"
-        className="rounded-[10px] border border-white/10 bg-white/5 p-[10px] flex flex-col flex-1 min-h-[140px] max-h-[280px]"
+        className="relative flex items-stretch justify-between rounded-[10px] border border-white/10 bg-white/5 overflow-hidden"
       >
-        <div className="flex items-center justify-between gap-[8px]">
+        <div
+          className={`flex-1 min-w-0 p-[10px] flex flex-col justify-center ${
+            detail.location_lat != null && detail.location_lng != null ? "pr-[84px]" : ""
+          }`}
+        >
           <h4 className="font-body-md text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
             Location
           </h4>
-          <div className="flex items-center gap-[6px]">
-            <span className="inline-flex items-center justify-center h-[22px] rounded-full border border-primary-container/40 bg-primary-container/10 px-[8px] font-data-mono text-[10px] text-primary-container">
-              Simple
+          <div className="mt-[4px] font-data-mono text-[12px] text-on-surface-variant flex flex-wrap items-baseline gap-x-[6px]">
+            <span>Coordinates:</span>
+            <span className="text-primary-container font-medium">
+              {detail.location_lat != null && detail.location_lng != null
+                ? `Lat: ${detail.location_lat.toFixed(4)}° N, Lng: ${detail.location_lng.toFixed(4)}° E`
+                : "Coordinates pending"}
             </span>
-            <button
-              type="button"
-              disabled
-              aria-disabled="true"
-              aria-label="Satellite view (Soon)"
-              className="inline-flex items-center justify-center gap-[3px] h-[22px] rounded-full border border-white/15 bg-white/5 px-[8px] font-data-mono text-[10px] text-on-surface-variant/60 cursor-not-allowed"
-            >
-              <span>Satellite</span>
-              <span className="text-[10px] uppercase tracking-wider text-on-surface-variant/50">
-                (Soon)
-              </span>
-            </button>
           </div>
-        </div>
-        <div className="mt-[6px] font-data-mono text-[12px] flex items-center justify-between text-on-surface-variant">
-          <span>Coordinates:</span>
-          <span className="text-primary-container font-medium">
-            {detail.location_lat != null && detail.location_lng != null
-              ? `Lat: ${detail.location_lat.toFixed(4)}° N, Lng: ${detail.location_lng.toFixed(4)}° E`
-              : "Coordinates pending"}
-          </span>
         </div>
         {detail.location_lat != null && detail.location_lng != null && (
-          <div className="mt-[6px]">
-            <a
-              id="project-location-map-link"
-              href={`https://www.openstreetmap.org/?mlat=${detail.location_lat}&mlon=${detail.location_lng}#map=17/${detail.location_lat}/${detail.location_lng}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center font-data-mono text-[11px] text-cyan-400 underline hover:text-cyan-300 focus:outline-none focus:ring-1 focus:ring-cyan-400"
-            >
-              View on map
-            </a>
-          </div>
+          <a
+            id="project-location-map-link"
+            href={`https://www.openstreetmap.org/?mlat=${detail.location_lat}&mlon=${detail.location_lng}#map=17/${detail.location_lat}/${detail.location_lng}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="View on map (opens OpenStreetMap)"
+            title="View on map"
+            className="absolute top-[-1px] bottom-[-1px] right-[-1px] aspect-square flex items-center justify-center rounded-r-[10px] border-l border-white/10 bg-primary-container/10 hover:bg-primary-container/20 text-primary-container transition-colors focus:outline-none focus:ring-1 focus:ring-primary-container"
+          >
+            <span className="material-symbols-outlined text-[20px] select-none">
+              location_on
+            </span>
+          </a>
         )}
       </div>
     </>
