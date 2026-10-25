@@ -5,6 +5,7 @@ from psycopg import Connection
 
 from app.core.config import get_settings
 from app.database.connection import get_connection
+from app.repositories.site_change_repository import cancel_open_site_change_on_expire
 from app.services.deadline_reminders import process_deadline_reminders
 
 logger = logging.getLogger(__name__)
@@ -45,6 +46,9 @@ def move_expired_projects_to_in_progress(connection: Connection) -> int:
                 proj_id = proj["id"]
                 title = proj["title"]
                 created_by = proj["created_by"]
+
+                # Rule 6: cancel any open site change without altering public site
+                cancel_open_site_change_on_expire(cursor, proj_id)
 
                 # Write project_events row (actor_id = created_by since actor_id is NOT NULL)
                 cursor.execute(
