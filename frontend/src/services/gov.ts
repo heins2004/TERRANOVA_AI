@@ -192,3 +192,23 @@ export function completeProject(id: number): Promise<GovProject> {
 export function getProjectEvents(id: number): Promise<GovProjectEvent[]> {
   return request<GovProjectEvent[]>(`/api/projects/${id}/events`);
 }
+
+export interface DeployedProjectEditPayload {
+  title?: string;
+  description?: string;
+  category?: string;
+  budget?: number;
+  start_date?: string;
+  end_date?: string;
+}
+
+export function updateDeployedProjectDetails(
+  id: number,
+  payload: DeployedProjectEditPayload
+): Promise<GovProject> {
+  return request<GovProject>(`/api/projects/${id}/deployed-details`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+

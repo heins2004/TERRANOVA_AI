@@ -19,7 +19,8 @@ from app.schemas.workflow import (
     ReassignPlannerRequest,
     SiteProposalRequest,
 )
-from app.services import project_deadline_service, project_service, workflow_service
+from app.services import project_deadline_service, project_post_deploy_edit_service, project_service, workflow_service
+from app.services.project_post_deploy_edit_service import DeployedProjectUpdate
 from app.repositories import workflow_repository
 
 EDITOR_ROLES = ("Urban Planner", "Government Official", "Administrator")
@@ -106,6 +107,21 @@ def update_project(
         connection=connection,
         user=user,
         existing=existing,
+    )
+
+
+@projects_router.patch("/{project_id}/deployed-details", response_model=ProjectResponse)
+def update_deployed_project_details(
+    project_id: int,
+    payload: DeployedProjectUpdate,
+    connection: Connection = Depends(get_db),
+    user: UserResponse = Depends(require_role("Government Official")),
+) -> dict:
+    return project_post_deploy_edit_service.edit_deployed_project(
+        connection=connection,
+        user=user,
+        project_id=project_id,
+        payload=payload,
     )
 
 

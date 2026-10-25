@@ -9,6 +9,7 @@ import {
 } from "@/services/gov";
 import { GovInProgressConfirmModal } from "./GovInProgressConfirmModal";
 import { GovExtendDeadlineModal } from "./GovExtendDeadlineModal";
+import { GovDeployedEditModal } from "./GovDeployedEditModal";
 
 interface GovDeployedControlsProps {
   project: GovProject;
@@ -30,6 +31,8 @@ export function GovDeployedControls({
   const isCreator = user?.role === "Government Official" && user?.id === project.created_by;
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showExtendModal, setShowExtendModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   function handleMoveToInProgressClick() {
     const isFutureDeadline =
@@ -47,18 +50,33 @@ export function GovDeployedControls({
   return (
     <div className="w-full md:w-auto min-w-0 max-w-full rounded-[12px] border border-white/10 bg-surface-container-lowest/80 p-[16px] sm:p-[20px] space-y-[16px]">
       <span className="font-data-mono text-[11px] text-primary uppercase">ACTIVE DEPLOYMENT CONTROLS</span>
+      {successMessage && (
+        <div id="gov-deployed-success-msg" className="rounded border border-primary-container/40 bg-primary-container/15 p-[10px] text-xs text-primary font-data-mono">
+          {successMessage}
+        </div>
+      )}
       {project.stage === "OpenForResponse" && (
         <div className="space-y-[16px]">
           <div className="flex flex-wrap items-center gap-[10px]">
             {isCreator && (
-              <button
-                type="button"
-                id="gov-extend-deadline-btn"
-                onClick={() => setShowExtendModal(true)}
-                className="rounded border border-primary-container bg-primary-container/20 px-[14px] py-[8px] font-data-mono text-[11px] text-primary uppercase hover:bg-primary-container/30 disabled:opacity-50"
-              >
-                Extend deadline
-              </button>
+              <>
+                <button
+                  type="button"
+                  id="gov-edit-details-btn"
+                  onClick={() => setShowEditModal(true)}
+                  className="rounded border border-white/20 bg-white/5 px-[14px] py-[8px] font-data-mono text-[11px] text-white uppercase hover:border-white/40"
+                >
+                  Edit details
+                </button>
+                <button
+                  type="button"
+                  id="gov-extend-deadline-btn"
+                  onClick={() => setShowExtendModal(true)}
+                  className="rounded border border-primary-container bg-primary-container/20 px-[14px] py-[8px] font-data-mono text-[11px] text-primary uppercase hover:bg-primary-container/30 disabled:opacity-50"
+                >
+                  Extend deadline
+                </button>
+              </>
             )}
             <button
               type="button"
@@ -133,6 +151,18 @@ export function GovDeployedControls({
           onClose={() => setShowExtendModal(false)}
           onSuccess={() => {
             void onExecute("extend_deadline", async () => {});
+          }}
+        />
+      )}
+
+      {showEditModal && (
+        <GovDeployedEditModal
+          project={project}
+          onClose={() => setShowEditModal(false)}
+          onSuccess={(msg) => {
+            setSuccessMessage(msg);
+            setTimeout(() => setSuccessMessage(null), 5000);
+            void onExecute("deployed_edit", async () => {});
           }}
         />
       )}
