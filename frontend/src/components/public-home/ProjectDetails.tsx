@@ -100,6 +100,19 @@ export function ProjectDetails({ detail }: ProjectDetailsProps) {
               : "Coordinates pending"}
           </span>
         </div>
+        {detail.location_lat != null && detail.location_lng != null && (
+          <div className="mt-[6px]">
+            <a
+              id="project-location-map-link"
+              href={`https://www.openstreetmap.org/?mlat=${detail.location_lat}&mlon=${detail.location_lng}#map=17/${detail.location_lat}/${detail.location_lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center font-data-mono text-[11px] text-cyan-400 underline hover:text-cyan-300 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+            >
+              View on map
+            </a>
+          </div>
+        )}
       </div>
     </>
   );
