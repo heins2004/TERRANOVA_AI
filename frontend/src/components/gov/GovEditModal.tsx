@@ -5,6 +5,7 @@ import { GovProject, GovProjectCreatePayload, updateGovProject } from "@/service
 import { GovSiteAreaSection } from "@/components/gov/GovSiteAreaSection";
 import { getKolkataToday, isDateInPast, isEndAfterStart } from "@/lib/dateRules";
 import { DateTimeInput } from "@/components/common/DateTimeInput";
+import { PlaceSearchInput } from "@/components/common/PlaceSearchInput";
 
 interface GovEditModalProps {
   project: GovProject;
@@ -18,6 +19,11 @@ export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps)
 
   const [title, setTitle] = useState(project.title);
   const [description, setDescription] = useState(project.description ?? "");
+  const [city, setCity] = useState(project.city || "");
+  const [cityName, setCityName] = useState(project.city_name || "");
+  const [cityLat, setCityLat] = useState<number | null>(project.location_lat ?? null);
+  const [cityLng, setCityLng] = useState<number | null>(project.location_lng ?? null);
+  const [isCityValid, setIsCityValid] = useState(true);
   const [budget, setBudget] = useState(project.budget != null ? String(project.budget) : "");
   const [startDate, setStartDate] = useState(initialStartDate);
   const [endDate, setEndDate] = useState(initialEndDate);
@@ -29,6 +35,8 @@ export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps)
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const isSubmittingRef = useRef(false);
+
+  const canEditCity = project.stage === "Draft" || project.stage === "Planner invited";
 
   const minStartDate = getKolkataToday();
   const canEditSiteArea = project.stage === "Draft" || project.stage === "Planner invited";
@@ -60,6 +68,11 @@ export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps)
     if (isSubmittingRef.current) return;
     if (!title.trim()) {
       setError("Title cannot be empty.");
+      return;
+    }
+
+    if (canEditCity && (!city || !cityName || !isCityValid)) {
+      setError("City is required. Please select a place from the search results.");
       return;
     }
 
@@ -98,6 +111,13 @@ export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps)
       }
       if (endDateChanged) {
         payload.end_date = endDate || undefined;
+      }
+
+      if (canEditCity && (city !== project.city || cityName !== project.city_name)) {
+        payload.city = city;
+        payload.city_name = cityName;
+        if (cityLat != null) payload.location_lat = cityLat;
+        if (cityLng != null) payload.location_lng = cityLng;
       }
 
       if (canEditSiteArea) {
@@ -166,6 +186,38 @@ export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps)
             />
           </div>
 
+          {canEditCity ? (
+            <div>
+              <PlaceSearchInput
+                id="gov-edit-city"
+                label="City *"
+                initialCityName={cityName || project.city_name}
+                initialCitySlug={city || project.city}
+                onSelectPlace={(place) => {
+                  setCity(place.citySlug);
+                  setCityName(place.cityName);
+                  setCityLat(place.lat);
+                  setCityLng(place.lng);
+                  setIsCityValid(true);
+                }}
+                onValidityChange={(valid) => {
+                  setIsCityValid(valid);
+                }}
+              />
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-white mb-[6px]">City (Locked)</label>
+              <input
+                type="text"
+                id="gov-edit-city-locked"
+                disabled
+                value={project.city_name || project.city || ""}
+                className="w-full rounded border border-white/10 bg-white/5 px-[14px] py-[10px] text-sm text-on-surface-variant font-data-mono cursor-not-allowed opacity-60"
+              />
+            </div>
+          )}
+
           <div className="grid gap-[16px] sm:grid-cols-3">
             <div>
               <label className="block text-sm font-medium text-white">Budget (₹ INR)</label>
@@ -200,7 +252,9 @@ export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps)
 
           {canEditSiteArea && (
             <GovSiteAreaSection
-              city={project.city}
+              city={city}
+              cityLat={cityLat}
+              cityLng={cityLng}
               centerLat={siteAreaLat}
               centerLng={siteAreaLng}
               radiusKm={siteAreaRadiusKm}

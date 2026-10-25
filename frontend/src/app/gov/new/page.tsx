@@ -7,7 +7,7 @@ import { useAuth } from "@/components/layout/auth-provider";
 import { TopBar } from "@/components/layout/TopBar";
 import { createGovProject, GovProjectCreatePayload } from "@/services/gov";
 import { GovSiteAreaSection } from "@/components/gov/GovSiteAreaSection";
-import { SUPPORTED_CITIES } from "@/lib/cities";
+import { PlaceSearchInput } from "@/components/common/PlaceSearchInput";
 import { GovNewDatesBudget } from "@/components/gov/GovNewDatesBudget";
 import { isDateInPast, isEndAfterStart } from "@/lib/dateRules";
 
@@ -19,10 +19,11 @@ export default function NewGovProjectPage() {
   const isSubmittingRef = useRef(false);
 
   const [formData, setFormData] = useState({
-    title: "", description: "", category: "Energy", city: "delhi",
-    location_lat: "28.6139", location_lng: "77.2090", budget: "10000000",
+    title: "", description: "", category: "Energy", city: "", city_name: "",
+    location_lat: "", location_lng: "", budget: "10000000",
     start_date: "", end_date: "",
   });
+  const [isCityValid, setIsCityValid] = useState(false);
 
   const [siteArea, setSiteArea] = useState<{ centerLat: number | null; centerLng: number | null; radiusKm: number | null }>({
     centerLat: null, centerLng: null, radiusKm: null,
@@ -41,7 +42,9 @@ export default function NewGovProjectPage() {
       errors.title = "Title cannot exceed 200 characters.";
     }
 
-    if (!formData.city) errors.city = "City is required.";
+    if (!formData.city || !formData.city_name || !isCityValid) {
+      errors.city = "City is required. Please select a place from the search results.";
+    }
 
     const lat = Number(formData.location_lat);
     if (formData.location_lat !== "" && (isNaN(lat) || lat < 6.0 || lat > 38.0)) {
@@ -93,6 +96,7 @@ export default function NewGovProjectPage() {
         description: formData.description.trim() || undefined,
         category: formData.category || undefined,
         city: formData.city,
+        city_name: formData.city_name || undefined,
         location_lat: formData.location_lat ? Number(formData.location_lat) : undefined,
         location_lng: formData.location_lng ? Number(formData.location_lng) : undefined,
         budget: formData.budget ? Number(formData.budget) : undefined,
@@ -170,18 +174,34 @@ export default function NewGovProjectPage() {
 
             <div className="grid gap-[16px] sm:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-white">City *</label>
-                <select
+                <PlaceSearchInput
                   id="gov-new-city"
-                  value={formData.city}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  className="mt-[6px] w-full rounded border border-white/15 bg-[#0a0e17] px-[14px] py-[10px] text-sm text-white focus:border-primary focus:outline-none"
-                >
-                  {SUPPORTED_CITIES.map((c) => (
-                    <option key={c.slug} value={c.slug}>{c.name}</option>
-                  ))}
-                </select>
-                {fieldErrors.city && <p className="mt-[4px] text-[12px] text-danger">{fieldErrors.city}</p>}
+                  label="City *"
+                  initialCityName={formData.city_name}
+                  initialCitySlug={formData.city}
+                  onSelectPlace={(place) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      city: place.citySlug,
+                      city_name: place.cityName,
+                      location_lat: String(place.lat),
+                      location_lng: String(place.lng),
+                    }));
+                    setIsCityValid(true);
+                    setFieldErrors((prev) => {
+                      const next = { ...prev };
+                      delete next.city;
+                      return next;
+                    });
+                  }}
+                  onValidityChange={(valid) => {
+                    setIsCityValid(valid);
+                    if (!valid) {
+                      setFormData((prev) => ({ ...prev, city: "", city_name: "" }));
+                    }
+                  }}
+                  externalError={fieldErrors.city}
+                />
               </div>
 
               <div>
@@ -201,6 +221,8 @@ export default function NewGovProjectPage() {
 
             <GovSiteAreaSection
               city={formData.city}
+              cityLat={formData.location_lat ? Number(formData.location_lat) : null}
+              cityLng={formData.location_lng ? Number(formData.location_lng) : null}
               centerLat={siteArea.centerLat}
               centerLng={siteArea.centerLng}
               radiusKm={siteArea.radiusKm}

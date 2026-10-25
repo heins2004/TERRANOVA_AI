@@ -12,6 +12,8 @@ import { ModalHeaderBar } from "./ModalHeaderBar";
 export interface FullScreenGovProps {
   mode: "gov";
   city?: string | null;
+  cityLat?: number | null;
+  cityLng?: number | null;
   initialCenterLat: number | null;
   initialCenterLng: number | null;
   initialRadiusKm: number | null;
@@ -166,6 +168,9 @@ function FullScreenMapModalDialog(props: FullScreenMapModalProps) {
     if (props.mode === "gov") {
       if (props.initialCenterLat != null && props.initialCenterLng != null) {
         return [props.initialCenterLat, props.initialCenterLng];
+      }
+      if (props.cityLat != null && props.cityLng != null) {
+        return [props.cityLat, props.cityLng];
       }
       const c = getCityCoordinates(props.city);
       return [c.lat, c.lng];

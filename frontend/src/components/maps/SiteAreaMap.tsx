@@ -43,6 +43,8 @@ function MapClickHandler({ onClick }: { onClick: (latlng: L.LatLng) => void }) {
 export interface SiteAreaMapGovProps {
   mode: "gov";
   city?: string | null;
+  cityLat?: number | null;
+  cityLng?: number | null;
   centerLat: number | null;
   centerLng: number | null;
   radiusKm: number | null;
@@ -87,6 +89,9 @@ export default function SiteAreaMap(props: SiteAreaMapProps) {
     if (props.mode === "gov") {
       if (props.centerLat != null && props.centerLng != null) {
         return [props.centerLat, props.centerLng];
+      }
+      if (props.cityLat != null && props.cityLng != null) {
+        return [props.cityLat, props.cityLng];
       }
       const coords = getCityCoordinates(props.city);
       return [coords.lat, coords.lng];
@@ -168,6 +173,8 @@ export default function SiteAreaMap(props: SiteAreaMapProps) {
         <MapClickHandler onClick={handleMapClick} />
         <MapBoundsController
           city={props.city}
+          cityLat={props.mode === "gov" ? props.cityLat : undefined}
+          cityLng={props.mode === "gov" ? props.cityLng : undefined}
           centerLat={props.mode === "gov" ? props.centerLat : props.circleCenterLat}
           centerLng={props.mode === "gov" ? props.centerLng : props.circleCenterLng}
           radiusMeters={radiusMeters}

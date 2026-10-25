@@ -7,6 +7,7 @@ export interface GovProject {
   status: string;
   category: string | null;
   city: string | null;
+  city_name?: string | null;
   location_lat: number | null;
   location_lng: number | null;
   budget: string | number | null;
@@ -53,6 +54,7 @@ export interface GovProjectCreatePayload {
   description?: string;
   category?: string;
   city: string;
+  city_name?: string | null;
   location_lat?: number;
   location_lng?: number;
   budget?: number;

@@ -22,6 +22,8 @@ const FullScreenMapModal = dynamic(
 
 interface GovSiteAreaSectionProps {
   city?: string | null;
+  cityLat?: number | null;
+  cityLng?: number | null;
   centerLat: number | null;
   centerLng: number | null;
   radiusKm: number | null;
@@ -32,6 +34,8 @@ interface GovSiteAreaSectionProps {
 
 export function GovSiteAreaSection({
   city,
+  cityLat,
+  cityLng,
   centerLat,
   centerLng,
   radiusKm,
@@ -130,6 +134,8 @@ export function GovSiteAreaSection({
       <SiteAreaMap
         mode="gov"
         city={city}
+        cityLat={cityLat}
+        cityLng={cityLng}
         centerLat={centerLat}
         centerLng={centerLng}
         radiusKm={radiusKm ?? (parseFloat(radiusInput) || 5.0)}
@@ -179,6 +185,8 @@ export function GovSiteAreaSection({
         onClose={() => setIsModalOpen(false)}
         mode="gov"
         city={city}
+        cityLat={cityLat}
+        cityLng={cityLng}
         initialCenterLat={centerLat}
         initialCenterLng={centerLng}
         initialRadiusKm={radiusKm ?? (parseFloat(radiusInput) || 5.0)}
