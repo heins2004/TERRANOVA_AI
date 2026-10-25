@@ -76,8 +76,7 @@ function validateBounds(
 }
 
 function parseUrlCoordinates(
-  urlObj: URL,
-  rawUrl: string
+  urlObj: URL
 ): { lat: number; lng: number; source: string } | null {
   const host = urlObj.hostname.toLowerCase();
   const searchParams = urlObj.searchParams;
@@ -230,7 +229,7 @@ export function parseMapLinkOrCoords(input: string): ParseResult {
       };
     }
 
-    const coords = parseUrlCoordinates(parsedUrl, trimmed);
+    const coords = parseUrlCoordinates(parsedUrl);
     if (!coords) {
       return {
         success: false,

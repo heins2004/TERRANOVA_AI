@@ -8,6 +8,7 @@ export type SidebarItem = {
   label: string;
   icon?: string;
   href?: string;
+  badge?: number;
 };
 
 type SidebarLayoutProps = {
@@ -77,6 +78,14 @@ export function SidebarLayout({
                   </span>
                 )}
                 <span>{item.label}</span>
+                {typeof item.badge === "number" && item.badge > 0 && (
+                  <span
+                    id={`${idPrefix}-tab-${item.key}-unread-badge`}
+                    className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-[5px] rounded-full bg-primary text-black font-data-mono text-[10px] font-bold"
+                  >
+                    {item.badge}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -101,24 +110,34 @@ export function SidebarLayout({
                 href={href}
                 id={`${idPrefix}-nav-${item.key}`}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex items-center gap-[12px] px-[14px] py-[10px] rounded-[10px] text-[13px] font-body-md transition-all cursor-pointer ${
+                className={`flex items-center justify-between gap-[12px] px-[14px] py-[10px] rounded-[10px] text-[13px] font-body-md transition-all cursor-pointer ${
                   isActive
                     ? "border border-primary-container/60 bg-primary-container/15 text-primary-container font-semibold shadow-[0_0_16px_rgba(34,211,238,0.2)]"
                     : "border border-transparent text-on-surface-variant hover:text-on-surface hover:bg-white/5"
                 }`}
               >
-                {item.icon && (
+                <div className="flex items-center gap-[12px] min-w-0">
+                  {item.icon && (
+                    <span
+                      className={`material-symbols-outlined text-[18px] ${
+                        isActive
+                          ? "text-primary-container"
+                          : "text-on-surface-variant"
+                      }`}
+                    >
+                      {item.icon}
+                    </span>
+                  )}
+                  <span className="truncate">{item.label}</span>
+                </div>
+                {typeof item.badge === "number" && item.badge > 0 && (
                   <span
-                    className={`material-symbols-outlined text-[18px] ${
-                      isActive
-                        ? "text-primary-container"
-                        : "text-on-surface-variant"
-                    }`}
+                    id={`${idPrefix}-nav-${item.key}-unread-badge`}
+                    className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-[5px] rounded-full bg-primary text-black font-data-mono text-[10px] font-bold shrink-0"
                   >
-                    {item.icon}
+                    {item.badge}
                   </span>
                 )}
-                <span>{item.label}</span>
               </Link>
             );
           })}

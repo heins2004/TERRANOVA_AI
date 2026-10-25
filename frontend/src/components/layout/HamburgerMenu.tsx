@@ -8,10 +8,8 @@ import { HamburgerMenuItems } from "./HamburgerMenuItems";
 
 export function HamburgerMenu({
   className = "",
-  chatUnreadCount = 0,
 }: {
   className?: string;
-  chatUnreadCount?: number;
 } = {}) {
   const { user, isAuthenticated, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -176,7 +174,6 @@ export function HamburgerMenu({
                 isAuthenticated={isAuthenticated}
                 mustChangePassword={user?.must_change_password}
                 isLoggingOut={isLoggingOut}
-                chatUnreadCount={chatUnreadCount}
                 onLinkClick={() => {
                   setTimeout(() => setIsOpen(false), 10);
                 }}

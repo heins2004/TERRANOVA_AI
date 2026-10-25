@@ -7,7 +7,6 @@ type MenuItemsProps = {
   isAuthenticated: boolean;
   mustChangePassword?: boolean;
   isLoggingOut: boolean;
-  chatUnreadCount?: number;
   onLinkClick: () => void;
   onLogout: () => void;
 };
@@ -17,7 +16,6 @@ export function HamburgerMenuItems({
   isAuthenticated,
   mustChangePassword,
   isLoggingOut,
-  chatUnreadCount = 0,
   onLinkClick,
   onLogout,
 }: MenuItemsProps) {
@@ -115,28 +113,6 @@ export function HamburgerMenuItems({
             <span className="pointer-events-none">Planner portal</span>
           </Link>
           <Link
-            href="/chat"
-            role="menuitem"
-            id="menu-item-chat"
-            onClick={onLinkClick}
-            className="flex h-[38px] items-center justify-between rounded-lg px-[12px] font-body-md text-[13px] text-on-surface transition-colors hover:bg-white/10 hover:text-primary"
-          >
-            <div className="flex items-center gap-[10px]">
-              <span className="material-symbols-outlined text-[18px] text-on-surface-variant pointer-events-none">
-                chat
-              </span>
-              <span className="pointer-events-none">Chat</span>
-            </div>
-            {chatUnreadCount > 0 && (
-              <span
-                id="menu-item-chat-unread-badge"
-                className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-[5px] rounded-full bg-primary text-black font-data-mono text-[10px] font-bold"
-              >
-                {chatUnreadCount}
-              </span>
-            )}
-          </Link>
-          <Link
             href="/"
             role="menuitem"
             id="menu-item-home"
@@ -164,28 +140,6 @@ export function HamburgerMenuItems({
               account_balance
             </span>
             <span className="pointer-events-none">Government portal</span>
-          </Link>
-          <Link
-            href="/chat"
-            role="menuitem"
-            id="menu-item-chat"
-            onClick={onLinkClick}
-            className="flex h-[38px] items-center justify-between rounded-lg px-[12px] font-body-md text-[13px] text-on-surface transition-colors hover:bg-white/10 hover:text-primary"
-          >
-            <div className="flex items-center gap-[10px]">
-              <span className="material-symbols-outlined text-[18px] text-on-surface-variant pointer-events-none">
-                chat
-              </span>
-              <span className="pointer-events-none">Chat</span>
-            </div>
-            {chatUnreadCount > 0 && (
-              <span
-                id="menu-item-chat-unread-badge"
-                className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-[5px] rounded-full bg-primary text-black font-data-mono text-[10px] font-bold"
-              >
-                {chatUnreadCount}
-              </span>
-            )}
           </Link>
           <Link
             href="/"

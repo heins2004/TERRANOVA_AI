@@ -8,6 +8,7 @@ import { TopBar } from "@/components/layout/TopBar";
 import { SidebarLayout, SidebarItem } from "@/components/layout/SidebarLayout";
 import { GovStageGroupSection, StageGroupConfig } from "@/components/gov/GovStageGroupSection";
 import { getGovProjects, GovProject } from "@/services/gov";
+import { getChatUnreadCount } from "@/services/chat";
 
 const STAGE_ORDER: StageGroupConfig[] = [
   { key: "draft", label: "Draft", stages: ["Draft"] },
@@ -35,12 +36,33 @@ function GovDashboardContent() {
   const [projects, setProjects] = useState<GovProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [chatUnreadCount, setChatUnreadCount] = useState(0);
 
   const isOfficial = user?.role === "Government Official";
 
   const rawSection = searchParams.get("section");
   const isValidSection = rawSection && STAGE_ORDER.some((g) => g.key === rawSection);
   const activeSection = isValidSection ? (rawSection as string) : "draft";
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchUnread = async () => {
+      try {
+        const res = await getChatUnreadCount();
+        if (isMounted) setChatUnreadCount(res.unread_count ?? 0);
+      } catch {
+        // tolerate errors silently without red banners
+      }
+    };
+    void fetchUnread();
+    const interval = setInterval(() => {
+      void fetchUnread();
+    }, 30000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isReady) return;
@@ -72,12 +94,16 @@ function GovDashboardContent() {
 
   const activeGroup = STAGE_ORDER.find((g) => g.key === activeSection) ?? STAGE_ORDER[0];
 
+  const navItems = GOV_LIST_NAV_ITEMS.map((item) =>
+    item.key === "chat" ? { ...item, badge: chatUnreadCount } : item
+  );
+
   return (
     <div className="min-h-screen flex flex-col bg-surface-container-lowest text-on-surface">
       <TopBar user={user} />
       <main className="flex-1 w-full">
         <SidebarLayout
-          items={GOV_LIST_NAV_ITEMS}
+          items={navItems}
           activeKey={activeSection}
           basePath="/gov"
           navTitle="Project stages"

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { ChatProjectItem } from "@/services/chat";
 import { formatISTDateTime } from "./chatUtils";
 
@@ -13,6 +14,8 @@ interface ChatProjectListProps {
   onTogglePin: (id: number, currentPinned: boolean) => void;
   pinErrorMessage?: string | null;
   isLoading: boolean;
+  portalHref?: string | null;
+  portalLabel?: string;
 }
 
 export function ChatProjectList({
@@ -24,11 +27,25 @@ export function ChatProjectList({
   onTogglePin,
   pinErrorMessage,
   isLoading,
+  portalHref,
+  portalLabel = "Back to portal",
 }: ChatProjectListProps) {
   return (
     <div className="flex flex-col h-full bg-surface-container-lowest border-r border-white/10">
       {/* Search Header */}
       <div className="p-[14px] border-b border-white/10 shrink-0">
+        {portalHref && (
+          <div className="mb-[10px]">
+            <Link
+              href={portalHref}
+              id="chat-back-to-portal-link"
+              className="inline-flex items-center gap-[6px] text-[12px] font-data-mono text-primary hover:underline"
+            >
+              <span className="material-symbols-outlined text-[14px] pointer-events-none">arrow_back</span>
+              <span>{portalLabel}</span>
+            </Link>
+          </div>
+        )}
         <div className="relative">
           <span
             className="material-symbols-outlined absolute left-[10px] top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant pointer-events-none"

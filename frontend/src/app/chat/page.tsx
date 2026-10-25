@@ -116,8 +116,6 @@ function ChatPageContent() {
         const errorMsg = err instanceof Error ? err.message : String(err);
         if (errorMsg.includes("409") || errorMsg.includes("planner accepts")) {
           setNoPlannerAssigned(true);
-        } else {
-          setConversationError(errorMsg);
         }
         messagesErrorBackoffRef.current = Math.min(20000, (messagesErrorBackoffRef.current || 2000) * 1.5);
       } finally {
@@ -189,13 +187,13 @@ function ChatPageContent() {
   };
 
   const handleTogglePin = async (id: number, currentPinned: boolean) => {
-    setPinError(null);
     try {
       if (currentPinned) {
         await unpinChatProject(id);
       } else {
         await pinChatProject(id);
       }
+      setPinError(null);
       await fetchProjects(searchQuery);
     } catch (err: unknown) {
       setPinError(err instanceof Error ? err.message : String(err));
@@ -204,9 +202,16 @@ function ChatPageContent() {
 
   const handleSendMessage = async (body: string) => {
     if (!selectedProjectId) return;
-    const sent = await sendChatMessage(selectedProjectId, body);
-    setMessages((prev) => [...prev, sent]);
-    await fetchProjects(searchQuery);
+    try {
+      const sent = await sendChatMessage(selectedProjectId, body);
+      setConversationError(null);
+      setMessages((prev) => [...prev, sent]);
+      await fetchProjects(searchQuery);
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      setConversationError(errorMsg);
+      throw err;
+    }
   };
 
   const activeProject = projects.find((p) => p.id === selectedProjectId) || null;
@@ -214,6 +219,19 @@ function ChatPageContent() {
     activeProject?.stage === "Completed" ||
     activeProject?.stage === "Halted" ||
     activeProject?.stage === "Recalled";
+
+  const portalHref =
+    user?.role === "Government Official"
+      ? "/gov"
+      : user?.role === "Urban Planner"
+      ? "/planner"
+      : null;
+  const portalLabel =
+    user?.role === "Government Official"
+      ? "Back to Gov Portal"
+      : user?.role === "Urban Planner"
+      ? "Back to Planner Portal"
+      : "Back to portal";
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
@@ -235,6 +253,8 @@ function ChatPageContent() {
             onTogglePin={handleTogglePin}
             pinErrorMessage={pinError}
             isLoading={isLoadingProjects}
+            portalHref={portalHref}
+            portalLabel={portalLabel}
           />
         </div>
 

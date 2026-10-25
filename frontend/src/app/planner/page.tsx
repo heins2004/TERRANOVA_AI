@@ -16,16 +16,13 @@ import {
 } from "@/services/planner";
 import { getPlannerCredentials, CredentialStatus } from "@/services/plannerCredentials";
 import { PendingInvitesSection } from "@/components/planner/PendingInvitesSection";
+import { getChatUnreadCount } from "@/services/chat";
 
 const STAGE_GROUPS = [
   { key: "site-proposed", label: "Site Proposed", stages: ["Site proposed"] },
   { key: "under-consideration", label: "Under Consideration", stages: ["Under consideration"] },
   { key: "approved", label: "Approved", stages: ["Approved"] },
-  {
-    key: "deployed-stages",
-    label: "Deployed Stages",
-    stages: ["OpenForResponse", "InProgress", "Completed", "Halted", "Recalled"],
-  },
+  { key: "deployed-stages", label: "Deployed Stages", stages: ["OpenForResponse", "InProgress", "Completed", "Halted", "Recalled"] },
 ];
 
 const PLANNER_LIST_NAV_ITEMS: SidebarItem[] = [
@@ -37,13 +34,7 @@ const PLANNER_LIST_NAV_ITEMS: SidebarItem[] = [
   { key: "chat", label: "Chat", icon: "chat", href: "/chat" },
 ];
 
-const VALID_SECTIONS = [
-  "invitations",
-  "site-proposed",
-  "under-consideration",
-  "approved",
-  "deployed-stages",
-] as const;
+const VALID_SECTIONS = ["invitations", "site-proposed", "under-consideration", "approved", "deployed-stages"] as const;
 
 type PlannerSection = (typeof VALID_SECTIONS)[number];
 
@@ -57,6 +48,7 @@ function PlannerDashboardContent() {
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
   const [error, setError] = useState("");
+  const [chatUnreadCount, setChatUnreadCount] = useState(0);
   const isSubmittingRef = useRef(false);
 
   const rawSection = searchParams.get("section");
@@ -76,6 +68,21 @@ function PlannerDashboardContent() {
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Unable to load planner data."))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchUnread = async () => {
+      try {
+        const res = await getChatUnreadCount();
+        if (isMounted) setChatUnreadCount(res.unread_count ?? 0);
+      } catch {
+        // tolerate errors silently without red banners
+      }
+    };
+    void fetchUnread();
+    const interval = setInterval(() => { void fetchUnread(); }, 30000);
+    return () => { isMounted = false; clearInterval(interval); };
   }, []);
 
   useEffect(() => {
@@ -173,7 +180,9 @@ function PlannerDashboardContent() {
 
       <main className="flex-1 w-full">
         <SidebarLayout
-          items={PLANNER_LIST_NAV_ITEMS}
+          items={PLANNER_LIST_NAV_ITEMS.map((item) =>
+            item.key === "chat" ? { ...item, badge: chatUnreadCount } : item
+          )}
           activeKey={activeSection}
           basePath="/planner"
           navTitle="Planner stages"

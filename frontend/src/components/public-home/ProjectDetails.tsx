@@ -68,19 +68,21 @@ export function ProjectDetails({ detail }: ProjectDetailsProps) {
       {/* Location & Coordinates (row with square map link button) */}
       <div
         id="project-location-map"
-        className="relative flex items-stretch justify-between rounded-[10px] border border-white/10 bg-white/5 overflow-hidden"
+        className={`grid ${
+          detail.location_lat != null && detail.location_lng != null
+            ? "grid-cols-[1fr_auto]"
+            : "grid-cols-1"
+        } items-stretch gap-[12px] rounded-[10px] border border-white/10 bg-white/5 overflow-hidden pl-[12px] ${
+          detail.location_lat != null && detail.location_lng != null ? "pr-0" : "pr-[12px]"
+        }`}
       >
-        <div
-          className={`flex-1 min-w-0 p-[10px] flex flex-col justify-center ${
-            detail.location_lat != null && detail.location_lng != null ? "pr-[84px]" : ""
-          }`}
-        >
+        <div className="min-w-0 py-[10px] flex flex-col justify-center">
           <h4 className="font-body-md text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
             Location
           </h4>
-          <div className="mt-[4px] font-data-mono text-[12px] text-on-surface-variant flex flex-wrap items-baseline gap-x-[6px]">
+          <div className="mt-[4px] font-data-mono text-[11px] sm:text-[12px] text-on-surface-variant flex flex-wrap items-baseline gap-x-[6px] break-words">
             <span>Coordinates:</span>
-            <span className="text-primary-container font-medium">
+            <span className="text-primary-container font-medium break-all sm:break-normal">
               {detail.location_lat != null && detail.location_lng != null
                 ? `Lat: ${detail.location_lat.toFixed(4)}° N, Lng: ${detail.location_lng.toFixed(4)}° E`
                 : "Coordinates pending"}
@@ -95,7 +97,7 @@ export function ProjectDetails({ detail }: ProjectDetailsProps) {
             rel="noopener noreferrer"
             aria-label="View on map (opens OpenStreetMap)"
             title="View on map"
-            className="absolute top-[-1px] bottom-[-1px] right-[-1px] aspect-square flex items-center justify-center rounded-r-[10px] border-l border-white/10 bg-primary-container/10 hover:bg-primary-container/20 text-primary-container transition-colors focus:outline-none focus:ring-1 focus:ring-primary-container"
+            className="aspect-square h-[calc(100%+2px)] -my-[1px] -mr-[1px] flex items-center justify-center border-l border-white/10 bg-primary-container/10 hover:bg-primary-container/20 text-primary-container transition-colors focus:outline-none focus:ring-1 focus:ring-primary-container"
           >
             <span className="material-symbols-outlined text-[20px] select-none">
               location_on
