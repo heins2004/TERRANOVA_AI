@@ -61,6 +61,14 @@ export function PlaceSearchInput({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Scroll active option into view during keyboard navigation
+  useEffect(() => {
+    if (highlightedIndex >= 0) {
+      const el = document.getElementById(`${id}-opt-${highlightedIndex}`);
+      el?.scrollIntoView({ block: "nearest" });
+    }
+  }, [highlightedIndex, id]);
+
   function choosePlace(place: PlaceResult) {
     isChoosingRef.current = true;
     setQuery(place.cityName);
@@ -212,7 +220,8 @@ export function PlaceSearchInput({
         <ul
           id={`${id}-listbox`}
           role="listbox"
-          className="absolute left-0 right-0 z-50 mt-[4px] max-h-60 overflow-y-auto rounded-lg border border-white/15 bg-[#0a0e17] shadow-2xl py-[4px]"
+          style={{ maxHeight: "min(16rem, 50vh)" }}
+          className="absolute left-0 right-0 z-[1100] mt-[4px] max-h-64 overflow-y-auto rounded-lg border border-white/15 bg-[#0a0e17] shadow-2xl py-[4px]"
         >
           {isLoading && results.length === 0 && (
             <li className="px-[14px] py-[10px] text-xs font-data-mono text-on-surface-variant">
