@@ -29,6 +29,8 @@ interface SiteProposalFormProps {
   siteAreaLat?: number | null;
   siteAreaLng?: number | null;
   siteAreaRadiusKm?: number | null;
+  onSubmitOverride?: (payload: { name: string; location_lat: number; location_lng: number; explanation: string }) => Promise<void>;
+  submitButtonLabel?: string;
   onSuccess: () => void;
 }
 
@@ -38,6 +40,8 @@ export function SiteProposalForm({
   siteAreaLat,
   siteAreaLng,
   siteAreaRadiusKm,
+  onSubmitOverride,
+  submitButtonLabel,
   onSuccess,
 }: SiteProposalFormProps) {
   const [siteName, setSiteName] = useState("");
@@ -102,12 +106,9 @@ export function SiteProposalForm({
     setGeneralError("");
 
     try {
-      await proposeSite(projectId, {
-        name: siteName.trim(),
-        location_lat: parseFloat(siteLat),
-        location_lng: parseFloat(siteLng),
-        explanation: explanation.trim(),
-      });
+      const p = { name: siteName.trim(), location_lat: parseFloat(siteLat), location_lng: parseFloat(siteLng), explanation: explanation.trim() };
+      if (onSubmitOverride) await onSubmitOverride(p);
+      else await proposeSite(projectId, p);
       onSuccess();
     } catch (err) {
       setGeneralError(err instanceof Error ? err.message : "Failed to propose site.");
@@ -267,7 +268,7 @@ export function SiteProposalForm({
             disabled={isLoading}
             className="rounded border border-primary-container bg-primary-container/20 px-[20px] py-[10px] font-data-mono text-xs font-semibold uppercase tracking-wider text-primary hover:bg-primary-container/30 disabled:opacity-50"
           >
-            {isLoading ? "SUBMITTING PROPOSAL..." : "SUBMIT SITE PROPOSAL"}
+            {isLoading ? "SUBMITTING PROPOSAL..." : submitButtonLabel || "SUBMIT SITE PROPOSAL"}
           </button>
         </div>
       </form>

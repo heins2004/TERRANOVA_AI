@@ -10,21 +10,27 @@ import {
 import { GovInProgressConfirmModal } from "./GovInProgressConfirmModal";
 import { GovExtendDeadlineModal } from "./GovExtendDeadlineModal";
 import { GovDeployedEditModal } from "./GovDeployedEditModal";
+import { GovSiteChangeModal } from "./GovSiteChangeModal";
+import { SiteChange } from "@/services/siteChange";
 
 interface GovDeployedControlsProps {
   project: GovProject;
+  siteChange?: SiteChange | null;
   loadingAction: string | null;
   onExecute: (name: string, fn: () => Promise<unknown>) => Promise<void>;
   onOpenReason: (action: "halt" | "recall", title: string) => void;
   onError: (err: string) => void;
+  onRefresh?: () => void;
   extraAction?: React.ReactNode;
 }
 
 export function GovDeployedControls({
   project,
+  siteChange,
   loadingAction,
   onExecute,
   onOpenReason,
+  onRefresh,
   extraAction,
 }: GovDeployedControlsProps) {
   const { user } = useAuth();
@@ -32,7 +38,10 @@ export function GovDeployedControls({
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showExtendModal, setShowExtendModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showSiteChangeModal, setShowSiteChangeModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const hasOpenSiteChange = siteChange && ["requested", "proposed", "approved", "rejected"].includes(siteChange.status);
 
   function handleMoveToInProgressClick() {
     const isFutureDeadline =
@@ -76,6 +85,16 @@ export function GovDeployedControls({
                 >
                   Extend deadline
                 </button>
+                {!hasOpenSiteChange && (
+                  <button
+                    type="button"
+                    id="gov-request-site-change-btn"
+                    onClick={() => setShowSiteChangeModal(true)}
+                    className="rounded border border-primary-container bg-primary-container/20 px-[14px] py-[8px] font-data-mono text-[11px] text-primary uppercase hover:bg-primary-container/30 disabled:opacity-50"
+                  >
+                    Request site change
+                  </button>
+                )}
               </>
             )}
             <button
@@ -163,6 +182,20 @@ export function GovDeployedControls({
             setSuccessMessage(msg);
             setTimeout(() => setSuccessMessage(null), 5000);
             void onExecute("deployed_edit", async () => {});
+          }}
+        />
+      )}
+
+      {showSiteChangeModal && (
+        <GovSiteChangeModal
+          projectId={project.id}
+          initialLat={project.site_area_lat}
+          initialLng={project.site_area_lng}
+          initialRadiusKm={project.site_area_radius_km}
+          onClose={() => setShowSiteChangeModal(false)}
+          onSuccess={() => {
+            if (onRefresh) onRefresh();
+            else void onExecute("site_change", async () => {});
           }}
         />
       )}

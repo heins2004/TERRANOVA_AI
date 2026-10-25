@@ -13,6 +13,7 @@ import { GovPlannerTabSection } from "@/components/gov/GovPlannerTabSection";
 import { GovConsultationsTabSection } from "@/components/gov/GovConsultationsTabSection";
 import { GovTimelineTabSection } from "@/components/gov/GovTimelineTabSection";
 import { GovEditModal } from "@/components/gov/GovEditModal";
+import { getSiteChange, SiteChange } from "@/services/siteChange";
 
 function GovProjectDetailContent() {
   const params = useParams<{ id: string }>();
@@ -22,6 +23,7 @@ function GovProjectDetailContent() {
   const { user, isReady, isAuthenticated } = useAuth();
   const [project, setProject] = useState<GovProject | null>(null);
   const [events, setEvents] = useState<GovProjectEvent[]>([]);
+  const [siteChange, setSiteChange] = useState<SiteChange | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showEditModal, setShowEditModal] = useState(false);
@@ -33,10 +35,12 @@ function GovProjectDetailContent() {
     Promise.all([
       getGovProject(projectId),
       getProjectEvents(projectId).catch(() => []),
+      getSiteChange(projectId).catch(() => null),
     ])
-      .then(([proj, evs]) => {
+      .then(([proj, evs, sc]) => {
         setProject(proj);
         setEvents(evs);
+        setSiteChange(sc);
         setError("");
       })
       .catch((err) => {
@@ -98,12 +102,17 @@ function GovProjectDetailContent() {
         <div className="space-y-[32px]">
           <GovProjectHeader
             project={project}
+            siteChange={siteChange}
             onRefresh={loadData}
             onOpenEdit={() => setShowEditModal(true)}
           />
 
           <GovDetailsSection project={project} />
-          <GovSiteAreaTabSection project={project} />
+          <GovSiteAreaTabSection
+            project={project}
+            siteChange={siteChange}
+            onRefresh={loadData}
+          />
           <GovPlannerTabSection project={project} onRefresh={loadData} />
           <GovConsultationsTabSection project={project} />
           <GovTimelineTabSection project={project} events={events} />

@@ -16,14 +16,17 @@ import { GovReasonModal } from "./GovReasonModal";
 import { GovDeployedControls } from "./GovDeployedControls";
 import { GovApprovedControls } from "./GovApprovedControls";
 import { GovConsultationFormModal } from "./GovConsultationModal";
+import { SiteChange } from "@/services/siteChange";
+import { SiteChangeInProgressBadge } from "./SiteChangeInProgressBadge";
 
 interface GovProjectHeaderProps {
   project: GovProject;
+  siteChange?: SiteChange | null;
   onRefresh: () => void;
   onOpenEdit: () => void;
 }
 
-export function GovProjectHeader({ project, onRefresh, onOpenEdit }: GovProjectHeaderProps) {
+export function GovProjectHeader({ project, siteChange, onRefresh, onOpenEdit }: GovProjectHeaderProps) {
   const isActionRef = useRef(false);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -87,10 +90,13 @@ export function GovProjectHeader({ project, onRefresh, onOpenEdit }: GovProjectH
 
         <div className="mt-[8px] flex flex-wrap items-start justify-between gap-[16px]">
           <div className="max-w-2xl">
-            <div className="flex items-center gap-[10px]">
+            <div className="flex flex-wrap items-center gap-[10px]">
               <span className="rounded border border-primary-container/40 bg-primary-container/15 px-[10px] py-[3px] font-data-mono text-[11px] font-semibold text-primary uppercase">
                 {project.stage}
               </span>
+              {siteChange && ["requested", "proposed", "approved", "rejected"].includes(siteChange.status) && (
+                <SiteChangeInProgressBadge status={siteChange.status} />
+              )}
               <span className="font-data-mono text-xs text-on-surface-variant uppercase">
                 City: {project.city ?? "National"}
               </span>
@@ -199,10 +205,12 @@ export function GovProjectHeader({ project, onRefresh, onOpenEdit }: GovProjectH
             {["OpenForResponse", "InProgress", "Completed", "Halted", "Recalled"].includes(project.stage) && (
               <GovDeployedControls
                 project={project}
+                siteChange={siteChange}
                 loadingAction={loadingAction}
                 onExecute={executeAction}
                 onOpenReason={(action, title) => setReasonModal({ action, title })}
                 onError={setError}
+                onRefresh={onRefresh}
                 extraAction={addConsultationBtn}
               />
             )}

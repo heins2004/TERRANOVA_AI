@@ -2,6 +2,8 @@
 
 import dynamic from "next/dynamic";
 import { GovProject } from "@/services/gov";
+import { SiteChange } from "@/services/siteChange";
+import { GovSiteChangeCard } from "./GovSiteChangeCard";
 
 const SiteAreaMap = dynamic(
   () => import("@/components/maps/SiteAreaMap"),
@@ -17,11 +19,13 @@ const SiteAreaMap = dynamic(
 
 interface GovSiteAreaTabSectionProps {
   project: GovProject;
+  siteChange?: SiteChange | null;
+  onRefresh?: () => void;
 }
 
 const EXCLUDED_STAGES = ["Draft", "Planner invited"];
 
-export function GovSiteAreaTabSection({ project }: GovSiteAreaTabSectionProps) {
+export function GovSiteAreaTabSection({ project, siteChange, onRefresh }: GovSiteAreaTabSectionProps) {
   const isStageFromSiteProposed = !EXCLUDED_STAGES.includes(project.stage);
   const showCandidateBlock =
     isStageFromSiteProposed &&
@@ -90,6 +94,14 @@ export function GovSiteAreaTabSection({ project }: GovSiteAreaTabSectionProps) {
             </a>
           </div>
         </div>
+      )}
+
+      {siteChange && ["requested", "proposed", "approved", "rejected"].includes(siteChange.status) && (
+        <GovSiteChangeCard
+          projectId={project.id}
+          change={siteChange}
+          onRefresh={onRefresh || (() => {})}
+        />
       )}
     </div>
   );

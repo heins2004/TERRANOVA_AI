@@ -11,6 +11,9 @@ import { PlannerEventsTimeline } from "@/components/planner/PlannerEventsTimelin
 import { PlannerConsultationsList } from "@/components/planner/PlannerConsultationsList";
 import { CopyButton } from "@/components/common/CopyButton";
 import { formatISTDateTime } from "@/lib/dateRules";
+import { getSiteChange, SiteChange } from "@/services/siteChange";
+import { SiteChangeInProgressBadge } from "@/components/gov/SiteChangeInProgressBadge";
+import { PlannerSiteChangeSection } from "@/components/planner/PlannerSiteChangeSection";
 
 function PlannerProjectDetailContent() {
   const router = useRouter();
@@ -19,6 +22,7 @@ function PlannerProjectDetailContent() {
 
   const { user, isReady, isAuthenticated } = useAuth();
   const [project, setProject] = useState<PlannerProject | null>(null);
+  const [siteChange, setSiteChange] = useState<SiteChange | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
@@ -27,8 +31,14 @@ function PlannerProjectDetailContent() {
 
   const loadData = useCallback(() => {
     if (!projectId || isNaN(projectId)) return;
-    getPlannerProject(projectId)
-      .then(setProject)
+    Promise.all([
+      getPlannerProject(projectId),
+      getSiteChange(projectId).catch(() => null),
+    ])
+      .then(([proj, sc]) => {
+        setProject(proj);
+        setSiteChange(sc);
+      })
       .catch((err) => setError(err instanceof Error ? err.message : "Unable to load project."))
       .finally(() => setLoading(false));
   }, [projectId]);
@@ -143,6 +153,9 @@ function PlannerProjectDetailContent() {
                   <span className="rounded border border-primary-container/60 bg-primary-container/10 px-[10px] py-[4px] font-data-mono text-xs text-primary font-semibold uppercase">
                     {project.stage}
                   </span>
+                  {siteChange && ["requested", "proposed", "approved", "rejected"].includes(siteChange.status) && (
+                    <SiteChangeInProgressBadge status={siteChange.status} />
+                  )}
                   <span className="font-data-mono text-[11px] text-on-surface-variant">
                     STATUS: {project.status}
                   </span>
@@ -169,6 +182,16 @@ function PlannerProjectDetailContent() {
                 </div>
               </div>
             </div>
+
+            {/* Site Change Section if open */}
+            {siteChange && ["requested", "proposed", "approved", "rejected"].includes(siteChange.status) && (
+              <PlannerSiteChangeSection
+                projectId={project.id}
+                change={siteChange}
+                project={project}
+                onRefresh={loadData}
+              />
+            )}
 
             {/* Site area Section */}
             <PlannerStageActions
