@@ -3,7 +3,7 @@ from typing import Any
 from fastapi import HTTPException, status
 from psycopg import Connection
 
-from app.core.cities import CITY_SLUGS
+from app.core.place_validation import validate_place_data
 from app.repositories import planner_credential_repository, project_repository, workflow_repository
 from app.schemas.auth import UserResponse
 from app.schemas.workflow import (
@@ -174,13 +174,8 @@ def create_project(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only Government Officials can create projects.",
         )
-    if payload.city not in CITY_SLUGS:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="City must be a supported city slug.",
-        )
-
     values = payload.model_dump()
+    validate_place_data(values)
     project_date_rules.validate_create_dates(values)
     row = project_repository.create_project(
         connection,

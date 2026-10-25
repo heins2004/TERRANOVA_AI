@@ -2,7 +2,7 @@ from fastapi import HTTPException, status
 from psycopg import Connection
 
 from app.repositories import project_repository
-from app.core.cities import CITY_SLUGS
+from app.core.place_validation import validate_place_data
 from app.schemas.auth import UserResponse
 from app.schemas.projects import (
     ProjectCreate,
@@ -24,14 +24,9 @@ def _validate_coordinate_pair(values: dict) -> None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Latitude and longitude must be provided together.")
 
 
-def _validate_city(values: dict) -> None:
-    if "city" in values and values["city"] not in CITY_SLUGS:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="City must be a supported city slug.")
-
-
 def create_project(*, payload: ProjectCreate, created_by: int, connection: Connection) -> dict:
     values = payload.model_dump()
-    _validate_city(values)
+    validate_place_data(values)
     _validate_coordinate_pair(values)
     project_date_rules.validate_create_dates(values)
     return project_repository.create_project(connection, created_by=created_by, **values)
@@ -61,7 +56,7 @@ def update_project(
             _not_found("Project")
 
     values = payload.model_dump(exclude_unset=True)
-    _validate_city(values)
+    validate_place_data(values, existing)
     _validate_coordinate_pair(values)
     project_date_rules.validate_update_dates(values, existing)
 

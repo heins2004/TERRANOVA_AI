@@ -46,7 +46,7 @@ def serialize_public_project(row: dict[str, Any]) -> PublicProjectItem:
         budget = float(budget)
 
     city_slug = row.get("city")
-    city_name = resolve_city_name(city_slug)
+    city_name = row.get("city_name") or resolve_city_name(city_slug)
 
     return PublicProjectItem(
         id=row["id"],

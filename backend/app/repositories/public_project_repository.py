@@ -39,9 +39,9 @@ def get_public_projects(
             escaped_q = escape_like(clean_q)
             pattern = f"%{escaped_q}%"
             where_clauses.append(
-                "(p.title ILIKE %s ESCAPE '\\' OR p.city ILIKE %s ESCAPE '\\' OR p.category ILIKE %s ESCAPE '\\')"
+                "(p.title ILIKE %s ESCAPE '\\' OR p.city ILIKE %s ESCAPE '\\' OR p.city_name ILIKE %s ESCAPE '\\' OR p.category ILIKE %s ESCAPE '\\')"
             )
-            params.extend([pattern, pattern, pattern])
+            params.extend([pattern, pattern, pattern, pattern])
 
     where_sql = " AND ".join(where_clauses)
 
@@ -62,7 +62,7 @@ def get_public_projects(
 
     select_sql = f"""
         SELECT
-            p.id, p.title, p.description, p.category, p.city,
+            p.id, p.title, p.description, p.category, p.city, p.city_name,
             p.location_lat, p.location_lng, p.budget,
             p.start_date, p.end_date, p.stage,
             p.response_deadline, p.halt_reason, p.is_demo,
@@ -111,7 +111,7 @@ def get_public_project_by_id(
 ) -> dict[str, Any] | None:
     query = """
         SELECT
-            p.id, p.title, p.description, p.category, p.city,
+            p.id, p.title, p.description, p.category, p.city, p.city_name,
             p.location_lat, p.location_lng, p.budget,
             p.start_date, p.end_date, p.stage,
             p.response_deadline, p.halt_reason, p.is_demo, p.created_by,

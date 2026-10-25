@@ -11,7 +11,8 @@ class ProjectCreate(BaseModel):
     description: str | None = None
     status: str = Field(default="Proposed", max_length=50)
     category: str | None = Field(default=None, max_length=100)
-    city: str = Field(max_length=100)
+    city: str = Field(min_length=2, max_length=120)
+    city_name: str | None = Field(default=None, max_length=150)
     location_lat: float | None = None
     location_lng: float | None = None
     budget: Decimal | None = None
@@ -77,7 +78,8 @@ class ProjectUpdate(BaseModel):
     description: str | None = None
     status: str | None = Field(default=None, max_length=50)
     category: str | None = Field(default=None, max_length=100)
-    city: str | None = Field(default=None, max_length=100)
+    city: str | None = Field(default=None, max_length=120)
+    city_name: str | None = Field(default=None, max_length=150)
     location_lat: float | None = None
     location_lng: float | None = None
     budget: Decimal | None = None
@@ -148,6 +150,7 @@ class ProjectResponse(BaseModel):
     status: str
     category: str | None = None
     city: str | None = None
+    city_name: str | None = None
     location_lat: float | None = None
     location_lng: float | None = None
     budget: Decimal | None = None

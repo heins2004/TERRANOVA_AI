@@ -14,7 +14,8 @@ class ProjectCreateWorkflow(BaseModel):
     description: str | None = None
     status: str = Field(default="Proposed", max_length=50)
     category: str | None = Field(default=None, max_length=100)
-    city: str = Field(max_length=100)
+    city: str = Field(min_length=2, max_length=120)
+    city_name: str | None = Field(default=None, max_length=150)
     location_lat: float
     location_lng: float
     budget: Decimal | None = None
