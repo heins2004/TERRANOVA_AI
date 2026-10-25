@@ -192,9 +192,9 @@ def create_chat_notification(
 
 def get_pin_count(connection: Connection, user_id: int) -> int:
     with connection.cursor() as cur:
-        cur.execute("SELECT COUNT(*) FROM chat_pins WHERE user_id = %s", (user_id,))
+        cur.execute("SELECT COUNT(*) AS n FROM chat_pins WHERE user_id = %s", (user_id,))
         row = cur.fetchone()
-        return row[0] if row else 0
+        return row["n"] if row else 0
 
 
 def is_pinned(connection: Connection, user_id: int, project_id: int) -> bool:
@@ -230,7 +230,7 @@ def get_total_unread_count(connection: Connection, user_id: int) -> int:
     with connection.cursor() as cur:
         cur.execute(
             """
-            SELECT COALESCE(COUNT(m.id), 0)
+            SELECT COALESCE(COUNT(m.id), 0) AS n
             FROM chat_messages m
             JOIN projects p ON p.id = m.project_id
             LEFT JOIN chat_reads r ON r.project_id = m.project_id AND r.user_id = %s
@@ -242,4 +242,4 @@ def get_total_unread_count(connection: Connection, user_id: int) -> int:
             (user_id, user_id, user_id, user_id),
         )
         row = cur.fetchone()
-        return int(row[0]) if row else 0
+        return int(row["n"]) if row else 0

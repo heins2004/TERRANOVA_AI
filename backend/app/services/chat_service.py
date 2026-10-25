@@ -82,7 +82,7 @@ def get_user_chat_projects(
     q: str | None = None,
 ) -> list[ChatProjectItem]:
     rows = chat_repository.get_chat_projects(connection, user.id, q=q)
-    return [ChatProjectItem(**r) for r in rows]
+    return [ChatProjectItem(**r) for r in rows if r.get("stage") != "Draft"]
 
 
 def get_project_messages(
