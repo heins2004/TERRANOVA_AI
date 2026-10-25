@@ -66,7 +66,7 @@ export function GovDeployedControls({
       )}
       {project.stage === "OpenForResponse" && (
         <div className="space-y-[16px]">
-          <div className="flex flex-wrap items-center gap-[10px]">
+          <div className="flex flex-wrap items-center gap-[10px] max-w-[460px]">
             {isCreator && (
               <>
                 <button
