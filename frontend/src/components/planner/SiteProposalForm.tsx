@@ -48,10 +48,11 @@ export function SiteProposalForm({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const isSubmittingRef = useRef(false);
 
-  const hasCircle = siteAreaLat != null && siteAreaLng != null && siteAreaRadiusKm != null;
+  const hasCircle = siteAreaLat != null && siteAreaLng != null && siteAreaRadiusKm != null && Number(siteAreaRadiusKm) > 0;
+  const radiusKmNumber = hasCircle ? Number(siteAreaRadiusKm) : 5.0;
   const centerLat = hasCircle ? siteAreaLat : (fallbackLat ?? siteAreaLat ?? 12.9716);
   const centerLng = hasCircle ? siteAreaLng : (fallbackLng ?? siteAreaLng ?? 77.5946);
-  const radiusKm = hasCircle ? siteAreaRadiusKm : 5.0;
+  const radiusKm = radiusKmNumber;
   const showMap = hasCircle || (fallbackLat != null && fallbackLng != null) || (siteAreaLat != null && siteAreaLng != null);
 
   function validateProposal(): boolean {
@@ -67,7 +68,7 @@ export function SiteProposalForm({
     if (isNaN(lat)) {
       errors.lat = hasCircle
         ? "Please click inside the site area circle to place your candidate site pin."
-        : "Please click on the map to place your candidate site pin.";
+        : "The government official has not set a candidate site area circle for this project.";
     } else if (lat < 6.0 || lat > 38.0) {
       errors.lat = "Latitude must be inside India (between 6.0 and 38.0).";
     }
@@ -76,7 +77,7 @@ export function SiteProposalForm({
     if (isNaN(lng)) {
       errors.lng = hasCircle
         ? "Please click inside the site area circle to place your candidate site pin."
-        : "Please click on the map to place your candidate site pin.";
+        : "The government official has not set a candidate site area circle for this project.";
     } else if (lng < 68.0 || lng > 98.0) {
       errors.lng = "Longitude must be inside India (between 68.0 and 98.0).";
     }
@@ -160,6 +161,14 @@ export function SiteProposalForm({
         </div>
       )}
 
+      {!hasCircle && (
+        <div id="planner-no-circle-banner" className="mb-[20px] rounded border border-warning/40 bg-warning/10 p-[14px]">
+          <p className="font-data-mono text-xs text-warning">
+            The government official has not set a candidate site area circle for this project. Site pin placement is disabled until a site area is defined.
+          </p>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="font-display-md text-[18px] font-semibold uppercase tracking-wider text-foreground">
@@ -168,7 +177,7 @@ export function SiteProposalForm({
           <p className="mt-[4px] text-xs text-on-surface-variant">
             {hasCircle
               ? `Click inside the ${radiusKm} km circular site area to place your candidate site pin.`
-              : "Click on the map centered on the project location to place your candidate site pin."}
+              : "The government official has not set a candidate site area circle for this project."}
           </p>
         </div>
 

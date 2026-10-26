@@ -102,9 +102,9 @@ export default function SiteAreaMap(props: SiteAreaMapProps) {
 
   const radiusMeters: number | undefined = useMemo(() => {
     if (props.mode === "gov") {
-      return props.radiusKm ? props.radiusKm * 1000 : undefined;
+      return props.radiusKm ? Number(props.radiusKm) * 1000 : undefined;
     }
-    return props.circleRadiusKm * 1000;
+    return props.hasCircle !== false ? Number(props.circleRadiusKm) * 1000 : undefined;
   }, [props]);
 
   const propsRef = useRef(props);
@@ -124,7 +124,6 @@ export default function SiteAreaMap(props: SiteAreaMapProps) {
       }
     } else {
       if (currentProps.hasCircle === false) {
-        currentProps.onSetPin(latlng.lat, latlng.lng);
         return;
       }
       const distMeters = computeDistanceMeters(
@@ -133,7 +132,7 @@ export default function SiteAreaMap(props: SiteAreaMapProps) {
         latlng.lat,
         latlng.lng
       );
-      const allowedRadiusMeters = currentProps.circleRadiusKm * 1000;
+      const allowedRadiusMeters = Number(currentProps.circleRadiusKm) * 1000;
       if (distMeters <= allowedRadiusMeters) {
         currentProps.onSetPin(latlng.lat, latlng.lng);
       } else {
@@ -217,13 +216,13 @@ export default function SiteAreaMap(props: SiteAreaMapProps) {
                 <Circle
                   center={[props.circleCenterLat, props.circleCenterLng]}
                   pathOptions={{
-                    interactive: false,
+                    interactive: true,
                     color: "#22d3ee",
                     fillColor: "#22d3ee",
                     fillOpacity: 0.18,
                     weight: 2,
                   }}
-                  radius={props.circleRadiusKm * 1000}
+                  radius={Number(props.circleRadiusKm) * 1000}
                 />
                 <Marker
                   icon={centerMarkerIcon}

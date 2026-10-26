@@ -10,6 +10,7 @@ import {
   ESRI_DARK_TILES,
   ESRI_SATELLITE_TILES,
 } from "./mapUtils";
+import { MapBoundsController } from "./MapBoundsController";
 
 function MapSearchController({ onMap }: { onMap: (map: L.Map) => void }) {
   const map = useMap();
@@ -90,6 +91,9 @@ export type FullScreenMapCanvasProps =
 
 export function FullScreenMapCanvas(props: FullScreenMapCanvasProps) {
   const tileConfig = props.tileMode === "dark" ? ESRI_DARK_TILES : ESRI_SATELLITE_TILES;
+  const boundsCenterLat = props.mode === "gov" ? props.draftCenterLat : (props.mode === "planner" && props.hasCircle !== false ? props.circleCenterLat : null);
+  const boundsCenterLng = props.mode === "gov" ? props.draftCenterLng : (props.mode === "planner" && props.hasCircle !== false ? props.circleCenterLng : null);
+  const boundsRadiusMeters = props.mode === "gov" ? (props.draftRadiusKm > 0 ? props.draftRadiusKm * 1000 : undefined) : (props.mode === "planner" && props.hasCircle !== false ? Number(props.circleRadiusKm) * 1000 : undefined);
 
   return (
     <div id="full-map-container" className="relative flex-1 w-full bg-black">
@@ -103,6 +107,11 @@ export function FullScreenMapCanvas(props: FullScreenMapCanvasProps) {
         <TileLayer attribution={tileConfig.attribution} url={tileConfig.base} />
         <TileLayer url={tileConfig.reference} />
         <ModalClickHandler onClick={props.onMapClick} />
+        <MapBoundsController
+          centerLat={boundsCenterLat}
+          centerLng={boundsCenterLng}
+          radiusMeters={boundsRadiusMeters}
+        />
 
         {props.mode === "gov" && props.draftCenterLat != null && props.draftCenterLng != null && (
           <>
@@ -133,9 +142,9 @@ export function FullScreenMapCanvas(props: FullScreenMapCanvasProps) {
               <>
                 <Circle
                   center={[props.circleCenterLat, props.circleCenterLng]}
-                  radius={props.circleRadiusKm * 1000}
+                  radius={Number(props.circleRadiusKm) * 1000}
                   pathOptions={{
-                    interactive: false,
+                    interactive: true,
                     color: "#22d3ee",
                     fillColor: "#22d3ee",
                     fillOpacity: 0.18,

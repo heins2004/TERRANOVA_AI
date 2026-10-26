@@ -52,7 +52,7 @@ export function ProposalMapSection({
         <label className="block font-data-mono text-[11px] uppercase tracking-wider text-primary">
           {hasCircle
             ? "Candidate Site Area Map (Click inside circle to place pin)"
-            : "Candidate Site Map (Click map to place pin)"}
+            : "Candidate Site Map (Site area circle not set by official)"}
         </label>
         <button
           type="button"
@@ -90,7 +90,7 @@ export function ProposalMapSection({
           <span id="planner-pin-readout" className="text-primary font-semibold">
             {hasPin
               ? `${siteLat}, ${siteLng}`
-              : (hasCircle ? "No pin placed (click inside circle)" : "No pin placed (click map)")}
+              : (hasCircle ? "No pin placed (click inside circle)" : "Site area circle not set by official")}
           </span>
         </div>
         {hasPin && (

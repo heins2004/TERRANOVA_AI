@@ -122,18 +122,18 @@ function FullScreenMapModalDialog(props: FullScreenMapModalProps) {
       }
     } else {
       if (props.hasCircle === false) {
-        setDraftPinLat(latlng.lat);
-        setDraftPinLng(latlng.lng);
-        setOutsideMsg("");
         return;
       }
       const dist = computeDistanceMeters(props.circleCenterLat, props.circleCenterLng, latlng.lat, latlng.lng);
-      if (dist <= props.circleRadiusKm * 1000) {
+      const radKm = Number(props.circleRadiusKm);
+      if (dist <= radKm * 1000) {
         setDraftPinLat(latlng.lat);
         setDraftPinLng(latlng.lng);
         setOutsideMsg("");
       } else {
-        setOutsideMsg(`Click is outside the allowed site area (${(dist / 1000).toFixed(2)} km from centre). Please place your pin inside the ${props.circleRadiusKm} km circle.`);
+        setOutsideMsg(
+          `Click is outside the allowed site area (${(dist / 1000).toFixed(2)} km from centre). Please place your pin inside the ${radKm} km circle.`
+        );
       }
     }
   };
