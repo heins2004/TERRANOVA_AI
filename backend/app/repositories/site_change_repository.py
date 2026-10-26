@@ -51,9 +51,11 @@ def create_site_change(
     *,
     project_id: int,
     reason: str,
-    circle_lat: float | None,
-    circle_lng: float | None,
-    circle_radius_km: float | None,
+    city: str | None = None,
+    city_name: str | None = None,
+    circle_lat: float | None = None,
+    circle_lng: float | None = None,
+    circle_radius_km: float | None = None,
     created_by: int,
 ) -> dict[str, Any]:
     with connection.cursor() as cursor:
@@ -61,13 +63,14 @@ def create_site_change(
             """
             INSERT INTO project_site_changes (
                 project_id, status, reason,
+                city, city_name,
                 circle_lat, circle_lng, circle_radius_km,
                 created_by, created_at, updated_at
             )
-            VALUES (%s, 'requested', %s, %s, %s, %s, %s, NOW(), NOW())
+            VALUES (%s, 'requested', %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
             RETURNING *
             """,
-            (project_id, reason, circle_lat, circle_lng, circle_radius_km, created_by),
+            (project_id, reason, city, city_name, circle_lat, circle_lng, circle_radius_km, created_by),
         )
         return cursor.fetchone()
 

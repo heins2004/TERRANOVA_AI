@@ -2,23 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import dynamic from "next/dynamic";
+import { PlaceSearchInput } from "@/components/common/PlaceSearchInput";
+import { GovSiteAreaSection } from "@/components/gov/GovSiteAreaSection";
 import { requestSiteChange } from "@/services/siteChange";
-
-const SiteAreaMap = dynamic(
-  () => import("@/components/maps/SiteAreaMap"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex h-[200px] w-full items-center justify-center rounded border border-white/10 bg-black/40 font-data-mono text-xs text-on-surface-variant">
-        LOADING MAP...
-      </div>
-    ),
-  }
-);
 
 interface GovSiteChangeModalProps {
   projectId: number;
+  initialCity?: string | null;
+  initialCityName?: string | null;
   initialLat?: number | null;
   initialLng?: number | null;
   initialRadiusKm?: number | null;
@@ -28,17 +19,28 @@ interface GovSiteChangeModalProps {
 
 export function GovSiteChangeModal({
   projectId,
+  initialCity,
+  initialCityName,
   initialLat,
   initialLng,
   initialRadiusKm,
   onClose,
   onSuccess,
 }: GovSiteChangeModalProps) {
+  const hasStoredCircle = initialLat != null && initialLng != null && initialRadiusKm != null;
+
   const [reason, setReason] = useState("");
-  const [modifyCircle, setModifyCircle] = useState(false);
+  const [city, setCity] = useState<string | null>(null);
+  const [cityName, setCityName] = useState<string | null>(null);
+  const [cityLat, setCityLat] = useState<number | null>(null);
+  const [cityLng, setCityLng] = useState<number | null>(null);
+
   const [circleLat, setCircleLat] = useState<number | null>(initialLat ?? null);
   const [circleLng, setCircleLng] = useState<number | null>(initialLng ?? null);
-  const [circleRadiusKm, setCircleRadiusKm] = useState<number | null>(initialRadiusKm ?? 5.0);
+  const [circleRadiusKm, setCircleRadiusKm] = useState<number | null>(
+    initialRadiusKm != null ? Number(initialRadiusKm) : 5.0
+  );
+
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -68,15 +70,29 @@ export function GovSiteChangeModal({
       return;
     }
 
+    if (!hasStoredCircle) {
+      if (circleLat == null || circleLng == null || circleRadiusKm == null) {
+        setError("A circular site area (centre and radius) is required because this project has no existing site area.");
+        return;
+      }
+    }
+
+    if (circleRadiusKm != null && (circleRadiusKm < 0.5 || circleRadiusKm > 50.0)) {
+      setError("Site area radius must be between 0.5 and 50 km inclusive.");
+      return;
+    }
+
     setSubmitting(true);
     setError("");
 
     try {
       await requestSiteChange(projectId, {
         reason: trimmed,
-        circle_lat: modifyCircle ? circleLat : undefined,
-        circle_lng: modifyCircle ? circleLng : undefined,
-        circle_radius_km: modifyCircle ? circleRadiusKm : undefined,
+        city: city || undefined,
+        city_name: cityName || undefined,
+        circle_lat: circleLat != null ? circleLat : undefined,
+        circle_lng: circleLng != null ? circleLng : undefined,
+        circle_radius_km: circleRadiusKm != null ? circleRadiusKm : undefined,
       });
       onSuccess();
       onClose();
@@ -98,7 +114,7 @@ export function GovSiteChangeModal({
     >
       <div
         ref={modalRef}
-        className="w-full max-w-[540px] max-h-[90vh] overflow-y-auto rounded-[12px] border border-white/10 bg-surface-container-lowest p-[20px] sm:p-[24px] shadow-2xl space-y-[16px] text-on-surface"
+        className="w-full max-w-[620px] max-h-[90vh] overflow-y-auto rounded-[12px] border border-white/10 bg-surface-container-lowest p-[20px] sm:p-[24px] shadow-2xl space-y-[16px] text-on-surface"
       >
         <div className="flex items-center justify-between border-b border-white/10 pb-[12px]">
           <h3 id="site-change-modal-title" className="font-sans text-[18px] font-bold text-white">
@@ -128,7 +144,7 @@ export function GovSiteChangeModal({
             <textarea
               id="site-change-reason"
               ref={textareaRef}
-              rows={4}
+              rows={3}
               value={reason}
               onChange={(e) => {
                 setReason(e.target.value);
@@ -144,60 +160,44 @@ export function GovSiteChangeModal({
             </div>
           </div>
 
-          <div className="rounded border border-white/10 bg-white/[0.02] p-[12px] space-y-[12px]">
-            <label className="flex items-center gap-[8px] cursor-pointer">
-              <input
-                type="checkbox"
-                id="site-change-modify-circle-toggle"
-                checked={modifyCircle}
-                onChange={(e) => setModifyCircle(e.target.checked)}
-                className="rounded border-white/20 bg-white/5 text-primary focus:ring-0"
-              />
-              <span className="font-data-mono text-xs text-white uppercase">
-                Modify planning circle (City remains locked)
-              </span>
-            </label>
-
-            {modifyCircle && (
-              <div className="space-y-[12px] pt-[8px] border-t border-white/10">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
-                  <div>
-                    <label className="block font-data-mono text-[10px] text-on-surface-variant uppercase mb-[4px]">
-                      Radius (km)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.5"
-                      min="0.5"
-                      max="50"
-                      value={circleRadiusKm ?? 5.0}
-                      onChange={(e) => setCircleRadiusKm(parseFloat(e.target.value) || 5.0)}
-                      className="w-full rounded border border-white/15 bg-white/[0.04] p-[8px] text-sm text-white"
-                    />
-                  </div>
-                  <div className="font-data-mono text-[11px] text-on-surface-variant flex items-center">
-                    Center: {circleLat ? circleLat.toFixed(4) : "—"}, {circleLng ? circleLng.toFixed(4) : "—"}
-                  </div>
-                </div>
-
-                {circleLat != null && circleLng != null && (
-                  <div className="relative h-[160px] w-full rounded overflow-hidden border border-white/10">
-                    <SiteAreaMap
-                      mode="gov"
-                      centerLat={circleLat}
-                      centerLng={circleLng}
-                      radiusKm={circleRadiusKm ?? 5.0}
-                      readOnly={false}
-                      onSetCenter={(lat: number, lng: number) => {
-                        setCircleLat(lat);
-                        setCircleLng(lng);
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
+          <div>
+            <PlaceSearchInput
+              id="site-change-city"
+              label="City (Optional — search to change city)"
+              initialCityName={initialCityName || undefined}
+              initialCitySlug={initialCity || undefined}
+              required={false}
+              onSelectPlace={(place) => {
+                setCity(place.citySlug);
+                setCityName(place.cityName);
+                setCityLat(place.lat);
+                setCityLng(place.lng);
+                if (error) setError("");
+              }}
+              onPlaceCleared={() => {
+                setCity(null);
+                setCityName(null);
+                setCityLat(null);
+                setCityLng(null);
+              }}
+            />
           </div>
+
+          <GovSiteAreaSection
+            city={city || initialCity}
+            cityLat={cityLat}
+            cityLng={cityLng}
+            centerLat={circleLat}
+            centerLng={circleLng}
+            radiusKm={circleRadiusKm}
+            onChange={(lat, lng, rad) => {
+              setCircleLat(lat);
+              setCircleLng(lng);
+              setCircleRadiusKm(rad);
+              if (error) setError("");
+            }}
+            canClear={hasStoredCircle}
+          />
 
           <div className="flex items-center justify-end gap-[12px] pt-[8px]">
             <button

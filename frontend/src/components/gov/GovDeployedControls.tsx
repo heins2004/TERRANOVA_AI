@@ -193,6 +193,8 @@ export function GovDeployedControls({
       {showSiteChangeModal && (
         <GovSiteChangeModal
           projectId={project.id}
+          initialCity={project.city}
+          initialCityName={project.city_name}
           initialLat={project.site_area_lat}
           initialLng={project.site_area_lng}
           initialRadiusKm={project.site_area_radius_km}

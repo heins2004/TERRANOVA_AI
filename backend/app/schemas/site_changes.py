@@ -1,9 +1,11 @@
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class SiteChangeRequestCreate(BaseModel):
     reason: str = Field(..., min_length=10, max_length=500)
+    city: str | None = Field(default=None, max_length=120)
+    city_name: str | None = Field(default=None, max_length=150)
     circle_lat: float | None = None
     circle_lng: float | None = None
     circle_radius_km: float | None = None
@@ -19,23 +21,33 @@ class SiteChangeRequestCreate(BaseModel):
     @field_validator("circle_lat")
     @classmethod
     def validate_circle_lat(cls, v: float | None) -> float | None:
-        if v is not None and (v < 6.0 or v > 38.0):
+        if v is not None and not (6.0 <= v <= 38.0):
             raise ValueError("Latitude must be inside India (between 6.0 and 38.0).")
         return v
 
     @field_validator("circle_lng")
     @classmethod
     def validate_circle_lng(cls, v: float | None) -> float | None:
-        if v is not None and (v < 68.0 or v > 98.0):
+        if v is not None and not (68.0 <= v <= 98.0):
             raise ValueError("Longitude must be inside India (between 68.0 and 98.0).")
         return v
 
     @field_validator("circle_radius_km")
     @classmethod
     def validate_circle_radius(cls, v: float | None) -> float | None:
-        if v is not None and (v <= 0 or v > 100.0):
-            raise ValueError("Circle radius must be between 0.1 and 100.0 km.")
+        if v is not None:
+            val = float(v)
+            if not (0.5 <= val <= 50.0):
+                raise ValueError("Site area radius must be between 0.5 and 50 km inclusive.")
         return v
+
+    @model_validator(mode="after")
+    def validate_circle_fields(self) -> "SiteChangeRequestCreate":
+        circle_fields = [self.circle_lat, self.circle_lng, self.circle_radius_km]
+        provided = sum(1 for f in circle_fields if f is not None)
+        if 0 < provided < 3:
+            raise ValueError("Circle latitude, longitude, and radius must all be provided together.")
+        return self
 
 
 class SiteChangeProposeRequest(BaseModel):
@@ -92,6 +104,8 @@ class SiteChangeResponse(BaseModel):
     project_id: int
     status: str
     reason: str
+    city: str | None = None
+    city_name: str | None = None
     circle_lat: float | None = None
     circle_lng: float | None = None
     circle_radius_km: float | None = None

@@ -5,6 +5,8 @@ export interface SiteChange {
   project_id: number;
   status: "requested" | "proposed" | "approved" | "rejected" | "cancelled" | "completed";
   reason: string;
+  city?: string | null;
+  city_name?: string | null;
   circle_lat?: number | null;
   circle_lng?: number | null;
   circle_radius_km?: number | null;
@@ -20,6 +22,8 @@ export interface SiteChange {
 
 export interface RequestSiteChangePayload {
   reason: string;
+  city?: string | null;
+  city_name?: string | null;
   circle_lat?: number | null;
   circle_lng?: number | null;
   circle_radius_km?: number | null;

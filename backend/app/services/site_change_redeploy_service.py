@@ -52,6 +52,11 @@ def redeploy_project(
             "proposed_site_lat": change["proposed_site_lat"],
             "proposed_site_lng": change["proposed_site_lng"],
         }
+        if change.get("city"):
+            updates["city"] = change["city"]
+        if change.get("city_name"):
+            updates["city_name"] = change["city_name"]
+
         if change.get("circle_lat") is not None:
             updates["site_area_lat"] = change["circle_lat"]
             updates["site_area_lng"] = change["circle_lng"]
@@ -70,13 +75,22 @@ def redeploy_project(
             status="completed",
         )
 
+        note_parts = [f"Site changed and redeployed: {old_site_name} to {new_site_name}"]
+        if change.get("city") and change["city"] != project.get("city"):
+            old_city = project.get("city_name") or project.get("city")
+            new_city = change.get("city_name") or change.get("city")
+            note_parts.append(f"city changed from {old_city} to {new_city}")
+        if change.get("circle_lat") is not None:
+            note_parts.append("site area circle updated")
+        event_note = "; ".join(note_parts)
+
         event = workflow_repository.create_project_event(
             connection,
             project_id=project_id,
             actor_id=user.id,
             from_stage="OpenForResponse",
             to_stage="OpenForResponse",
-            note=f"Site changed and redeployed: {old_site_name} to {new_site_name}",
+            note=event_note,
             auto_commit=False,
         )
 

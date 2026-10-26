@@ -239,7 +239,7 @@ export function GovDeployedEditModal({
               </div>
             </div>
             <p className="text-[11px] text-on-surface-variant/70 italic">
-              City and site cannot be changed after deploy.
+              To change city or site area, use Request site change.
             </p>
           </div>
 

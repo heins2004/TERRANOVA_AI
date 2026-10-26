@@ -19,6 +19,8 @@ from app.services.site_change_redeploy_service import (
     redeploy_project,
 )
 
+from app.services.site_change_validation import validate_site_change_request
+
 __all__ = [
     "request_site_change",
     "get_site_change",
@@ -60,11 +62,15 @@ def request_site_change(
             detail="A site change is already in progress for this project.",
         )
 
+    norm_city, norm_city_name = validate_site_change_request(project, payload)
+
     with connection.transaction():
         change = site_change_repository.create_site_change(
             connection,
             project_id=project_id,
             reason=payload.reason,
+            city=norm_city,
+            city_name=norm_city_name,
             circle_lat=payload.circle_lat,
             circle_lng=payload.circle_lng,
             circle_radius_km=payload.circle_radius_km,

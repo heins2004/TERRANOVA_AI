@@ -69,6 +69,15 @@ export function PlannerSiteChangeSection({
           <p className="text-sm text-white/90">{change.reason}</p>
         </div>
 
+        {(change.city_name || change.city) && (
+          <div>
+            <span className="block font-data-mono text-[10px] text-on-surface-variant uppercase">
+              Requested City
+            </span>
+            <p className="text-sm text-primary font-medium">{change.city_name || change.city}</p>
+          </div>
+        )}
+
         {change.status === "rejected" && change.rejection_reason && (
           <div className="rounded border border-danger/40 bg-danger/10 p-[12px]">
             <span className="block font-data-mono text-[10px] text-danger uppercase mb-[4px]">
