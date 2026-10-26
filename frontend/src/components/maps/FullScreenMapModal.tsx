@@ -28,6 +28,7 @@ export interface FullScreenPlannerProps {
   initialPinLat: number | null;
   initialPinLng: number | null;
   onConfirm: (lat: number, lng: number) => void;
+  hasCircle?: boolean;
 }
 
 export interface FullScreenVenuePinProps {
@@ -120,20 +121,19 @@ function FullScreenMapModalDialog(props: FullScreenMapModalProps) {
         setOutsideMsg("Please place your pin inside India.");
       }
     } else {
-      const dist = computeDistanceMeters(
-        props.circleCenterLat,
-        props.circleCenterLng,
-        latlng.lat,
-        latlng.lng
-      );
+      if (props.hasCircle === false) {
+        setDraftPinLat(latlng.lat);
+        setDraftPinLng(latlng.lng);
+        setOutsideMsg("");
+        return;
+      }
+      const dist = computeDistanceMeters(props.circleCenterLat, props.circleCenterLng, latlng.lat, latlng.lng);
       if (dist <= props.circleRadiusKm * 1000) {
         setDraftPinLat(latlng.lat);
         setDraftPinLng(latlng.lng);
         setOutsideMsg("");
       } else {
-        setOutsideMsg(
-          `Click is outside the allowed site area (${(dist / 1000).toFixed(2)} km from centre). Please place your pin inside the ${props.circleRadiusKm} km circle.`
-        );
+        setOutsideMsg(`Click is outside the allowed site area (${(dist / 1000).toFixed(2)} km from centre). Please place your pin inside the ${props.circleRadiusKm} km circle.`);
       }
     }
   };
@@ -237,6 +237,7 @@ function FullScreenMapModalDialog(props: FullScreenMapModalProps) {
             circleCenterLat={props.circleCenterLat}
             circleCenterLng={props.circleCenterLng}
             circleRadiusKm={props.circleRadiusKm}
+            hasCircle={props.hasCircle}
             draftPinLat={draftPinLat}
             draftPinLng={draftPinLng}
             onMapClick={handleMapClick}

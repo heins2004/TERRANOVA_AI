@@ -70,6 +70,7 @@ interface FullScreenMapCanvasPlannerProps {
   draftPinLng: number | null;
   onMapClick: (latlng: L.LatLng) => void;
   onMapReady: (map: L.Map) => void;
+  hasCircle?: boolean;
 }
 
 interface FullScreenMapCanvasVenuePinProps {
@@ -128,22 +129,26 @@ export function FullScreenMapCanvas(props: FullScreenMapCanvasProps) {
 
         {props.mode === "planner" && (
           <>
-            <Circle
-              center={[props.circleCenterLat, props.circleCenterLng]}
-              radius={props.circleRadiusKm * 1000}
-              pathOptions={{
-                interactive: false,
-                color: "#22d3ee",
-                fillColor: "#22d3ee",
-                fillOpacity: 0.18,
-                weight: 2,
-              }}
-            />
-            <Marker
-              position={[props.circleCenterLat, props.circleCenterLng]}
-              icon={centerMarkerIcon}
-              interactive={false}
-            />
+            {props.hasCircle !== false && (
+              <>
+                <Circle
+                  center={[props.circleCenterLat, props.circleCenterLng]}
+                  radius={props.circleRadiusKm * 1000}
+                  pathOptions={{
+                    interactive: false,
+                    color: "#22d3ee",
+                    fillColor: "#22d3ee",
+                    fillOpacity: 0.18,
+                    weight: 2,
+                  }}
+                />
+                <Marker
+                  position={[props.circleCenterLat, props.circleCenterLng]}
+                  icon={centerMarkerIcon}
+                  interactive={false}
+                />
+              </>
+            )}
             {props.draftPinLat != null && props.draftPinLng != null && (
               <Marker
                 position={[props.draftPinLat, props.draftPinLng]}

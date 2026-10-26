@@ -5,18 +5,7 @@ import { useRef, useState } from "react";
 import { proposeSite } from "@/services/planner";
 import { LegacyCoordinateInputs } from "./LegacyCoordinateInputs";
 import { ProposalExplanationField } from "./ProposalExplanationField";
-
-const SiteAreaMap = dynamic(
-  () => import("@/components/maps/SiteAreaMap"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex h-[300px] w-full items-center justify-center rounded-lg border border-white/10 bg-black/40 font-data-mono text-xs text-on-surface-variant">
-        LOADING PROPOSAL MAP...
-      </div>
-    ),
-  }
-);
+import { ProposalMapSection } from "./ProposalMapSection";
 
 const FullScreenMapModal = dynamic(
   () => import("@/components/maps/FullScreenMapModal"),
@@ -29,6 +18,8 @@ interface SiteProposalFormProps {
   siteAreaLat?: number | null;
   siteAreaLng?: number | null;
   siteAreaRadiusKm?: number | null;
+  fallbackLat?: number | null;
+  fallbackLng?: number | null;
   onSubmitOverride?: (payload: { name: string; location_lat: number; location_lng: number; explanation: string }) => Promise<void>;
   submitButtonLabel?: string;
   onSuccess: () => void;
@@ -40,6 +31,8 @@ export function SiteProposalForm({
   siteAreaLat,
   siteAreaLng,
   siteAreaRadiusKm,
+  fallbackLat,
+  fallbackLng,
   onSubmitOverride,
   submitButtonLabel,
   onSuccess,
@@ -55,8 +48,11 @@ export function SiteProposalForm({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const isSubmittingRef = useRef(false);
 
-  const hasSiteArea =
-    siteAreaLat != null && siteAreaLng != null && siteAreaRadiusKm != null;
+  const hasCircle = siteAreaLat != null && siteAreaLng != null && siteAreaRadiusKm != null;
+  const centerLat = hasCircle ? siteAreaLat : (fallbackLat ?? siteAreaLat ?? 12.9716);
+  const centerLng = hasCircle ? siteAreaLng : (fallbackLng ?? siteAreaLng ?? 77.5946);
+  const radiusKm = hasCircle ? siteAreaRadiusKm : 5.0;
+  const showMap = hasCircle || (fallbackLat != null && fallbackLng != null) || (siteAreaLat != null && siteAreaLng != null);
 
   function validateProposal(): boolean {
     const errors: Record<string, string> = {};
@@ -69,18 +65,18 @@ export function SiteProposalForm({
 
     const lat = parseFloat(siteLat);
     if (isNaN(lat)) {
-      errors.lat = hasSiteArea
+      errors.lat = hasCircle
         ? "Please click inside the site area circle to place your candidate site pin."
-        : "Latitude is required.";
+        : "Please click on the map to place your candidate site pin.";
     } else if (lat < 6.0 || lat > 38.0) {
       errors.lat = "Latitude must be inside India (between 6.0 and 38.0).";
     }
 
     const lng = parseFloat(siteLng);
     if (isNaN(lng)) {
-      errors.lng = hasSiteArea
+      errors.lng = hasCircle
         ? "Please click inside the site area circle to place your candidate site pin."
-        : "Longitude is required.";
+        : "Please click on the map to place your candidate site pin.";
     } else if (lng < 68.0 || lng > 98.0) {
       errors.lng = "Longitude must be inside India (between 68.0 and 98.0).";
     }
@@ -105,34 +101,43 @@ export function SiteProposalForm({
     setIsLoading(true);
     setGeneralError("");
 
+    const payload = {
+      name: siteName.trim(),
+      location_lat: parseFloat(siteLat),
+      location_lng: parseFloat(siteLng),
+      explanation: explanation.trim(),
+    };
+
     try {
-      const p = { name: siteName.trim(), location_lat: parseFloat(siteLat), location_lng: parseFloat(siteLng), explanation: explanation.trim() };
-      if (onSubmitOverride) await onSubmitOverride(p);
-      else await proposeSite(projectId, p);
-      onSuccess();
+      if (onSubmitOverride) {
+        await onSubmitOverride(payload);
+      } else {
+        await proposeSite(projectId, payload);
+        onSuccess();
+      }
     } catch (err) {
-      setGeneralError(err instanceof Error ? err.message : "Failed to propose site.");
+      setGeneralError(err instanceof Error ? err.message : "Failed to submit site proposal.");
     } finally {
-      isSubmittingRef.current = false;
       setIsLoading(false);
+      isSubmittingRef.current = false;
     }
   }
 
   function handleSetPin(lat: number, lng: number) {
-    setSiteLat(lat.toFixed(4));
-    setSiteLng(lng.toFixed(4));
+    setSiteLat(lat.toFixed(6));
+    setSiteLng(lng.toFixed(6));
     setOutsideClickError("");
     setFieldErrors((prev) => {
-      const copy = { ...prev };
-      delete copy.lat;
-      delete copy.lng;
-      return copy;
+      const next = { ...prev };
+      delete next.lat;
+      delete next.lng;
+      return next;
     });
   }
 
   function handleOutsideClick(distKm: number) {
     setOutsideClickError(
-      `Click is outside the allowed site area (${distKm.toFixed(2)} km from centre). Please place your pin inside the ${siteAreaRadiusKm} km circle.`
+      `Click is outside the allowed site area (${distKm.toFixed(2)} km from centre). Please place your pin inside the ${radiusKm} km circle.`
     );
   }
 
@@ -161,13 +166,13 @@ export function SiteProposalForm({
             Propose Site Location
           </h3>
           <p className="mt-[4px] text-xs text-on-surface-variant">
-            {hasSiteArea
-              ? `Click inside the ${siteAreaRadiusKm} km circular site area to place your candidate site pin.`
-              : "Enter candidate site details inside India coordinates and technical justification."}
+            {hasCircle
+              ? `Click inside the ${radiusKm} km circular site area to place your candidate site pin.`
+              : "Click on the map centered on the project location to place your candidate site pin."}
           </p>
         </div>
 
-        {hasSiteArea && (
+        {showMap && (
           <button
             type="button"
             id="planner-open-full-map-btn"
@@ -199,51 +204,20 @@ export function SiteProposalForm({
           )}
         </div>
 
-        {hasSiteArea ? (
-          <div className="space-y-[10px]">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <label className="block font-data-mono text-[11px] uppercase tracking-wider text-primary">
-                Candidate Site Area Map (Click inside circle to place pin)
-              </label>
-              <button
-                type="button"
-                id="planner-open-full-map-btn"
-                data-testid="planner-open-full-map-btn"
-                onClick={() => setIsModalOpen(true)}
-                className="rounded border border-primary/40 bg-primary/10 px-[12px] py-[6px] font-data-mono text-[11px] uppercase tracking-wider text-primary hover:bg-primary/20"
-              >
-                Open Full Map
-              </button>
-            </div>
-
-            <SiteAreaMap
-              mode="planner"
-              circleCenterLat={siteAreaLat}
-              circleCenterLng={siteAreaLng}
-              circleRadiusKm={siteAreaRadiusKm}
-              pinLat={siteLat ? parseFloat(siteLat) : null}
-              pinLng={siteLng ? parseFloat(siteLng) : null}
-              onSetPin={handleSetPin}
-              onOutsideClick={handleOutsideClick}
-              onOpenFullMap={() => setIsModalOpen(true)}
-            />
-
-            {outsideClickError && (
-              <div id="planner-outside-click-msg" className="rounded border border-danger/40 bg-danger/10 p-[10px] font-data-mono text-xs text-danger">
-                {outsideClickError}
-              </div>
-            )}
-
-            <div className="flex flex-wrap items-center justify-between rounded border border-white/10 bg-white/[0.02] p-[12px] font-data-mono text-xs">
-              <span className="text-on-surface-variant">PIN LOCATION:</span>
-              <span id="planner-pin-readout" className="text-primary font-semibold">
-                {siteLat && siteLng ? `${siteLat}, ${siteLng}` : "No pin placed (click inside circle)"}
-              </span>
-            </div>
-            {fieldErrors.lat && (
-              <p className="font-data-mono text-[11px] text-danger">{fieldErrors.lat}</p>
-            )}
-          </div>
+        {showMap ? (
+          <ProposalMapSection
+            hasCircle={hasCircle}
+            centerLat={centerLat}
+            centerLng={centerLng}
+            radiusKm={radiusKm}
+            siteLat={siteLat}
+            siteLng={siteLng}
+            outsideClickError={outsideClickError}
+            latError={fieldErrors.lat}
+            onSetPin={handleSetPin}
+            onOutsideClick={handleOutsideClick}
+            onOpenFullMap={() => setIsModalOpen(true)}
+          />
         ) : (
           <LegacyCoordinateInputs
             siteLat={siteLat}
@@ -273,14 +247,15 @@ export function SiteProposalForm({
         </div>
       </form>
 
-      {hasSiteArea && (
+      {showMap && (
         <FullScreenMapModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           mode="planner"
-          circleCenterLat={siteAreaLat}
-          circleCenterLng={siteAreaLng}
-          circleRadiusKm={siteAreaRadiusKm}
+          hasCircle={hasCircle}
+          circleCenterLat={centerLat}
+          circleCenterLng={centerLng}
+          circleRadiusKm={radiusKm}
           initialPinLat={siteLat ? parseFloat(siteLat) : null}
           initialPinLng={siteLng ? parseFloat(siteLng) : null}
           onConfirm={handleSetPin}

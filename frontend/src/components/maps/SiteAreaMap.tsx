@@ -64,6 +64,7 @@ export interface SiteAreaMapPlannerProps {
   onSetPin: (lat: number, lng: number) => void;
   onOutsideClick: (distanceKm: number) => void;
   onOpenFullMap?: () => void;
+  hasCircle?: boolean;
 }
 
 export type SiteAreaMapProps = SiteAreaMapGovProps | SiteAreaMapPlannerProps;
@@ -122,6 +123,10 @@ export default function SiteAreaMap(props: SiteAreaMapProps) {
         currentProps.onSetCenter(latlng.lat, latlng.lng);
       }
     } else {
+      if (currentProps.hasCircle === false) {
+        currentProps.onSetPin(latlng.lat, latlng.lng);
+        return;
+      }
       const distMeters = computeDistanceMeters(
         currentProps.circleCenterLat,
         currentProps.circleCenterLng,
@@ -207,22 +212,26 @@ export default function SiteAreaMap(props: SiteAreaMapProps) {
 
         {props.mode === "planner" && (
           <>
-            <Circle
-              center={[props.circleCenterLat, props.circleCenterLng]}
-              pathOptions={{
-                interactive: false,
-                color: "#22d3ee",
-                fillColor: "#22d3ee",
-                fillOpacity: 0.18,
-                weight: 2,
-              }}
-              radius={props.circleRadiusKm * 1000}
-            />
-            <Marker
-              icon={centerMarkerIcon}
-              position={[props.circleCenterLat, props.circleCenterLng]}
-              interactive={false}
-            />
+            {props.hasCircle !== false && (
+              <>
+                <Circle
+                  center={[props.circleCenterLat, props.circleCenterLng]}
+                  pathOptions={{
+                    interactive: false,
+                    color: "#22d3ee",
+                    fillColor: "#22d3ee",
+                    fillOpacity: 0.18,
+                    weight: 2,
+                  }}
+                  radius={props.circleRadiusKm * 1000}
+                />
+                <Marker
+                  icon={centerMarkerIcon}
+                  position={[props.circleCenterLat, props.circleCenterLng]}
+                  interactive={false}
+                />
+              </>
+            )}
             {props.pinLat != null && props.pinLng != null && (
               <Marker
                 icon={pinMarkerIcon}

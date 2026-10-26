@@ -90,6 +90,8 @@ export function PlannerSiteChangeSection({
             siteAreaLat={circleLat}
             siteAreaLng={circleLng}
             siteAreaRadiusKm={circleRadius}
+            fallbackLat={project.location_lat}
+            fallbackLng={project.location_lng}
             onSubmitOverride={async (payload) => {
               await proposeSiteChange(projectId, payload);
               onRefresh();
