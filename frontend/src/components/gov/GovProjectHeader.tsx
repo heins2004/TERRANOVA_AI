@@ -67,17 +67,6 @@ export function GovProjectHeader({ project, siteChange, onRefresh, onOpenEdit }:
 
   const isDeployed = ["OpenForResponse", "InProgress", "Completed", "Halted"].includes(project.stage);
 
-  const addConsultationBtn = isDeployed ? (
-    <button
-      type="button"
-      id="gov-add-consultation-btn"
-      onClick={() => setShowConsultationModal(true)}
-      className="rounded-[6px] bg-cyan-600 px-[14px] py-[8px] font-sans text-xs font-semibold text-white hover:bg-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-    >
-      Add consultation
-    </button>
-  ) : null;
-
   return (
     <div className="space-y-[20px]">
       {/* Header navigation, title & top-right stage operations */}
@@ -211,7 +200,7 @@ export function GovProjectHeader({ project, siteChange, onRefresh, onOpenEdit }:
                 onOpenReason={(action, title) => setReasonModal({ action, title })}
                 onError={setError}
                 onRefresh={onRefresh}
-                extraAction={addConsultationBtn}
+                onOpenConsultation={isDeployed ? () => setShowConsultationModal(true) : undefined}
               />
             )}
           </div>

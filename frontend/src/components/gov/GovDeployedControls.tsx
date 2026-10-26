@@ -11,6 +11,7 @@ import { GovInProgressConfirmModal } from "./GovInProgressConfirmModal";
 import { GovExtendDeadlineModal } from "./GovExtendDeadlineModal";
 import { GovDeployedEditModal } from "./GovDeployedEditModal";
 import { GovSiteChangeModal } from "./GovSiteChangeModal";
+import { GovActivityMenu, ActivityMenuItem } from "./GovActivityMenu";
 import { SiteChange } from "@/services/siteChange";
 
 interface GovDeployedControlsProps {
@@ -22,6 +23,7 @@ interface GovDeployedControlsProps {
   onError: (err: string) => void;
   onRefresh?: () => void;
   extraAction?: React.ReactNode;
+  onOpenConsultation?: () => void;
 }
 
 export function GovDeployedControls({
@@ -31,7 +33,7 @@ export function GovDeployedControls({
   onExecute,
   onOpenReason,
   onRefresh,
-  extraAction,
+  onOpenConsultation,
 }: GovDeployedControlsProps) {
   const { user } = useAuth();
   const isCreator = user?.role === "Government Official" && user?.id === project.created_by;
@@ -41,7 +43,9 @@ export function GovDeployedControls({
   const [showSiteChangeModal, setShowSiteChangeModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const hasOpenSiteChange = siteChange && ["requested", "proposed", "approved", "rejected"].includes(siteChange.status);
+  const hasOpenSiteChange = Boolean(
+    siteChange && ["requested", "proposed", "approved", "rejected"].includes(siteChange.status)
+  );
 
   function handleMoveToInProgressClick() {
     const isFutureDeadline =
@@ -56,100 +60,100 @@ export function GovDeployedControls({
     }
   }
 
+  const menuItems: ActivityMenuItem[] = [];
+
+  if (project.stage === "OpenForResponse") {
+    if (isCreator) {
+      menuItems.push({
+        id: "gov-edit-details-btn",
+        label: "Edit details",
+        onClick: () => setShowEditModal(true),
+      });
+      menuItems.push({
+        id: "gov-extend-deadline-btn",
+        label: "Extend deadline",
+        onClick: () => setShowExtendModal(true),
+      });
+      if (!hasOpenSiteChange) {
+        menuItems.push({
+          id: "gov-request-site-change-btn",
+          label: "Request site change",
+          onClick: () => setShowSiteChangeModal(true),
+        });
+      }
+    }
+
+    if (onOpenConsultation) {
+      menuItems.push({
+        id: "gov-add-consultation-btn",
+        label: "Add consultation",
+        onClick: onOpenConsultation,
+      });
+    }
+
+    menuItems.push({
+      id: "gov-in-progress-btn",
+      label: "Move to In Progress",
+      onClick: handleMoveToInProgressClick,
+      disabled: loadingAction === "in_progress",
+      disabledReason: "Action in progress",
+    });
+
+    menuItems.push({
+      id: "gov-halt-btn",
+      label: "Halt Project",
+      onClick: () => onOpenReason("halt", "Halt Consultation (Public Reason)"),
+      variant: "warning",
+    });
+
+    menuItems.push({
+      id: "gov-recall-btn",
+      label: "Recall Project",
+      onClick: () => onOpenReason("recall", "Recall Project (Public Reason)"),
+      variant: "danger",
+    });
+  } else if (project.stage === "InProgress") {
+    menuItems.push({
+      id: "gov-complete-btn",
+      label: "Mark Project Completed",
+      onClick: () => void onExecute("complete", () => completeProject(project.id)),
+      disabled: loadingAction === "complete",
+      disabledReason: "Action in progress",
+    });
+
+    if (onOpenConsultation) {
+      menuItems.push({
+        id: "gov-add-consultation-btn",
+        label: "Add consultation",
+        onClick: onOpenConsultation,
+      });
+    }
+  } else if (["Completed", "Halted"].includes(project.stage)) {
+    if (onOpenConsultation) {
+      menuItems.push({
+        id: "gov-add-consultation-btn",
+        label: "Add consultation",
+        onClick: onOpenConsultation,
+      });
+    }
+  }
+
+  if (menuItems.length === 0 && !project.halt_reason && !successMessage) {
+    return null;
+  }
+
   return (
-    <div className="w-full md:w-auto min-w-0 max-w-full rounded-[12px] border border-white/10 bg-surface-container-lowest/80 p-[16px] sm:p-[20px] space-y-[16px]">
-      <span className="font-data-mono text-[11px] text-primary uppercase">ACTIVE DEPLOYMENT CONTROLS</span>
+    <div className="w-full md:w-auto min-w-0 max-w-full">
       {successMessage && (
-        <div id="gov-deployed-success-msg" className="rounded border border-primary-container/40 bg-primary-container/15 p-[10px] text-xs text-primary font-data-mono">
+        <div id="gov-deployed-success-msg" className="mb-[10px] rounded border border-primary-container/40 bg-primary-container/15 p-[10px] text-xs text-primary font-data-mono">
           {successMessage}
         </div>
       )}
-      {project.stage === "OpenForResponse" && (
-        <div className="space-y-[16px]">
-          <div className="flex flex-wrap items-center gap-[10px] max-w-[460px]">
-            {isCreator && (
-              <>
-                <button
-                  type="button"
-                  id="gov-edit-details-btn"
-                  onClick={() => setShowEditModal(true)}
-                  className="rounded border border-white/20 bg-white/5 px-[14px] py-[8px] font-data-mono text-[11px] text-white uppercase hover:border-white/40"
-                >
-                  Edit details
-                </button>
-                <button
-                  type="button"
-                  id="gov-extend-deadline-btn"
-                  onClick={() => setShowExtendModal(true)}
-                  className="rounded border border-primary-container bg-primary-container/20 px-[14px] py-[8px] font-data-mono text-[11px] text-primary uppercase hover:bg-primary-container/30 disabled:opacity-50"
-                >
-                  Extend deadline
-                </button>
-                {!hasOpenSiteChange && (
-                  <button
-                    type="button"
-                    id="gov-request-site-change-btn"
-                    onClick={() => setShowSiteChangeModal(true)}
-                    className="rounded border border-primary-container bg-primary-container/20 px-[14px] py-[8px] font-data-mono text-[11px] text-primary uppercase hover:bg-primary-container/30 disabled:opacity-50"
-                  >
-                    Request site change
-                  </button>
-                )}
-              </>
-            )}
-            <button
-              type="button"
-              id="gov-in-progress-btn"
-              disabled={loadingAction === "in_progress"}
-              onClick={handleMoveToInProgressClick}
-              className="rounded border border-primary-container bg-primary-container/20 px-[14px] py-[8px] font-data-mono text-[11px] text-primary uppercase hover:bg-primary-container/30 disabled:opacity-50"
-            >
-              Move to In Progress
-            </button>
-            <button
-              type="button"
-              id="gov-halt-btn"
-              onClick={() => onOpenReason("halt", "Halt Consultation (Public Reason)")}
-              className="rounded border border-warning/40 bg-warning/10 px-[14px] py-[8px] font-data-mono text-[11px] text-warning uppercase hover:bg-warning/20"
-            >
-              Halt Project
-            </button>
-            <button
-              type="button"
-              id="gov-recall-btn"
-              onClick={() => onOpenReason("recall", "Recall Project (Public Reason)")}
-              className="rounded border border-danger/40 bg-danger/10 px-[14px] py-[8px] font-data-mono text-[11px] text-danger uppercase hover:bg-danger/20"
-            >
-              Recall Project
-            </button>
-            {extraAction}
-          </div>
-        </div>
-      )}
 
-      {project.stage === "InProgress" && (
-        <div className="flex flex-wrap items-center gap-[10px]">
-          <button
-            type="button"
-            id="gov-complete-btn"
-            disabled={loadingAction === "complete"}
-            onClick={() => void onExecute("complete", () => completeProject(project.id))}
-            className="rounded border border-primary-container bg-primary-container/25 px-[16px] py-[10px] font-data-mono text-[12px] font-semibold text-primary uppercase hover:bg-primary-container/35 disabled:opacity-50"
-          >
-            Mark Project Completed
-          </button>
-          {extraAction}
-        </div>
-      )}
-
-      {project.stage !== "OpenForResponse" && project.stage !== "InProgress" && extraAction && (
-        <div className="flex flex-wrap items-center gap-[10px]">
-          {extraAction}
-        </div>
-      )}
+      <GovActivityMenu items={menuItems} />
 
       {project.halt_reason && (
-        <p className="text-xs text-warning font-data-mono">HALT REASON: {project.halt_reason}</p>
+        <p className="mt-[8px] text-xs text-warning font-data-mono">HALT REASON: {project.halt_reason}</p>
       )}
 
       {showConfirmModal && project.response_deadline && (
