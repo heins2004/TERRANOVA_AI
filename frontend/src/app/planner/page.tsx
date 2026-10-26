@@ -16,6 +16,7 @@ import {
 } from "@/services/planner";
 import { getPlannerCredentials, CredentialStatus } from "@/services/plannerCredentials";
 import { PendingInvitesSection } from "@/components/planner/PendingInvitesSection";
+import { PlannerStageGroupSection } from "@/components/planner/PlannerStageGroupSection";
 import { getChatUnreadCount } from "@/services/chat";
 
 const STAGE_GROUPS = [
@@ -142,9 +143,9 @@ function PlannerDashboardContent() {
   }
 
   const currentStageGroup = STAGE_GROUPS.find((g) => g.key === activeSection);
-  const stageProjects = currentStageGroup
-    ? projects.filter((p) => currentStageGroup.stages.includes(p.stage))
-    : [];
+  const siteProposedCount = projects.filter(
+    (p) => p.stage === "Site proposed" || (p.stage === "OpenForResponse" && Boolean(p.site_change_status))
+  ).length;
 
   return (
     <div className="min-h-screen flex flex-col bg-surface-container-lowest text-on-surface">
@@ -180,9 +181,11 @@ function PlannerDashboardContent() {
 
       <main className="flex-1 w-full">
         <SidebarLayout
-          items={PLANNER_LIST_NAV_ITEMS.map((item) =>
-            item.key === "chat" ? { ...item, badge: chatUnreadCount } : item
-          )}
+          items={PLANNER_LIST_NAV_ITEMS.map((item) => {
+            if (item.key === "chat") return { ...item, badge: chatUnreadCount };
+            if (item.key === "site-proposed") return { ...item, badge: siteProposedCount };
+            return item;
+          })}
           activeKey={activeSection}
           basePath="/planner"
           navTitle="Planner stages"
@@ -214,54 +217,11 @@ function PlannerDashboardContent() {
             )}
 
             {currentStageGroup && (
-              <section>
-                <div className="flex items-center gap-[10px] mb-[16px] border-b border-white/10 pb-[12px]">
-                  <span className="h-[6px] w-[6px] rounded-full bg-primary" />
-                  <h2 className="font-display-md text-[18px] font-semibold uppercase text-primary">
-                    {currentStageGroup.label} ({stageProjects.length})
-                  </h2>
-                </div>
-
-                {loading ? (
-                  <p className="mt-[16px] font-data-mono text-sm text-on-surface-variant">LOADING PROJECTS...</p>
-                ) : stageProjects.length === 0 ? (
-                  <div className="mt-[16px] rounded-xl border border-white/10 bg-white/[0.02] p-[24px]">
-                    <p className="font-data-mono text-sm text-on-surface-variant">NO PROJECTS FOUND IN THIS STAGE.</p>
-                  </div>
-                ) : (
-                  <div className="grid gap-[16px] md:grid-cols-2 lg:grid-cols-3">
-                    {stageProjects.map((proj) => (
-                      <Link
-                        key={proj.id}
-                        href={`/planner/${proj.id}`}
-                        className="glass-card block rounded-xl border border-white/10 bg-white/[0.02] p-[20px] transition hover:border-primary-container/60 hover:bg-white/[0.04]"
-                      >
-                        <div className="flex items-start justify-between gap-[10px]">
-                          <span className="font-data-mono text-[10px] uppercase text-on-surface-variant">
-                            #{proj.id} • {proj.city || "INDIA"}
-                          </span>
-                          <span className="rounded border border-primary-container/40 bg-primary-container/10 px-[6px] py-[2px] font-data-mono text-[10px] text-primary">
-                            {proj.stage}
-                          </span>
-                        </div>
-
-                        <h3 className="mt-[8px] font-display-md text-[16px] font-medium text-foreground line-clamp-1">
-                          {proj.title}
-                        </h3>
-
-                        <p className="mt-[4px] text-xs text-on-surface-variant line-clamp-2">
-                          {proj.description || "No description provided."}
-                        </p>
-
-                        <div className="mt-[16px] flex items-center justify-between border-t border-white/10 pt-[10px] font-data-mono text-[11px] text-on-surface-variant">
-                          <span>CATEGORY: {proj.category || "GENERAL"}</span>
-                          <span className="text-primary hover:underline">VIEW &rarr;</span>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </section>
+              <PlannerStageGroupSection
+                group={currentStageGroup}
+                projects={projects}
+                loading={loading}
+              />
             )}
           </div>
         </SidebarLayout>

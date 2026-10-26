@@ -165,6 +165,7 @@ class ProjectResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     stage: str = "Draft"
+    site_change_status: str | None = None
     planner_id: int | None = None
     planner_name: str | None = None
     planner_email: str | None = None

@@ -171,3 +171,39 @@ def check_point_in_circle(
         is_within = bool(row["is_within"])
         distance_meters = float(row["distance_meters"])
         return is_within, distance_meters
+
+
+def get_open_site_change_status(connection: Connection, project_id: int) -> str | None:
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT status
+            FROM project_site_changes
+            WHERE project_id = %s
+              AND status IN ('requested', 'proposed', 'approved', 'rejected')
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (project_id,),
+        )
+        row = cursor.fetchone()
+        return row["status"] if row else None
+
+
+def get_open_site_changes_statuses(connection: Connection, project_ids: list[int]) -> dict[int, str]:
+    if not project_ids:
+        return {}
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT DISTINCT ON (project_id) project_id, status
+            FROM project_site_changes
+            WHERE project_id = ANY(%s)
+              AND status IN ('requested', 'proposed', 'approved', 'rejected')
+            ORDER BY project_id, id DESC
+            """,
+            (project_ids,),
+        )
+        rows = cursor.fetchall()
+        return {r["project_id"]: r["status"] for r in rows}
+

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { GovProject } from "@/services/gov";
+import { SiteReworkingBadge } from "@/components/common/SiteReworkingBadge";
 
 export interface StageGroupConfig {
   key: string;
@@ -15,7 +16,12 @@ interface GovStageGroupSectionProps {
 }
 
 export function GovStageGroupSection({ group, projects }: GovStageGroupSectionProps) {
-  const groupProjects = projects.filter((p) => group.stages.includes(p.stage));
+  const groupProjects = projects.filter((p) => {
+    if (group.key === "site-proposed") {
+      return p.stage === "Site proposed" || (p.stage === "OpenForResponse" && Boolean(p.site_change_status));
+    }
+    return group.stages.includes(p.stage);
+  });
 
   return (
     <section key={group.key} className="space-y-[16px]">
@@ -44,9 +50,14 @@ export function GovStageGroupSection({ group, projects }: GovStageGroupSectionPr
               className="group block rounded-[12px] border border-white/10 bg-surface-container-lowest/90 p-[20px] transition-all hover:border-primary/50 hover:bg-white/[0.03] hover:shadow-[0_0_15px_rgba(34,211,238,0.15)]"
             >
               <div className="flex items-start justify-between gap-[10px]">
-                <span className="rounded border border-primary-container/40 bg-primary-container/10 px-[8px] py-[3px] font-data-mono text-[10px] font-semibold text-primary uppercase">
-                  {project.stage}
-                </span>
+                <div className="flex flex-wrap items-center gap-[6px]">
+                  <span className="rounded border border-primary-container/40 bg-primary-container/10 px-[8px] py-[3px] font-data-mono text-[10px] font-semibold text-primary uppercase">
+                    {project.stage}
+                  </span>
+                  {project.site_change_status && (
+                    <SiteReworkingBadge status={project.site_change_status} id={`gov-card-site-change-${project.id}`} />
+                  )}
+                </div>
                 <span className="font-data-mono text-[11px] uppercase text-on-surface-variant">
                   {project.city ?? "No City"}
                 </span>

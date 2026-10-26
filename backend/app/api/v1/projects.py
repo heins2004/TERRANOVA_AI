@@ -19,7 +19,7 @@ from app.schemas.workflow import (
     ReassignPlannerRequest,
     SiteProposalRequest,
 )
-from app.services import project_deadline_service, project_post_deploy_edit_service, project_service, workflow_service
+from app.services import project_deadline_service, project_post_deploy_edit_service, project_service, project_site_change_helper, workflow_service
 from app.services.project_post_deploy_edit_service import DeployedProjectUpdate
 from app.repositories import workflow_repository
 
@@ -49,13 +49,14 @@ def list_projects(
     Returns only caller's own projects (Government Official: owned; Urban Planner: assigned).
     Never exposes created_by publicly.
     """
-    return workflow_service.list_projects_for_caller(
+    projects = workflow_service.list_projects_for_caller(
         connection=connection,
         user=user,
         status_filter=status_filter,
         category=category,
         city=city,
     )
+    return project_site_change_helper.attach_site_change_statuses(connection, user, projects)
 
 
 @projects_router.get("/{project_id}", response_model=ProjectResponse)
@@ -64,11 +65,12 @@ def get_project(
     connection: Connection = Depends(get_db),
     user: UserResponse = Depends(require_authenticated_user()),
 ) -> dict:
-    return workflow_service.get_project_for_caller(
+    project = workflow_service.get_project_for_caller(
         connection=connection,
         user=user,
         project_id=project_id,
     )
+    return project_site_change_helper.attach_site_change_status(connection, user, project)
 
 
 @projects_router.post("", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)

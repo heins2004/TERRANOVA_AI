@@ -94,9 +94,15 @@ function GovDashboardContent() {
 
   const activeGroup = STAGE_ORDER.find((g) => g.key === activeSection) ?? STAGE_ORDER[0];
 
-  const navItems = GOV_LIST_NAV_ITEMS.map((item) =>
-    item.key === "chat" ? { ...item, badge: chatUnreadCount } : item
-  );
+  const siteProposedCount = projects.filter(
+    (p) => p.stage === "Site proposed" || (p.stage === "OpenForResponse" && Boolean(p.site_change_status))
+  ).length;
+
+  const navItems = GOV_LIST_NAV_ITEMS.map((item) => {
+    if (item.key === "chat") return { ...item, badge: chatUnreadCount };
+    if (item.key === "site-proposed") return { ...item, badge: siteProposedCount };
+    return item;
+  });
 
   return (
     <div className="min-h-screen flex flex-col bg-surface-container-lowest text-on-surface">

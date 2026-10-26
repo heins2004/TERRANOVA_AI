@@ -31,6 +31,7 @@ export interface GovProject {
   site_area_lat?: number | null;
   site_area_lng?: number | null;
   site_area_radius_km?: number | null;
+  site_change_status?: string | null;
 }
 
 export interface GovProjectEvent {
