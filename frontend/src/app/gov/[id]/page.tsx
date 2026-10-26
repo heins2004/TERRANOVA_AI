@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState, useCallback, Suspense } from "react";
+import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useAuth } from "@/components/layout/auth-provider";
 import { TopBar } from "@/components/layout/TopBar";
 import { getGovProject, getProjectEvents, GovProject, GovProjectEvent } from "@/services/gov";
@@ -27,6 +27,7 @@ function GovProjectDetailContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showEditModal, setShowEditModal] = useState(false);
+  const isFetchingRef = useRef(false);
 
   const isOfficial = user?.role === "Government Official";
 
@@ -50,6 +51,44 @@ function GovProjectDetailContent() {
         setLoading(false);
       });
   }, [projectId]);
+
+  const silentRefetch = useCallback(async () => {
+    if (isNaN(projectId) || isFetchingRef.current) return;
+    isFetchingRef.current = true;
+    try {
+      const [proj, evs, sc] = await Promise.all([
+        getGovProject(projectId),
+        getProjectEvents(projectId).catch(() => []),
+        getSiteChange(projectId).catch(() => null),
+      ]);
+      setProject(proj);
+      setEvents(evs);
+      setSiteChange(sc);
+    } catch {
+      // tolerate errors silently
+    } finally {
+      isFetchingRef.current = false;
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      void silentRefetch();
+    };
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [silentRefetch]);
+
+  useEffect(() => {
+    if (project?.stage === "Planner invited" && !project?.planner_id) {
+      const interval = setInterval(() => {
+        void silentRefetch();
+      }, 15000);
+      return () => clearInterval(interval);
+    }
+  }, [project?.stage, project?.planner_id, silentRefetch]);
 
   useEffect(() => {
     if (!isReady) return;

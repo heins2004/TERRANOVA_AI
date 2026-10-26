@@ -29,7 +29,7 @@ export function GovPlannerTabSection({ project, onRefresh }: GovPlannerTabSectio
         />
       )}
 
-      {project.stage === "Planner invited" && (
+      {project.stage === "Planner invited" && !project.planner_id && (
         <div className="rounded-[12px] border border-white/10 bg-surface-container-lowest/80 p-[20px] space-y-[16px]">
           <div>
             <span className="font-data-mono text-[11px] text-primary uppercase">INVITATION DISPATCHED</span>
@@ -54,11 +54,13 @@ export function GovPlannerTabSection({ project, onRefresh }: GovPlannerTabSectio
         </div>
       )}
 
-      {!["Draft", "Planner invited"].includes(project.stage) && (
+      {Boolean(project.planner_id) && (
         <div className="rounded-[12px] border border-white/10 bg-surface-container-lowest/80 p-[20px] space-y-[8px]">
           <span className="font-data-mono text-[11px] text-primary uppercase">ASSIGNED PLANNER</span>
           <p className="text-white font-medium text-[15px]">
-            {project.planner_name ?? (project.planner_id ? `Planner #${project.planner_id}` : "None")}
+            {project.planner_name
+              ? `${project.planner_name} (ID: ${project.planner_id})`
+              : `Planner #${project.planner_id}`}
           </p>
         </div>
       )}

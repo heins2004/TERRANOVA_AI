@@ -68,9 +68,12 @@ def get_project_by_id(connection: Connection, project_id: int) -> dict | None:
                    u.full_name AS official_name,
                    u.email AS official_email,
                    u.organization AS official_organization,
-                   u.designation AS official_designation
+                   u.designation AS official_designation,
+                   pu.full_name AS planner_name,
+                   pu.email AS planner_email
             FROM projects p
             LEFT JOIN users u ON u.id = p.created_by
+            LEFT JOIN users pu ON pu.id = p.planner_id
             WHERE p.id = %s
             """,
             (project_id,),

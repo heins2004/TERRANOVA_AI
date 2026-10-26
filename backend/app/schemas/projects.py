@@ -166,6 +166,8 @@ class ProjectResponse(BaseModel):
     updated_at: datetime
     stage: str = "Draft"
     planner_id: int | None = None
+    planner_name: str | None = None
+    planner_email: str | None = None
     planner_deadline: datetime | None = None
     response_deadline: datetime | None = None
     halt_reason: str | None = None
