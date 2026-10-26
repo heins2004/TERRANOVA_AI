@@ -16,6 +16,7 @@ import {
 } from "@/services/planner";
 import { getPlannerCredentials, CredentialStatus } from "@/services/plannerCredentials";
 import { PendingInvitesSection } from "@/components/planner/PendingInvitesSection";
+import { PlannerInvitedSection } from "@/components/planner/PlannerInvitedSection";
 import { PlannerStageGroupSection } from "@/components/planner/PlannerStageGroupSection";
 import { getChatUnreadCount } from "@/services/chat";
 
@@ -28,6 +29,7 @@ const STAGE_GROUPS = [
 
 const PLANNER_LIST_NAV_ITEMS: SidebarItem[] = [
   { key: "invitations", label: "Invitations", icon: "mail" },
+  { key: "planner-invited", label: "Planner Invited", icon: "person_add" },
   { key: "site-proposed", label: "Site Proposed", icon: "location_searching" },
   { key: "under-consideration", label: "Under Consideration", icon: "fact_check" },
   { key: "approved", label: "Approved", icon: "verified" },
@@ -35,7 +37,14 @@ const PLANNER_LIST_NAV_ITEMS: SidebarItem[] = [
   { key: "chat", label: "Chat", icon: "chat", href: "/chat" },
 ];
 
-const VALID_SECTIONS = ["invitations", "site-proposed", "under-consideration", "approved", "deployed-stages"] as const;
+const VALID_SECTIONS = [
+  "invitations",
+  "planner-invited",
+  "site-proposed",
+  "under-consideration",
+  "approved",
+  "deployed-stages",
+] as const;
 
 type PlannerSection = (typeof VALID_SECTIONS)[number];
 
@@ -63,7 +72,7 @@ function PlannerDashboardContent() {
     Promise.all([getPendingInvites(), getPlannerProjects(), getPlannerCredentials().catch(() => null)])
       .then(([invList, projList, credRes]) => {
         setInvites(invList);
-        setProjects(projList.filter((p) => p.stage !== "Draft" && p.stage !== "Planner invited"));
+        setProjects(projList.filter((p) => p.stage !== "Draft"));
         if (credRes) setCredStatus(credRes.status);
         setError("");
       })
@@ -143,6 +152,10 @@ function PlannerDashboardContent() {
   }
 
   const currentStageGroup = STAGE_GROUPS.find((g) => g.key === activeSection);
+  const plannerInvitedProjects = projects.filter(
+    (p) => p.stage === "Planner invited" && p.planner_id === user?.id
+  );
+  const plannerInvitedCount = plannerInvitedProjects.length;
   const siteProposedCount = projects.filter(
     (p) => p.stage === "Site proposed" || (p.stage === "OpenForResponse" && Boolean(p.site_change_status))
   ).length;
@@ -183,6 +196,7 @@ function PlannerDashboardContent() {
         <SidebarLayout
           items={PLANNER_LIST_NAV_ITEMS.map((item) => {
             if (item.key === "chat") return { ...item, badge: chatUnreadCount };
+            if (item.key === "planner-invited") return { ...item, badge: plannerInvitedCount };
             if (item.key === "site-proposed") return { ...item, badge: siteProposedCount };
             return item;
           })}
@@ -213,6 +227,13 @@ function PlannerDashboardContent() {
                 actionLoadingId={actionLoadingId}
                 onAccept={handleAccept}
                 onDecline={handleDecline}
+              />
+            )}
+
+            {activeSection === "planner-invited" && (
+              <PlannerInvitedSection
+                projects={plannerInvitedProjects}
+                loading={loading}
               />
             )}
 
