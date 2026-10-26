@@ -12,7 +12,6 @@ def search_planners(connection: Connection, *, q: str, limit: int = 10) -> list[
                 """
                 SELECT u.id, u.full_name, u.city
                 FROM users u
-                JOIN planner_credentials pc ON pc.user_id = u.id AND pc.status = 'Verified'
                 WHERE u.role = 'Urban Planner'
                   AND u.is_active = true
                   AND u.is_demo = false
@@ -27,7 +26,6 @@ def search_planners(connection: Connection, *, q: str, limit: int = 10) -> list[
                 """
                 SELECT u.id, u.full_name, u.city
                 FROM users u
-                JOIN planner_credentials pc ON pc.user_id = u.id AND pc.status = 'Verified'
                 WHERE u.role = 'Urban Planner'
                   AND u.is_active = true
                   AND u.is_demo = false

@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 from psycopg import Connection
 
 from app.core.place_validation import validate_place_data
-from app.repositories import planner_credential_repository, project_repository, workflow_repository
+from app.repositories import project_repository, workflow_repository
 from app.schemas.auth import UserResponse
 from app.schemas.workflow import (
     DeployRequest,
@@ -369,13 +369,6 @@ def invite_planner(
             detail="Target planner is inactive.",
         )
 
-    target_creds = planner_credential_repository.get_by_user_id(connection, target_user["id"])
-    if not target_creds or target_creds.get("status") != "Verified":
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Only verified planners can be invited.",
-        )
-
     active_invite = workflow_repository.get_active_project_invite(connection, project_id)
     if active_invite:
         raise HTTPException(
@@ -508,12 +501,6 @@ def reassign_planner(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Target planner is inactive.",
-        )
-    target_creds = planner_credential_repository.get_by_user_id(connection, target_user["id"])
-    if not target_creds or target_creds.get("status") != "Verified":
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Only verified planners can be invited.",
         )
     if project.get("planner_id") == target_user["id"]:
         raise HTTPException(

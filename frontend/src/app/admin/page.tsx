@@ -16,7 +16,6 @@ import {
 } from "@/services/admin";
 import { AdminOverviewSection } from "@/components/admin/AdminOverviewSection";
 import { AdminAnalyticsTabSection } from "@/components/admin/AdminAnalyticsTabSection";
-import { AdminVerificationTabSection } from "@/components/admin/AdminVerificationTabSection";
 import { AdminLoginLogTabSection } from "@/components/admin/AdminLoginLogTabSection";
 import { AdminUsersSection } from "@/components/admin/AdminUsersSection";
 import { CreateOfficialModal } from "@/components/admin/CreateOfficialModal";
@@ -26,7 +25,6 @@ const ADMIN_NAV_ITEMS: SidebarItem[] = [
   { key: "overview", label: "Overview", icon: "dashboard" },
   { key: "analytics", label: "Analytics", icon: "analytics" },
   { key: "users", label: "Users", icon: "group" },
-  { key: "verification", label: "Planner verification", icon: "verified_user" },
   { key: "login-log", label: "Login log", icon: "history" },
 ];
 
@@ -34,7 +32,6 @@ const VALID_SECTIONS = [
   "overview",
   "analytics",
   "users",
-  "verification",
   "login-log",
 ] as const;
 
@@ -223,7 +220,6 @@ function AdminPageContent() {
               onStatusChange={handleStatusChange}
             />
           )}
-          {activeSection === "verification" && <AdminVerificationTabSection />}
           {activeSection === "login-log" && <AdminLoginLogTabSection />}
         </SidebarLayout>
       </main>

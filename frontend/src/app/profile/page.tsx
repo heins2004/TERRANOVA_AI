@@ -10,7 +10,6 @@ import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
 import { RoleSummaryCard } from "@/components/profile/RoleSummaryCard";
 import { ChangePasswordCard } from "@/components/profile/ChangePasswordCard";
 import { FollowingSection } from "@/components/profile/FollowingSection";
-import { PlannerCredentialsSection } from "@/components/profile/PlannerCredentialsSection";
 import { UserProfile, getProfile } from "@/services/profile";
 
 const PROFILE_NAV_ITEMS: SidebarItem[] = [
@@ -141,7 +140,6 @@ function ProfileContent() {
               {activeSection === "overview" && (
                 <div className="space-y-[24px]">
                   <RoleSummaryCard profile={profile} />
-                  {profile.role === "Urban Planner" && <PlannerCredentialsSection />}
                 </div>
               )}
 
