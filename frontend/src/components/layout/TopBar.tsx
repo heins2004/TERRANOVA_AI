@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/components/layout/auth-provider";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { HamburgerMenu } from "@/components/layout/HamburgerMenu";
+import { TopBarBackButton } from "@/components/layout/TopBarBackButton";
 import { AuthUser } from "@/lib/auth";
 
 type TopBarProps = {
@@ -62,6 +63,7 @@ export function TopBar({
       <div className="flex w-full items-center justify-between gap-[16px]">
         {/* Left: Brand text (plain text, never a link) + system readout (wide screens only) */}
         <div className="flex items-center gap-[10px] sm:gap-[16px]">
+          <TopBarBackButton currentUser={currentUser} />
           <span className="font-display-md text-[14px] sm:text-[15px] font-semibold tracking-wider text-primary uppercase select-none">
             TERRANOVA AI
           </span>
