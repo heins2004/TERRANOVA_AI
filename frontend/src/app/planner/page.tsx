@@ -14,12 +14,11 @@ import {
   PlannerProject,
 } from "@/services/planner";
 import { PendingInvitesSection } from "@/components/planner/PendingInvitesSection";
-import { PlannerInvitedSection } from "@/components/planner/PlannerInvitedSection";
 import { PlannerStageGroupSection } from "@/components/planner/PlannerStageGroupSection";
 import { getChatUnreadCount } from "@/services/chat";
 
 const STAGE_GROUPS = [
-  { key: "site-proposed", label: "Site Proposed", stages: ["Site proposed"] },
+  { key: "site-proposed", label: "Site Proposed", stages: ["Planner invited", "Site proposed"] },
   { key: "under-consideration", label: "Under Consideration", stages: ["Under consideration"] },
   { key: "approved", label: "Approved", stages: ["Approved"] },
   { key: "deployed-stages", label: "Deployed Stages", stages: ["OpenForResponse", "InProgress", "Completed", "Halted", "Recalled"] },
@@ -27,7 +26,6 @@ const STAGE_GROUPS = [
 
 const PLANNER_LIST_NAV_ITEMS: SidebarItem[] = [
   { key: "invitations", label: "Invitations", icon: "mail" },
-  { key: "planner-invited", label: "Planner Invited", icon: "person_add" },
   { key: "site-proposed", label: "Site Proposed", icon: "location_searching" },
   { key: "under-consideration", label: "Under Consideration", icon: "fact_check" },
   { key: "approved", label: "Approved", icon: "verified" },
@@ -37,7 +35,6 @@ const PLANNER_LIST_NAV_ITEMS: SidebarItem[] = [
 
 const VALID_SECTIONS = [
   "invitations",
-  "planner-invited",
   "site-proposed",
   "under-consideration",
   "approved",
@@ -59,8 +56,9 @@ function PlannerDashboardContent() {
   const isSubmittingRef = useRef(false);
 
   const rawSection = searchParams.get("section");
-  const activeSection: PlannerSection = VALID_SECTIONS.includes(rawSection as PlannerSection)
-    ? (rawSection as PlannerSection)
+  const normalizedSection = rawSection === "planner-invited" ? "site-proposed" : rawSection;
+  const activeSection: PlannerSection = VALID_SECTIONS.includes(normalizedSection as PlannerSection)
+    ? (normalizedSection as PlannerSection)
     : "invitations";
 
   const isPlanner = user?.role === "Urban Planner";
@@ -148,12 +146,11 @@ function PlannerDashboardContent() {
   }
 
   const currentStageGroup = STAGE_GROUPS.find((g) => g.key === activeSection);
-  const plannerInvitedProjects = projects.filter(
-    (p) => p.stage === "Planner invited" && p.planner_id === user?.id
-  );
-  const plannerInvitedCount = plannerInvitedProjects.length;
   const siteProposedCount = projects.filter(
-    (p) => p.stage === "Site proposed" || (p.stage === "OpenForResponse" && Boolean(p.site_change_status))
+    (p) =>
+      p.stage === "Site proposed" ||
+      (p.stage === "Planner invited" && p.planner_id === user?.id) ||
+      (p.stage === "OpenForResponse" && Boolean(p.site_change_status))
   ).length;
 
   return (
@@ -165,7 +162,6 @@ function PlannerDashboardContent() {
         <SidebarLayout
           items={PLANNER_LIST_NAV_ITEMS.map((item) => {
             if (item.key === "chat") return { ...item, badge: chatUnreadCount };
-            if (item.key === "planner-invited") return { ...item, badge: plannerInvitedCount };
             if (item.key === "site-proposed") return { ...item, badge: siteProposedCount };
             return item;
           })}
@@ -196,13 +192,6 @@ function PlannerDashboardContent() {
                 actionLoadingId={actionLoadingId}
                 onAccept={handleAccept}
                 onDecline={handleDecline}
-              />
-            )}
-
-            {activeSection === "planner-invited" && (
-              <PlannerInvitedSection
-                projects={plannerInvitedProjects}
-                loading={loading}
               />
             )}
 

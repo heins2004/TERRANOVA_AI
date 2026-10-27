@@ -54,11 +54,21 @@ class AnalyticsDailyItem(BaseModel):
     logins: int
 
 
+class LeaderboardItem(BaseModel):
+    id: int
+    name: str
+    count: int
+    role: str | None = None
+
+
 class AdminAnalyticsResponse(BaseModel):
     days: int
     daily_series: list[AnalyticsDailyItem]
     projects_by_stage: dict[str, int]
     users_by_role: dict[str, int]
+    top_officials_by_projects: list[LeaderboardItem] = []
+    top_planners_by_projects: list[LeaderboardItem] = []
+    top_users_by_comments: list[LeaderboardItem] = []
 
 
 class AdminLoginLogItem(BaseModel):

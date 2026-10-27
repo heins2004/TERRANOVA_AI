@@ -151,7 +151,7 @@ function PlannerProjectDetailContent() {
 
                 <div className="flex flex-col items-end gap-[8px]">
                   <span className="rounded border border-primary-container/60 bg-primary-container/10 px-[10px] py-[4px] font-data-mono text-xs text-primary font-semibold uppercase">
-                    {project.stage}
+                    {project.stage === "Planner invited" ? "Site proposed" : project.stage}
                   </span>
                   {siteChange && ["requested", "proposed", "approved", "rejected"].includes(siteChange.status) && (
                     <SiteChangeInProgressBadge status={siteChange.status} />

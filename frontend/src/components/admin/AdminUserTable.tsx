@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef } from "react";
-import { AdminUser, userRoles } from "@/services/admin";
+import { useState } from "react";
+import { AdminUser, exportUsersAsExcel, userRoles } from "@/services/admin";
 
 type AdminUserTableProps = {
   users: AdminUser[];
@@ -18,8 +18,8 @@ type AdminUserTableProps = {
   onStatusFilterChange: (val: string) => void;
   onPageChange: (newPage: number) => void;
   onLimitChange: (newLimit: number) => void;
-  onOpenConfirm: (user: AdminUser, action: "deactivate" | "reactivate") => void;
-  onStatusChange: (userId: number, isActive: boolean) => void;
+  onOpenConfirm?: (user: AdminUser, action: "deactivate" | "reactivate") => void;
+  onStatusChange?: (userId: number, isActive: boolean) => void;
 };
 
 export function AdminUserTable({
@@ -37,19 +37,32 @@ export function AdminUserTable({
   onStatusFilterChange,
   onPageChange,
   onLimitChange,
-  onOpenConfirm,
-  onStatusChange,
 }: AdminUserTableProps) {
-  const pageNavRef = useRef(false);
+  const [downloading, setDownloading] = useState(false);
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   function handlePageNav(delta: number) {
-    if (pageNavRef.current) return;
     const target = page + delta;
     if (target < 1 || target > totalPages) return;
-    pageNavRef.current = true;
     onPageChange(target);
-    setTimeout(() => { pageNavRef.current = false; }, 200);
+  }
+
+  async function handleDownloadExcel() {
+    try {
+      setDownloading(true);
+      await exportUsersAsExcel(
+        {
+          q: search || undefined,
+          role: roleFilter || undefined,
+          status: statusFilter || undefined,
+        },
+        "xlsx"
+      );
+    } catch (err) {
+      console.error("Export error:", err);
+    } finally {
+      setDownloading(false);
+    }
   }
 
   const startIdx = total === 0 ? 0 : (page - 1) * limit + 1;
@@ -61,7 +74,10 @@ export function AdminUserTable({
       <div className="flex flex-wrap items-center justify-between gap-[16px] pb-[20px] border-b border-white/10">
         <div className="flex flex-wrap items-center gap-[12px] flex-1 min-w-[280px]">
           <div className="relative flex-1 max-w-sm">
-            <span className="material-symbols-outlined absolute left-[12px] top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant/60" aria-hidden="true">
+            <span
+              className="material-symbols-outlined absolute left-[12px] top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant/60"
+              aria-hidden="true"
+            >
               search
             </span>
             <input
@@ -83,7 +99,11 @@ export function AdminUserTable({
               className="w-full h-[38px] px-[12px] rounded-[8px] bg-surface-muted/60 border border-white/15 text-foreground font-sans text-[13px] focus:outline-none focus:border-primary"
             >
               <option value="">All Roles</option>
-              {userRoles.map((r) => (<option key={r} value={r}>{r}</option>))}
+              {userRoles.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -100,6 +120,20 @@ export function AdminUserTable({
               <option value="inactive">Inactive</option>
             </select>
           </div>
+
+          <button
+            type="button"
+            id="download-users-excel-btn"
+            onClick={handleDownloadExcel}
+            disabled={downloading}
+            className="h-[38px] px-[14px] inline-flex items-center gap-[8px] rounded-[8px] border border-white/15 bg-surface-muted/60 hover:bg-white/10 text-foreground font-data-mono text-[12px] font-medium transition-colors cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Download users according to current filters as an Excel sheet"
+          >
+            <span className="material-symbols-outlined text-[18px] text-primary" aria-hidden="true">
+              {downloading ? "hourglass_top" : "download"}
+            </span>
+            <span>{downloading ? "Exporting…" : "Download Excel"}</span>
+          </button>
         </div>
 
         <div className="flex items-center gap-[8px] text-[12px] font-data-mono text-on-surface-variant">
@@ -129,19 +163,18 @@ export function AdminUserTable({
               <th className="py-[12px] px-[8px] xl:px-[12px] whitespace-nowrap">Status</th>
               <th className="py-[12px] px-[8px] xl:px-[12px] whitespace-nowrap">Created</th>
               <th className="py-[12px] px-[8px] xl:px-[12px] whitespace-nowrap">Last Login</th>
-              <th className="py-[12px] px-[8px] xl:px-[12px] text-right whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5 text-[13px]">
             {loading && users.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-[32px] text-center text-on-surface-variant font-data-mono text-[12px]">
+                <td colSpan={7} className="py-[32px] text-center text-on-surface-variant font-data-mono text-[12px]">
                   LOADING USER REGISTRY…
                 </td>
               </tr>
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-[32px] text-center text-on-surface-variant font-data-mono text-[12px]">
+                <td colSpan={7} className="py-[32px] text-center text-on-surface-variant font-data-mono text-[12px]">
                   No matching user accounts found.
                 </td>
               </tr>
@@ -149,7 +182,6 @@ export function AdminUserTable({
               users.map((item) => {
                 const isSelf = currentUserId === item.id;
                 const displayName = item.name || item.full_name;
-                const isFlaggedInactive = Boolean(item.is_inactive || item.inactive_flag);
 
                 return (
                   <tr key={item.id} className="hover:bg-white/[0.02] transition-colors">
@@ -167,19 +199,11 @@ export function AdminUserTable({
                             DEMO
                           </span>
                         )}
-                        {isFlaggedInactive && (
-                          <span
-                            data-testid="inactive-20-badge"
-                            className="px-[6px] py-[1px] rounded text-[10px] font-data-mono border border-cyan-400/30 bg-cyan-950/40 text-cyan-300 font-medium whitespace-nowrap"
-                          >
-                            Inactive 20+ days
-                          </span>
-                        )}
                       </div>
                       <span className="text-[11px] font-data-mono text-on-surface-variant/70">ID: #{item.id}</span>
                     </td>
 
-                    {/* Column 1: Email (Matches test_j5 td[1]) */}
+                    {/* Column 1: Email */}
                     <td className="py-[12px] px-[8px] xl:px-[12px] font-data-mono text-[12px] text-foreground whitespace-nowrap">
                       {item.email}
                     </td>
@@ -196,25 +220,17 @@ export function AdminUserTable({
                       {item.city || "—"}
                     </td>
 
-                    {/* Column 4: Status (Matches test_j4 input aria-label) */}
+                    {/* Column 4: Status (Auto-analyzed based on 15 days inactivity) */}
                     <td className="py-[12px] px-[8px] xl:px-[12px] whitespace-nowrap">
-                      <div className="flex items-center gap-[8px] whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          aria-label={`Active status for ${displayName}`}
-                          checked={item.is_active}
-                          disabled={isSelf}
-                          onChange={(e) => onStatusChange(item.id, e.target.checked)}
-                          className="h-[16px] w-[16px] accent-primary rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-                        />
-                        <span className={`inline-block whitespace-nowrap px-[8px] py-[2px] rounded-full text-[10px] font-data-mono font-medium ${
+                      <span
+                        className={`inline-block whitespace-nowrap px-[8px] py-[2px] rounded-full text-[10px] font-data-mono font-medium ${
                           item.is_active
                             ? "bg-success/10 text-success border border-success/30"
                             : "bg-danger/10 text-danger border border-danger/30"
-                        }`}>
-                          {item.is_active ? "Active" : "Inactive"}
-                        </span>
-                      </div>
+                        }`}
+                      >
+                        {item.is_active ? "Active" : "Inactive"}
+                      </span>
                     </td>
 
                     {/* Column 5: Created Date */}
@@ -226,31 +242,6 @@ export function AdminUserTable({
                     <td className="py-[12px] px-[8px] xl:px-[12px] font-data-mono text-[11px] text-on-surface-variant whitespace-nowrap">
                       {item.last_login_at ? item.last_login_at.slice(0, 10) : "Never"}
                     </td>
-
-                    {/* Column 7: Actions */}
-                    <td className="py-[12px] px-[8px] xl:px-[12px] text-right whitespace-nowrap">
-                      {isSelf ? (
-                        <span className="text-[11px] font-data-mono text-on-surface-variant/50 italic">Protected</span>
-                      ) : item.is_active ? (
-                        <button
-                          type="button"
-                          id={`deactivate-user-${item.id}-btn`}
-                          onClick={() => onOpenConfirm(item, "deactivate")}
-                          className="inline-flex items-center justify-center whitespace-nowrap h-[28px] px-[10px] rounded-[6px] border border-danger/40 bg-danger/10 text-danger hover:bg-danger/20 font-data-mono text-[11px] font-medium transition-colors"
-                        >
-                          Deactivate
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          id={`reactivate-user-${item.id}-btn`}
-                          onClick={() => onOpenConfirm(item, "reactivate")}
-                          className="inline-flex items-center justify-center whitespace-nowrap h-[28px] px-[10px] rounded-[6px] border border-success/40 bg-success/10 text-success hover:bg-success/20 font-data-mono text-[11px] font-medium transition-colors"
-                        >
-                          Reactivate
-                        </button>
-                      )}
-                    </td>
                   </tr>
                 );
               })
@@ -261,7 +252,9 @@ export function AdminUserTable({
 
       {/* Pagination Footer */}
       <div className="flex flex-wrap items-center justify-between gap-[16px] pt-[16px] mt-[12px] border-t border-white/10 text-[12px] font-data-mono text-on-surface-variant">
-        <div>Showing {startIdx}–{endIdx} of {total} accounts</div>
+        <div>
+          Showing {startIdx}–{endIdx} of {total} accounts
+        </div>
         <div className="flex items-center gap-[8px]">
           <button
             type="button"
@@ -272,7 +265,9 @@ export function AdminUserTable({
           >
             Previous
           </button>
-          <span>Page {page} of {totalPages}</span>
+          <span>
+            Page {page} of {totalPages}
+          </span>
           <button
             type="button"
             id="next-page-btn"

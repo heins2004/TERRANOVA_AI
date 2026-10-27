@@ -17,7 +17,6 @@ export function CreateOfficialModal({ isOpen, onClose, onCreated }: CreateOffici
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [city, setCity] = useState("bengaluru");
   const [serverError, setServerError] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,7 +78,6 @@ export function CreateOfficialModal({ isOpen, onClose, onCreated }: CreateOffici
         email: email.trim(),
         password,
         phone: phone.trim() ? phone.trim() : undefined,
-        city: city ? city.trim().toLowerCase() : undefined,
         role,
       };
 
@@ -141,7 +139,7 @@ export function CreateOfficialModal({ isOpen, onClose, onCreated }: CreateOffici
           {/* Name Field */}
           <div>
             <label htmlFor="official-name-input" className="block text-[12px] font-data-mono text-on-surface-variant mb-[6px]">
-              Full Name <span className="text-danger">* (No digits)</span>
+              Full Name <span className="text-danger">*</span>
             </label>
             <input
               id="official-name-input"
@@ -223,29 +221,10 @@ export function CreateOfficialModal({ isOpen, onClose, onCreated }: CreateOffici
             </select>
           </div>
 
-          {/* City Selection */}
-          <div>
-            <label htmlFor="official-city-input" className="block text-[12px] font-data-mono text-on-surface-variant mb-[6px]">
-              Jurisdiction City
-            </label>
-            <select
-              id="official-city-input"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              className="w-full h-[40px] px-[12px] rounded-[8px] bg-surface-muted/60 border border-white/15 text-foreground font-sans text-[13px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-            >
-              <option value="bengaluru">Bengaluru</option>
-              <option value="mumbai">Mumbai</option>
-              <option value="delhi">Delhi</option>
-              <option value="hyderabad">Hyderabad</option>
-              <option value="chennai">Chennai</option>
-            </select>
-          </div>
-
           {/* Password Field */}
           <div>
             <label htmlFor="official-password-input" className="block text-[12px] font-data-mono text-on-surface-variant mb-[6px]">
-              Temporary Password <span className="text-danger">* (Min 8 characters)</span>
+              Temporary Password <span className="text-danger">*</span>
             </label>
             <input
               id="official-password-input"

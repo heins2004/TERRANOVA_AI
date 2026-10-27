@@ -57,6 +57,31 @@ def list_users(
     return rows
 
 
+@router.get("/users/export")
+def export_users(
+    q: str | None = Query(None, description="Search by name, email, or city"),
+    role: str | None = Query(None, description="Filter by role"),
+    status: str | None = Query(None, description="Filter by active/inactive status"),
+    format: str = Query("xlsx", description="File format: xlsx or csv"),
+    include_demo: bool = Query(False, description="Whether to include demo accounts"),
+    connection: Connection = Depends(get_db),
+    _: UserResponse = Depends(require_role("Administrator")),
+) -> Response:
+    content, media_type, filename = admin_service.export_users_data(
+        connection,
+        q=q,
+        role=role,
+        status_filter=status,
+        format_type=format,
+        include_demo=include_demo,
+    )
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 @router.post("/officials", response_model=AdminUserItem, status_code=status.HTTP_201_CREATED)
 def create_official(
     payload: CreateOfficialRequest,

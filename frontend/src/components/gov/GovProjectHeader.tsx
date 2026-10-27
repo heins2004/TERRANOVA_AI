@@ -81,7 +81,7 @@ export function GovProjectHeader({ project, siteChange, onRefresh, onOpenEdit }:
           <div className="max-w-2xl">
             <div className="flex flex-wrap items-center gap-[10px]">
               <span className="rounded border border-primary-container/40 bg-primary-container/15 px-[10px] py-[3px] font-data-mono text-[11px] font-semibold text-primary uppercase">
-                {project.stage}
+                {project.stage === "Planner invited" ? "Site proposed" : project.stage}
               </span>
               {siteChange && ["requested", "proposed", "approved", "rejected"].includes(siteChange.status) && (
                 <SiteChangeInProgressBadge status={siteChange.status} />

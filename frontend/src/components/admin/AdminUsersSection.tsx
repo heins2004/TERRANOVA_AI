@@ -66,7 +66,7 @@ export function AdminUsersSection({
             Users
           </h1>
           <p className="mt-[4px] text-sm text-on-surface-variant">
-            Manage account roles, deactivate access, provision government officials, and monitor account status.
+            Manage account roles, provision government officials, and monitor active account status.
           </p>
         </div>
 

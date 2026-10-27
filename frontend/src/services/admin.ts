@@ -28,11 +28,21 @@ export type AnalyticsDaily = {
   logins: number;
 };
 
+export type LeaderboardItem = {
+  id: number;
+  name: string;
+  count: number;
+  role?: string | null;
+};
+
 export type AdminAnalytics = {
   days: number;
   daily_series: AnalyticsDaily[];
   projects_by_stage: Record<string, number>;
   users_by_role: Record<string, number>;
+  top_officials_by_projects?: LeaderboardItem[];
+  top_planners_by_projects?: LeaderboardItem[];
+  top_users_by_comments?: LeaderboardItem[];
 };
 
 export type LoginLogItem = {
@@ -100,6 +110,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
 export async function getUsers(params?: UserListParams): Promise<AdminUserList> {
   const searchParams = new URLSearchParams();
+  searchParams.set("envelope", "true");
   if (params?.q) searchParams.set("q", params.q);
   if (params?.role) searchParams.set("role", params.role);
   if (params?.status) searchParams.set("status", params.status);
@@ -137,6 +148,39 @@ export async function getUsers(params?: UserListParams): Promise<AdminUserList> 
   const result = list as AdminUserList;
   result.total = total;
   return result;
+}
+
+export async function exportUsersAsExcel(
+  params?: UserListParams,
+  format: "xlsx" | "csv" = "xlsx"
+): Promise<void> {
+  const searchParams = new URLSearchParams();
+  if (params?.q) searchParams.set("q", params.q);
+  if (params?.role) searchParams.set("role", params.role);
+  if (params?.status) searchParams.set("status", params.status);
+  searchParams.set("format", format);
+  if (params?.include_demo) searchParams.set("include_demo", "true");
+
+  const qs = searchParams.toString();
+  const url = `${API_BASE_URL}/api/admin/users/export${qs ? `?${qs}` : ""}`;
+
+  const response = await fetch(url, {
+    credentials: "include",
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.detail ?? "Failed to export users spreadsheet.");
+  }
+
+  const blob = await response.blob();
+  const blobUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = blobUrl;
+  a.download = format === "csv" ? "users_export.csv" : "users_export.xlsx";
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(blobUrl);
+  document.body.removeChild(a);
 }
 
 export function getAdminStats(): Promise<AdminStats> {

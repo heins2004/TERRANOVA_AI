@@ -336,11 +336,21 @@ def invite_planner(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only the owning official can invite a planner.",
         )
+    deadline = project.get("planner_deadline")
+    deadline_passed = False
+    if deadline:
+        if deadline.tzinfo is None:
+            deadline = deadline.replace(tzinfo=timezone.utc)
+        deadline_passed = datetime.now(timezone.utc) > deadline
+
     if project["stage"] != "Draft":
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Cannot invite planner when project is in '{project['stage']}' stage (must be Draft).",
-        )
+        if project["stage"] == "Planner invited" and not project.get("planner_id") and deadline_passed:
+            pass
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Cannot invite planner when project is in '{project['stage']}' stage (must be Draft).",
+            )
     if not project.get("site_area_lat") or not project.get("site_area_lng") or not project.get("site_area_radius_km"):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -371,10 +381,13 @@ def invite_planner(
 
     active_invite = workflow_repository.get_active_project_invite(connection, project_id)
     if active_invite:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="A planner invite is already active for this project.",
-        )
+        if deadline_passed:
+            workflow_repository.update_invite_status(connection, active_invite["id"], "cancelled")
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="A planner invite is already active for this project.",
+            )
     if project.get("planner_id") is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -383,6 +396,7 @@ def invite_planner(
 
     extra_updates: dict[str, Any] = {}
     if payload.planner_deadline:
+        project_date_rules.validate_planner_deadline(project, payload.planner_deadline)
         extra_updates["planner_deadline"] = payload.planner_deadline
 
     workflow_repository.create_project_invite(
@@ -502,20 +516,9 @@ def reassign_planner(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Target planner is inactive.",
         )
-    if project.get("planner_id") == target_user["id"]:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Cannot reassign to the currently assigned planner.",
-        )
-
     active_invite = workflow_repository.get_active_project_invite(connection, project_id)
     old_planner_id = project.get("planner_id") or (active_invite["planner_id"] if active_invite else None)
     if active_invite:
-        if active_invite["planner_id"] == target_user["id"]:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Cannot reassign to the currently invited planner.",
-            )
         workflow_repository.update_invite_status(connection, active_invite["id"], "cancelled")
 
     extra_updates: dict[str, Any] = {
@@ -523,6 +526,7 @@ def reassign_planner(
         "planner_deploy_permitted": False,
     }
     if payload.planner_deadline:
+        project_date_rules.validate_planner_deadline(project, payload.planner_deadline)
         extra_updates["planner_deadline"] = payload.planner_deadline
 
     workflow_repository.create_project_invite(
@@ -543,11 +547,13 @@ def reassign_planner(
         notification_kind="planner_reassigned" if old_planner_id else None,
         notification_target_user_ids=[old_planner_id] if old_planner_id else None,
     )
+    events = workflow_repository.get_project_events(connection, project_id)
+    latest_event_id = events[-1]["id"] if events else None
     if payload.planner_id:
         notification_service.dispatch_stage_notifications(
             connection,
             project=project,
-            event_id=0,
+            event_id=latest_event_id,
             actor_id=user.id,
             notification_kind="planner_invited",
             notification_target_user_ids=[payload.planner_id],
@@ -599,8 +605,20 @@ def accept_invite(
             detail="Cannot accept an invite meant for another planner.",
         )
 
-    workflow_repository.update_invite_status(connection, active_invite["id"], "accepted")
     proj = project_repository.get_project_by_id(connection, project_id)
+    if not proj:
+        raise HTTPException(status_code=404, detail="Project not found.")
+    deadline = proj.get("planner_deadline")
+    if deadline:
+        if deadline.tzinfo is None:
+            deadline = deadline.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) > deadline:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Invitation deadline has passed. Cannot accept expired invitation.",
+            )
+
+    workflow_repository.update_invite_status(connection, active_invite["id"], "accepted")
     updated = transition_project_stage(
         connection,
         project_id=project_id,

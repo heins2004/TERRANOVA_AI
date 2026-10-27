@@ -12,8 +12,7 @@ import { getChatUnreadCount } from "@/services/chat";
 
 const STAGE_ORDER: StageGroupConfig[] = [
   { key: "draft", label: "Draft", stages: ["Draft"] },
-  { key: "planner-invited", label: "Planner Invited", stages: ["Planner invited"] },
-  { key: "site-proposed", label: "Site Proposed", stages: ["Site proposed"] },
+  { key: "site-proposed", label: "Site Proposed", stages: ["Planner invited", "Site proposed"] },
   { key: "under-consideration", label: "Under Consideration", stages: ["Under consideration"] },
   { key: "approved", label: "Approved", stages: ["Approved"] },
   { key: "deployed-stages", label: "Deployed Stages", stages: ["OpenForResponse", "InProgress", "Completed", "Halted", "Recalled"] },
@@ -21,7 +20,6 @@ const STAGE_ORDER: StageGroupConfig[] = [
 
 const GOV_LIST_NAV_ITEMS: SidebarItem[] = [
   { key: "draft", label: "Draft", icon: "edit_note" },
-  { key: "planner-invited", label: "Planner Invited", icon: "person_add" },
   { key: "site-proposed", label: "Site Proposed", icon: "location_searching" },
   { key: "under-consideration", label: "Under Consideration", icon: "fact_check" },
   { key: "approved", label: "Approved", icon: "verified" },
@@ -41,8 +39,9 @@ function GovDashboardContent() {
   const isOfficial = user?.role === "Government Official";
 
   const rawSection = searchParams.get("section");
-  const isValidSection = rawSection && STAGE_ORDER.some((g) => g.key === rawSection);
-  const activeSection = isValidSection ? (rawSection as string) : "draft";
+  const normalizedSection = rawSection === "planner-invited" ? "site-proposed" : rawSection;
+  const isValidSection = normalizedSection && STAGE_ORDER.some((g) => g.key === normalizedSection);
+  const activeSection = isValidSection ? (normalizedSection as string) : "draft";
 
   useEffect(() => {
     let isMounted = true;
@@ -95,7 +94,10 @@ function GovDashboardContent() {
   const activeGroup = STAGE_ORDER.find((g) => g.key === activeSection) ?? STAGE_ORDER[0];
 
   const siteProposedCount = projects.filter(
-    (p) => p.stage === "Site proposed" || (p.stage === "OpenForResponse" && Boolean(p.site_change_status))
+    (p) =>
+      p.stage === "Site proposed" ||
+      p.stage === "Planner invited" ||
+      (p.stage === "OpenForResponse" && Boolean(p.site_change_status))
   ).length;
 
   const navItems = GOV_LIST_NAV_ITEMS.map((item) => {

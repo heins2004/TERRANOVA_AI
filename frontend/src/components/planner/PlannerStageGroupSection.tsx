@@ -24,7 +24,11 @@ export function PlannerStageGroupSection({
 }: PlannerStageGroupSectionProps) {
   const stageProjects = projects.filter((p) => {
     if (group.key === "site-proposed") {
-      return p.stage === "Site proposed" || (p.stage === "OpenForResponse" && Boolean(p.site_change_status));
+      return (
+        p.stage === "Site proposed" ||
+        p.stage === "Planner invited" ||
+        (p.stage === "OpenForResponse" && Boolean(p.site_change_status))
+      );
     }
     return group.stages.includes(p.stage);
   });
@@ -46,26 +50,28 @@ export function PlannerStageGroupSection({
         </div>
       ) : (
         <div className="grid gap-[16px] md:grid-cols-2 lg:grid-cols-3">
-          {stageProjects.map((proj) => (
-            <Link
-              key={proj.id}
-              href={`/planner/${proj.id}`}
-              id={`planner-project-card-${proj.id}`}
-              className="glass-card block rounded-xl border border-white/10 bg-white/[0.02] p-[20px] transition hover:border-primary-container/60 hover:bg-white/[0.04]"
-            >
-              <div className="flex items-start justify-between gap-[10px]">
-                <span className="font-data-mono text-[10px] uppercase text-on-surface-variant">
-                  #{proj.id} • {proj.city || "INDIA"}
-                </span>
-                <div className="flex flex-wrap items-center gap-[6px]">
-                  <span className="rounded border border-primary-container/40 bg-primary-container/10 px-[6px] py-[2px] font-data-mono text-[10px] text-primary">
-                    {proj.stage}
+          {stageProjects.map((proj) => {
+            const stageLabel = proj.stage === "Planner invited" ? "Site proposed" : proj.stage;
+            return (
+              <Link
+                key={proj.id}
+                href={`/planner/${proj.id}`}
+                id={`planner-project-card-${proj.id}`}
+                className="glass-card block rounded-xl border border-white/10 bg-white/[0.02] p-[20px] transition hover:border-primary-container/60 hover:bg-white/[0.04]"
+              >
+                <div className="flex items-start justify-between gap-[10px]">
+                  <span className="font-data-mono text-[10px] uppercase text-on-surface-variant">
+                    #{proj.id} • {proj.city || "INDIA"}
                   </span>
-                  {proj.site_change_status && (
-                    <SiteReworkingBadge status={proj.site_change_status} id={`planner-card-site-change-${proj.id}`} />
-                  )}
+                  <div className="flex flex-wrap items-center gap-[6px]">
+                    <span className="rounded border border-primary-container/40 bg-primary-container/10 px-[6px] py-[2px] font-data-mono text-[10px] text-primary">
+                      {stageLabel}
+                    </span>
+                    {proj.site_change_status && (
+                      <SiteReworkingBadge status={proj.site_change_status} id={`planner-card-site-change-${proj.id}`} />
+                    )}
+                  </div>
                 </div>
-              </div>
 
               <h3 className="mt-[8px] font-display-md text-[16px] font-medium text-foreground line-clamp-1">
                 {proj.title}
@@ -80,7 +86,8 @@ export function PlannerStageGroupSection({
                 <span className="text-primary hover:underline">VIEW &rarr;</span>
               </div>
             </Link>
-          ))}
+          );
+        })}
         </div>
       )}
     </section>

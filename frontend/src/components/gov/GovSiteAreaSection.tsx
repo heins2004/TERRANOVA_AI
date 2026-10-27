@@ -125,7 +125,7 @@ export function GovSiteAreaSection({
 
           {hasArea && !canClear && (
             <span className="font-data-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-              LOCKED (Planner invited)
+              LOCKED (Site proposed)
             </span>
           )}
         </div>

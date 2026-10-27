@@ -145,7 +145,7 @@ export function GovEditModal({ project, onClose, onSuccess }: GovEditModalProps)
             {project.stage === "Approved"
               ? "Final Edit (Approved Stage)"
               : project.stage === "Planner invited"
-              ? "Edit Project & Site Area (Planner Invited)"
+              ? "Edit Project & Site Area (Site Proposed)"
               : "Edit Project (Draft)"}
           </h3>
           <button

@@ -3,15 +3,23 @@
 import { useRef, useState } from "react";
 import { invitePlanner, PlannerSearchItem, reassignPlanner, searchPlanners } from "@/services/gov";
 import { DateTimeInput } from "@/components/common/DateTimeInput";
+import { getISTDatePart, getKolkataToday, toISTTimestamp } from "@/lib/dateRules";
 
 interface GovPlannerSearchProps {
   projectId: number;
+  projectStartDate?: string | null;
   isReassign?: boolean;
   onSuccess: () => void;
   hasArea?: boolean;
 }
 
-export function GovPlannerSearch({ projectId, isReassign = false, onSuccess, hasArea = true }: GovPlannerSearchProps) {
+export function GovPlannerSearch({
+  projectId,
+  projectStartDate,
+  isReassign = false,
+  onSuccess,
+  hasArea = true,
+}: GovPlannerSearchProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PlannerSearchItem[]>([]);
   const [searching, setSearching] = useState(false);
@@ -50,6 +58,22 @@ export function GovPlannerSearch({ projectId, isReassign = false, onSuccess, has
   async function handleSendInvite() {
     if (!selectedPlanner) return;
     if (actionRef.current) return;
+
+    if (deadline) {
+      const deadlineTime = new Date(deadline).getTime();
+      if (isNaN(deadlineTime) || deadlineTime <= Date.now()) {
+        setError("Proposal deadline must be in the future.");
+        return;
+      }
+      if (projectStartDate) {
+        const startTimestamp = toISTTimestamp(projectStartDate);
+        const deadlineTimestamp = toISTTimestamp(deadline);
+        if (startTimestamp != null && deadlineTimestamp != null && deadlineTimestamp >= startTimestamp) {
+          setError("Proposal deadline must be before the project start date.");
+          return;
+        }
+      }
+    }
 
     actionRef.current = true;
     setSubmitting(true);
@@ -168,7 +192,12 @@ export function GovPlannerSearch({ projectId, isReassign = false, onSuccess, has
             label="Proposal Deadline"
             labelClassName="block font-data-mono text-[11px] text-on-surface-variant uppercase"
             value={deadline}
-            onChange={setDeadline}
+            min={getKolkataToday()}
+            max={projectStartDate ? getISTDatePart(projectStartDate) : undefined}
+            onChange={(val) => {
+              setDeadline(val);
+              setError("");
+            }}
           />
 
           {!hasArea && (
@@ -187,7 +216,7 @@ export function GovPlannerSearch({ projectId, isReassign = false, onSuccess, has
             {submitting
               ? "Dispatching Invitation..."
               : isReassign
-              ? `Reassign to ${selectedPlanner.name}`
+              ? `Assign to ${selectedPlanner.name}`
               : `Send Invitation to ${selectedPlanner.name}`}
           </button>
         </div>

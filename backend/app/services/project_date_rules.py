@@ -154,3 +154,34 @@ def validate_deploy_dates(
             detail="Start date must be after the response deadline. Edit the project start date first.",
         )
 
+
+def validate_planner_deadline(
+    project: dict[str, Any],
+    planner_deadline: Any,
+    clock: Any = None,
+) -> None:
+    """Validate planner proposal deadline:
+    1. Must be strictly in the future (exact datetime).
+    2. Must be strictly before the project's start_date (if start_date is set).
+    """
+    if planner_deadline is None:
+        return
+
+    p_dt = to_kolkata_datetime(planner_deadline)
+    if p_dt is None:
+        return
+
+    now_dt = datetime.now(KOLKATA_TZ) if clock is None else (to_kolkata_datetime(clock) or datetime.now(KOLKATA_TZ))
+    if p_dt <= now_dt:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Proposal deadline must be in the future.",
+        )
+
+    s_dt = to_kolkata_datetime(project.get("start_date"))
+    if s_dt is not None and s_dt <= p_dt:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Proposal deadline must be before the project start date.",
+        )
+

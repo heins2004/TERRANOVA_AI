@@ -18,7 +18,11 @@ interface GovStageGroupSectionProps {
 export function GovStageGroupSection({ group, projects }: GovStageGroupSectionProps) {
   const groupProjects = projects.filter((p) => {
     if (group.key === "site-proposed") {
-      return p.stage === "Site proposed" || (p.stage === "OpenForResponse" && Boolean(p.site_change_status));
+      return (
+        p.stage === "Site proposed" ||
+        p.stage === "Planner invited" ||
+        (p.stage === "OpenForResponse" && Boolean(p.site_change_status))
+      );
     }
     return group.stages.includes(p.stage);
   });
@@ -42,22 +46,24 @@ export function GovStageGroupSection({ group, projects }: GovStageGroupSectionPr
         </div>
       ) : (
         <div className="grid gap-[16px] sm:grid-cols-2 lg:grid-cols-3">
-          {groupProjects.map((project) => (
-            <Link
-              key={project.id}
-              href={`/gov/${project.id}`}
-              id={`gov-project-card-${project.id}`}
-              className="group block rounded-[12px] border border-white/10 bg-surface-container-lowest/90 p-[20px] transition-all hover:border-primary/50 hover:bg-white/[0.03] hover:shadow-[0_0_15px_rgba(34,211,238,0.15)]"
-            >
-              <div className="flex items-start justify-between gap-[10px]">
-                <div className="flex flex-wrap items-center gap-[6px]">
-                  <span className="rounded border border-primary-container/40 bg-primary-container/10 px-[8px] py-[3px] font-data-mono text-[10px] font-semibold text-primary uppercase">
-                    {project.stage}
-                  </span>
-                  {project.site_change_status && (
-                    <SiteReworkingBadge status={project.site_change_status} id={`gov-card-site-change-${project.id}`} />
-                  )}
-                </div>
+          {groupProjects.map((project) => {
+            const stageLabel = project.stage === "Planner invited" ? "Site proposed" : project.stage;
+            return (
+              <Link
+                key={project.id}
+                href={`/gov/${project.id}`}
+                id={`gov-project-card-${project.id}`}
+                className="group block rounded-[12px] border border-white/10 bg-surface-container-lowest/90 p-[20px] transition-all hover:border-primary/50 hover:bg-white/[0.03] hover:shadow-[0_0_15px_rgba(34,211,238,0.15)]"
+              >
+                <div className="flex items-start justify-between gap-[10px]">
+                  <div className="flex flex-wrap items-center gap-[6px]">
+                    <span className="rounded border border-primary-container/40 bg-primary-container/10 px-[8px] py-[3px] font-data-mono text-[10px] font-semibold text-primary uppercase">
+                      {stageLabel}
+                    </span>
+                    {project.site_change_status && (
+                      <SiteReworkingBadge status={project.site_change_status} id={`gov-card-site-change-${project.id}`} />
+                    )}
+                  </div>
                 <span className="font-data-mono text-[11px] uppercase text-on-surface-variant">
                   {project.city ?? "No City"}
                 </span>
@@ -88,7 +94,8 @@ export function GovStageGroupSection({ group, projects }: GovStageGroupSectionPr
                 </div>
               </div>
             </Link>
-          ))}
+          );
+        })}
         </div>
       )}
     </section>

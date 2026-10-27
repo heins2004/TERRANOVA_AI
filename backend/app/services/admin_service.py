@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 from psycopg import Connection
 
 from app.core.security import hash_password
-from app.repositories import admin_repository, planner_credential_repository
+from app.repositories import admin_analytics_repository, admin_repository, planner_credential_repository
 from app.schemas.admin import CreateOfficialRequest
 from app.schemas.auth import UserResponse
 
@@ -200,7 +200,7 @@ def get_analytics(connection: Connection, days: int) -> dict[str, Any]:
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Query parameter 'days' must be one of: 7, 30, 90.",
         )
-    return admin_repository.get_analytics(connection, days)
+    return admin_analytics_repository.get_analytics(connection, days)
 
 
 def get_login_log(
@@ -215,3 +215,61 @@ def get_login_log(
             detail="Limit cannot exceed 100.",
         )
     return admin_repository.get_login_log(connection, limit=limit, offset=offset)
+
+
+def export_users_data(
+    connection: Connection,
+    *,
+    q: str | None = None,
+    role: str | None = None,
+    status_filter: str | None = None,
+    format_type: str = "xlsx",
+    include_demo: bool = False,
+) -> tuple[bytes, str, str]:
+    from app.utils.excel_export import generate_csv, generate_xlsx
+
+    rows, _ = admin_repository.list_users(
+        connection,
+        q=q,
+        role=role,
+        status=status_filter,
+        limit=None,
+        offset=0,
+        include_demo=include_demo,
+    )
+    headers = [
+        "User ID",
+        "Full Name",
+        "Email",
+        "Role",
+        "City",
+        "Status",
+        "Inactive Days",
+        "Created At",
+        "Last Login",
+    ]
+    data_rows = []
+    for r in rows:
+        status_label = "Active" if r.get("is_active") else "Inactive"
+        created = r["created_at"].isoformat() if r.get("created_at") else ""
+        last_login = r["last_login_at"].isoformat() if r.get("last_login_at") else "Never"
+        data_rows.append([
+            r.get("id"),
+            r.get("name") or r.get("full_name") or "",
+            r.get("email") or "",
+            r.get("role") or "",
+            r.get("city") or "",
+            status_label,
+            r.get("inactive_days", 0),
+            created,
+            last_login,
+        ])
+    if format_type.lower() == "csv":
+        content = generate_csv(headers, data_rows)
+        media_type = "text/csv; charset=utf-8"
+        filename = "users_export.csv"
+    else:
+        content = generate_xlsx(headers, data_rows)
+        media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        filename = "users_export.xlsx"
+    return content, media_type, filename
