@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
+import dynamic from "next/dynamic";
 import {
   ProjectConsultation,
   ProjectConsultationCreatePayload,
@@ -9,10 +10,14 @@ import {
   createProjectConsultation,
   updateProjectConsultation,
 } from "@/services/projectConsultations";
-import FullScreenMapModal from "@/components/maps/FullScreenMapModal";
 import { GovConsultationVenueLocationSection } from "./GovConsultationVenueLocationSection";
 import { DateTimeInput } from "@/components/common/DateTimeInput";
 export { GovConsultationCancelModal } from "./GovConsultationCancelModal";
+
+const FullScreenMapModal = dynamic(
+  () => import("@/components/maps/FullScreenMapModal"),
+  { ssr: false }
+);
 
 interface FormModalProps {
   projectId: number;
