@@ -21,10 +21,20 @@ from scripts.seed_demo_data import (
 REPORTS_DIR = Path(r"C:\Users\hp\Desktop\Programs\agent-reports")
 SEED_IDS_FILE = REPORTS_DIR / "seed-ids.json"
 TABLES = [
-    "users", "planner_credentials", "projects", "project_events",
-    "project_invites", "comments", "project_follows", "notifications",
+    "users", "projects", "project_events", "project_invites",
+    "comments", "project_follows", "notifications",
     "chat_messages", "chat_pins", "project_site_changes",
 ]
+
+def validate_cleanup_host(current_host: str, recorded_host: str | None) -> tuple[bool, str]:
+    """Validate cleanup host constraints: matches recorded host and contains neon.tech."""
+    if not recorded_host:
+        return False, "Recorded host is missing from seed-ids.json."
+    if current_host != recorded_host:
+        return False, f"Current host '{current_host}' does not match recorded host '{recorded_host}'."
+    if "neon.tech" not in current_host:
+        return False, f"Host '{current_host}' does not contain 'neon.tech'."
+    return True, "Host check passed."
 
 def get_row_counts(cur) -> dict[str, int]:
     counts = {}
@@ -87,9 +97,6 @@ def seed_database(conn, cur, admin_pwd: str, demo_pwd: str) -> dict[str, list]:
         uid = cur.fetchone()["id"]
         created["users"].append(uid)
         user_map[acc["email"]] = uid
-        if acc["role"] == "Urban Planner":
-            cur.execute("INSERT INTO planner_credentials (user_id, status, is_backfilled) VALUES (%s, 'Verified', true);", (uid,))
-            created["planner_credentials"].append(uid)
 
     gov_ids = [user_map[f"gov{i}@test.com"] for i in (1, 2, 3)]
     plan_ids = [user_map[f"planner{i}@test.com"] for i in (1, 2, 3)]
@@ -142,7 +149,7 @@ def seed_database(conn, cur, admin_pwd: str, demo_pwd: str) -> dict[str, list]:
             )
             created["project_site_changes"].append(cur.fetchone()["id"])
 
-        if i in (15, 18):  # A few deployed projects with chat
+        if i in (15, 18):  # Deployed projects with chat
             for s_idx, msg in enumerate(SAMPLE_CHAT_MESSAGES):
                 sndr = cit_ids[s_idx % len(cit_ids)] if s_idx % 2 == 0 else g_id
                 cur.execute("INSERT INTO chat_messages (project_id, sender_id, body) VALUES (%s, %s, %s) RETURNING id;", (proj_id, sndr, msg))
@@ -150,7 +157,6 @@ def seed_database(conn, cur, admin_pwd: str, demo_pwd: str) -> dict[str, list]:
             cur.execute("INSERT INTO chat_pins (user_id, project_id) VALUES (%s, %s) ON CONFLICT DO NOTHING;", (cit_ids[0], proj_id))
             created["chat_pins"].append({"user_id": cit_ids[0], "project_id": proj_id})
 
-    # Sample notifications
     for uid, kind, msg in [
         (plan_ids[0], "planner_invited", "You have been invited to review Kaloor Athletic Stadium Annex."),
         (gov_ids[0], "site_proposed", "Site proposed for Bandra Kurla Retail Pavilion."),
@@ -161,20 +167,38 @@ def seed_database(conn, cur, admin_pwd: str, demo_pwd: str) -> dict[str, list]:
 
     return created
 
-def cleanup_database(cur, ids: dict):
+def cleanup_database(cur, ids: dict) -> dict[str, int]:
+    deleted = {}
+    pin_del = 0
     for f in ids.get("chat_pins", []):
         cur.execute("DELETE FROM chat_pins WHERE user_id = %s AND project_id = %s;", (f["user_id"], f["project_id"]))
+        pin_del += cur.rowcount
+    deleted["chat_pins"] = pin_del
+
     for tbl, col in [
         ("notifications", "id"), ("chat_messages", "id"), ("comments", "id"),
         ("project_site_changes", "id"), ("project_invites", "id"), ("project_events", "id"),
     ]:
+        del_cnt = 0
         if ids.get(tbl):
             cur.execute(f"DELETE FROM {tbl} WHERE {col} = ANY(%s);", (ids[tbl],))
+            del_cnt = cur.rowcount
+        deleted[tbl] = del_cnt
+
+    foll_del = 0
     for f in ids.get("project_follows", []):
         cur.execute("DELETE FROM project_follows WHERE user_id = %s AND project_id = %s;", (f["user_id"], f["project_id"]))
-    for tbl, col in [("projects", "id"), ("planner_credentials", "user_id"), ("users", "id")]:
+        foll_del += cur.rowcount
+    deleted["project_follows"] = foll_del
+
+    for tbl, col in [("projects", "id"), ("users", "id")]:
+        del_cnt = 0
         if ids.get(tbl):
             cur.execute(f"DELETE FROM {tbl} WHERE {col} = ANY(%s);", (ids[tbl],))
+            del_cnt = cur.rowcount
+        deleted[tbl] = del_cnt
+
+    return deleted
 
 def print_summary(cur, host: str, header: str):
     print(f"Host: {host}")
@@ -189,6 +213,7 @@ def main():
     mode_group.add_argument("--dry-run", action="store_true", help="Simulate seeding in a transaction and rollback.")
     mode_group.add_argument("--commit", action="store_true", help="Commit seeding (refuses unless host is neon.tech).")
     mode_group.add_argument("--cleanup", action="store_true", help="Delete rows created by previous commit.")
+    parser.add_argument("--yes", action="store_true", help="Confirm deletion in cleanup mode. Without --yes, cleanup rolls back.")
     args = parser.parse_args()
 
     db_url = os.environ.get("DATABASE_URL")
@@ -211,13 +236,25 @@ def main():
                     sys.exit(1)
                 with open(SEED_IDS_FILE, "r", encoding="utf-8") as f:
                     saved_ids = json.load(f)
-                cleanup_database(cur, saved_ids)
-                conn.commit()
-                SEED_IDS_FILE.unlink(missing_ok=True)
-                print_summary(cur, host, "Per-Table Counts Post-Cleanup:")
+                valid, err = validate_cleanup_host(host, saved_ids.get("host"))
+                if not valid:
+                    print(f"ERROR: Cleanup refused. {err}", file=sys.stderr)
+                    sys.exit(1)
+                del_counts = cleanup_database(cur, saved_ids)
+                print(f"Host: {host}")
+                if args.yes:
+                    conn.commit()
+                    SEED_IDS_FILE.unlink(missing_ok=True)
+                    print("Cleanup committed. Deleted rows per table:")
+                    for tbl, cnt in del_counts.items():
+                        print(f"  {tbl:<22}: {cnt}")
+                else:
+                    conn.rollback()
+                    print("Cleanup simulation (dry-run). Rows that would be deleted (pass --yes to execute):")
+                    for tbl, cnt in del_counts.items():
+                        print(f"  {tbl:<22}: {cnt}")
                 return
 
-            # Seeding modes (--dry-run or --commit)
             admin_pwd = os.environ.get("ADMIN_PASSWORD") or getpass.getpass("Enter Administrator password: ")
             demo_pwd = os.environ.get("DEMO_PASSWORD")
             if not demo_pwd:
@@ -231,6 +268,7 @@ def main():
                 conn.rollback()
                 print("Dry-run complete: Transaction successfully rolled back.")
             elif args.commit:
+                created_ids["host"] = host
                 conn.commit()
                 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
                 with open(SEED_IDS_FILE, "w", encoding="utf-8") as f:
