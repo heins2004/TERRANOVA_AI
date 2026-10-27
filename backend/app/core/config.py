@@ -41,7 +41,7 @@ def _parse_bool(value: str, default: bool) -> bool:
 
 def _parse_origins(value: str) -> tuple[str, ...]:
     origins = tuple(origin.strip() for origin in value.split(",") if origin.strip())
-    return origins or ("http://localhost:3000",)
+    return origins or ("http://localhost:3000", "http://127.0.0.1:3000")
 
 
 @lru_cache
@@ -61,11 +61,18 @@ def get_settings() -> Settings:
             f"Invalid APP_ENV '{app_env}'. Allowed values are 'development' and 'production'."
         )
 
-    # Secure cookie flag: set Secure when DEPLOYED=1 or APP_ENV=production, never in development.
-    if app_env == "development" and not deployed:
+    # Secure cookie flag: driven by COOKIE_SECURE env flag if set, otherwise set when DEPLOYED=1 or APP_ENV=production.
+    raw_cookie_secure = os.getenv("COOKIE_SECURE")
+    if raw_cookie_secure is not None:
+        session_cookie_secure = _parse_bool(raw_cookie_secure, default=False)
+    elif app_env == "development" and not deployed:
         session_cookie_secure = False
     else:
         session_cookie_secure = bool(deployed or app_env == "production")
+
+    # SameSite cookie flag: driven by COOKIE_SAMESITE or SESSION_COOKIE_SAMESITE (default Lax)
+    raw_samesite = os.getenv("COOKIE_SAMESITE", os.getenv("SESSION_COOKIE_SAMESITE", "lax")).strip().lower()
+    session_cookie_samesite = raw_samesite if raw_samesite in {"lax", "strict", "none"} else "lax"
 
     dev_default_db_url = "postgresql://postgres:postgres@localhost:5432/terranova_ai"
     raw_database_url = os.getenv("DATABASE_URL")
@@ -84,12 +91,12 @@ def get_settings() -> Settings:
         app_env=app_env,
         database_url=database_url,
         frontend_origins=_parse_origins(
-            os.getenv("FRONTEND_ORIGINS", os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")),
+            os.getenv("FRONTEND_ORIGINS", os.getenv("FRONTEND_ORIGIN", "http://localhost:3000,http://127.0.0.1:3000")),
         ),
         session_cookie_name=os.getenv("SESSION_COOKIE_NAME", "terranova_session"),
         session_max_age_seconds=int(os.getenv("SESSION_MAX_AGE_SECONDS", "604800")),
         session_cookie_secure=session_cookie_secure,
-        session_cookie_samesite=os.getenv("SESSION_COOKIE_SAMESITE", "lax"),
+        session_cookie_samesite=session_cookie_samesite,
         rate_limit_public_max_requests=int(os.getenv("RATE_LIMIT_PUBLIC_MAX_REQUESTS", "120")),
         rate_limit_public_window_seconds=int(os.getenv("RATE_LIMIT_PUBLIC_WINDOW_SECONDS", "60")),
         rate_limit_login_max_failures=int(os.getenv("RATE_LIMIT_LOGIN_MAX_FAILURES", "10")),
